@@ -4,6 +4,7 @@ use rand::prelude::SliceRandom;
 use rand::thread_rng;
 
 use crate::core::{Individual, Population};
+use crate::core::error::OError;
 use crate::operators::{BinaryComparisonOperator, PreferredSolution};
 
 /// A trait implementing methods to choose individuals from a population for reproduction.
@@ -15,12 +16,12 @@ pub trait Selector<'a> {
     /// * `population`: The population.
     /// * `number_of_winners`: The number of winners to select.
     ///
-    /// returns: `Result<[&Individual], String>`
+    /// returns: `Result<[&Individual], OError>`
     fn select(
         &'a self,
         population: &'a Population,
         number_of_winners: usize,
-    ) -> Result<Vec<&'a Individual>, String> {
+    ) -> Result<Vec<&'a Individual>, OError> {
         let mut winners: Vec<&Individual> = Vec::new();
         for _ in 0..number_of_winners {
             winners.push(self.select_fit_individual(population)?);
@@ -34,11 +35,11 @@ pub trait Selector<'a> {
     ///
     /// * `population`: The list of individuals.
     ///
-    /// returns: `Result<&Individual, String>`
+    /// returns: `Result<&Individual, OError>`
     fn select_fit_individual(
         &'a self,
         population: &'a Population,
-    ) -> Result<&'a Individual, String>;
+    ) -> Result<&'a Individual, OError>;
 }
 
 /// Tournament selection method between multiple competitors for choosing individuals from a
@@ -76,16 +77,22 @@ impl<'a, Operator: BinaryComparisonOperator> Selector<'a> for TournamentSelector
     ///
     /// * `population`:The population with the solutions.
     ///
-    /// returns: `Result<&Individual, String>`
+    /// returns: `Result<&Individual, OError>`
     fn select_fit_individual(
         &'a self,
         population: &'a Population,
-    ) -> Result<&'a Individual, String> {
+    ) -> Result<&'a Individual, OError> {
         if population.is_empty() {
-            return Err("The population is empty and no individual can be selected".to_string());
+            return Err(OError::SelectorOperator(
+                "BinaryComparisonOperator".to_string(),
+                "The population is empty and no individual can be selected".to_string(),
+            ));
         }
         if population.size() < self.number_of_competitors {
-            return Err(format!("The population size ({}) is smaller than the number of competitors needed in the tournament ({})", population.size(), self.number_of_competitors));
+            return Err(OError::SelectorOperator(
+                "BinaryComparisonOperator".to_string(),
+                format!("The population size ({}) is smaller than the number of competitors needed in the tournament ({})", population.size(), self.number_of_competitors))
+            );
         }
 
         let individuals = population.individuals();

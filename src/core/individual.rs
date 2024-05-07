@@ -241,24 +241,30 @@ impl<'a> Individual<'a> {
     ///
     /// * `name`: The variable name.
     ///
-    /// returns: `Result<f64, String>`
-    pub fn get_real_value(&'a self, name: &str) -> Result<f64, String> {
+    /// returns: `Result<f64, OError>`
+    pub fn get_real_value(&'a self, name: &str) -> Result<f64, OError> {
         match self.variable_values[name] {
             VariableValue::Real(v) => Ok(v),
-            _ => Err(format!("The variable '{}' is not real", name)),
+            _ => Err(OError::WrongTypeVariable(
+                name.to_string(),
+                "real".to_string(),
+            )),
         }
     }
 
-    /// Ge the objective value by name.
+    /// Ge the objective value by name. This returns an error if the objective does not exist.
     ///
     /// # Arguments
     ///
     /// * `name`: The objective name.
     ///
-    /// returns: `Result<f64, String>`
-    pub fn get_objective_value(&self, name: &str) -> Result<f64, String> {
+    /// returns: `Result<f64, OError>`
+    pub fn get_objective_value(&self, name: &str) -> Result<f64, OError> {
         if !self.objective_values.contains_key(name) {
-            return Err(format!("The objective named '{}' does not exist", name));
+            return Err(OError::NonExistingName(
+                "objective".to_string(),
+                name.to_string(),
+            ));
         }
 
         Ok(self.objective_values[name])
@@ -320,14 +326,15 @@ impl<'a> Population<'a> {
         Self(population)
     }
 
-    /// Get the numbers stored in a real variable in all individuals.
+    /// Get the numbers stored in a real variable in all individuals. This returns an error if the
+    /// variable does not exist or is not a real type.
     ///
     /// # Arguments
     ///
     /// * `name`: The variable name.
     ///
-    /// returns: `Result<f64, String>`
-    pub fn to_real_vec(&'a self, name: &str) -> Result<Vec<f64>, String> {
+    /// returns: `Result<f64, OError>`
+    pub fn to_real_vec(&'a self, name: &str) -> Result<Vec<f64>, OError> {
         let mut values: Vec<f64> = vec![];
         for individual in self.individuals() {
             values.push(individual.get_real_value(name)?);

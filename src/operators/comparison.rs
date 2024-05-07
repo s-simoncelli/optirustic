@@ -1,4 +1,5 @@
 use crate::core::{Individual, Problem};
+use crate::core::error::OError;
 
 /// The preferred solution with the `BinaryComparisonOperator`.
 #[derive(Debug, PartialOrd, PartialEq)]
@@ -21,12 +22,12 @@ pub trait BinaryComparisonOperator {
     /// * `first_solution`: The first solution to compare.
     /// * `second_solution`: The second solution to compare.
     ///
-    /// returns: `Result<PreferredSolution, String>` The preferred solution.
+    /// returns: `Result<PreferredSolution, OError>` The preferred solution.
     fn compare(
         problem: &Problem,
         first_solution: &Individual,
         second_solution: &Individual,
-    ) -> Result<PreferredSolution, String>
+    ) -> Result<PreferredSolution, OError>
     where
         Self: Sized;
 }
@@ -55,13 +56,13 @@ impl BinaryComparisonOperator for ParetoConstrainedDominance {
     /// * `first_solution`: The first solution to compare.
     /// * `second_solution`: The second solution to compare.
     ///
-    /// returns: `Result<PreferredSolution, String>` The dominance relation between solution 1
+    /// returns: `Result<PreferredSolution, OError>` The dominance relation between solution 1
     /// and 2.
     fn compare(
         problem: &Problem,
         first_solution: &Individual,
         second_solution: &Individual,
-    ) -> Result<PreferredSolution, String> {
+    ) -> Result<PreferredSolution, OError> {
         let cv1 = first_solution.constraint_violation();
         let cv2 = second_solution.constraint_violation();
 
