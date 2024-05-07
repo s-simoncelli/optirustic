@@ -4,6 +4,7 @@ pub use problem::{Objective, ObjectiveDirection, Problem, ProblemExport};
 pub use variable::{Boolean, BoundedNumber, Choice, Variable, VariableType, VariableValue};
 
 pub mod constraint;
+pub mod error;
 pub mod individual;
 pub mod problem;
 pub mod variable;

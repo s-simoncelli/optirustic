@@ -5,12 +5,16 @@ use log::info;
 use serde::Serialize;
 
 use crate::core::{Constraint, VariableType};
+use crate::core::error::OError;
+use crate::core::error::OError::DuplicatedName;
 
 /// Whether the objective should be minimised or maximised. Default is minimise.
 #[derive(Default, Debug, PartialOrd, PartialEq, Serialize)]
 pub enum ObjectiveDirection {
     #[default]
+    /// Minimise an objective.
     Minimise,
+    /// Maximise an objective.
     Maximise,
 }
 
@@ -23,6 +27,14 @@ impl Display for ObjectiveDirection {
     }
 }
 
+/// Define a problem objective to minimise or maximise.
+///
+/// # Example
+/// ```
+///  use optirustic::core::{Objective, ObjectiveDirection};
+///  let o = Objective::new("Reduce cost", ObjectiveDirection::Minimise);
+///  println!("{}", o);
+/// ```
 #[derive(Serialize, Debug)]
 pub struct Objective {
     /// The objective name.
@@ -59,7 +71,20 @@ impl Display for Objective {
     }
 }
 
-/// Define a new problem to optimise.
+/// Define a new problem to optimise as:
+///
+///  $$$ Min/Max(f_1(x), f_2(x), ..., f_M(x)) $
+///
+/// where
+///   - where the integer $M \geq 1$ is the number of objectives;
+///   - $x$ the $N$-variable solution vector bounded to $$$ x_i^{(L)} \leq x_i \leq x_i^{(U)}$ with
+/// $i=1,2,...,N$.
+///
+/// The problem is also subjected to the following constraints:
+/// - $$$ g_j(x) \geq 0 $ with $j=1,2,...,J$ and $J$ the number of inequality constraints.
+/// - $$$ h_k(x) = 0 $ with $k=1,2,...,H$ and $H$ the number of equality constraints.
+///
+///
 #[derive(Default, Debug)]
 pub struct Problem {
     /// The problem objectives.
@@ -88,25 +113,85 @@ pub struct ProblemExport {
 
 impl Problem {
     /// Initialise the problem.
-    pub fn new() -> Self {
-        Self {
-            variables: HashMap::new(),
-            objectives: HashMap::new(),
-            constraints: HashMap::new(),
+    ///
+    /// # Arguments
+    ///
+    /// * `objectives`: The vector of objective to set on the problem.
+    /// * `variable_types`: The vector of variable types to set on the problem.
+    /// * `constraints`: The optional vector of constraints.
+    ///
+    /// returns: `Result<Problem, OError>`
+    pub fn new(
+        objectives: Vec<Objective>,
+        variable_types: Vec<VariableType>,
+        constraints: Option<Vec<Constraint>>,
+    ) -> Result<Self, OError> {
+        // Check vector lengths
+        if objectives.is_empty() {
+            return Err(OError::NoObjective);
         }
+        if variable_types.is_empty() {
+            return Err(OError::NoVariables);
+        }
+
+        let mut p_objectives: HashMap<String, Objective> = HashMap::new();
+        for objective in objectives.into_iter() {
+            let name = objective.name.to_string();
+            if p_objectives.contains_key(&name) {
+                return Err(DuplicatedName("objective".to_string(), name));
+            }
+            info!("Adding objective '{}' - {}", name, objective);
+            p_objectives.insert(name, objective);
+        }
+
+        let mut p_variables: HashMap<String, VariableType> = HashMap::new();
+        for var_type in variable_types.into_iter() {
+            let name = var_type.name().to_string();
+            if p_variables.contains_key(&name) {
+                return Err(DuplicatedName("variable".to_string(), name));
+            }
+            info!("Adding variable type '{}' - {}", name, var_type);
+            p_variables.insert(name, var_type);
+        }
+
+        let p_constraints = match constraints {
+            None => HashMap::<String, Constraint>::new(),
+            Some(c) => {
+                let mut p_constraints: HashMap<String, Constraint> = HashMap::new();
+                for constraint in c.into_iter() {
+                    let name = constraint.name().to_string();
+                    if p_constraints.contains_key(&name) {
+                        return Err(DuplicatedName("constraint".to_string(), name));
+                    }
+                    info!("Adding constraint '{}' - {}", name, constraint);
+                    p_constraints.insert(name, constraint);
+                }
+                p_constraints
+            }
+        };
+
+        Ok(Self {
+            variables: p_variables,
+            objectives: p_objectives,
+            constraints: p_constraints,
+        })
     }
 
-    /// Whether a problem objective is being minimised.
+    /// Whether a problem objective is being minimised. This returns an error if the objective does
+    /// not exist.
     ///
     /// # Arguments
     ///
     /// * `name`: The objective name.
     ///
     ///
-    /// returns: `Result<bool, String>`
-    pub fn is_objective_minimised(&self, name: &str) -> Result<bool, String> {
+    /// returns: `Result<bool, OError>`
+    pub fn is_objective_minimised(&self, name: &str) -> Result<bool, OError> {
         if !self.objectives.contains_key(name) {
-            return Err(format!("The objective named '{}' does not exist", name));
+            return Err(OError::NonExistingName(
+                "objective".to_string(),
+                name.to_string(),
+            ));
         }
         Ok(self.objectives[name].direction == ObjectiveDirection::Minimise)
     }
@@ -130,60 +215,6 @@ impl Problem {
     /// returns: `usize`
     pub fn number_of_variables(&self) -> usize {
         self.variables.len()
-    }
-
-    /// Add a new variable type to the problem.
-    ///
-    /// # Arguments
-    ///
-    /// * `name`: The variable name.
-    /// * `variable_type`: The variable type to add.
-    ///
-    /// returns: `Result<(), String>` An error is returned if an variable with the same name
-    /// already exists.
-    pub fn add_variable(&mut self, name: &str, variable_type: VariableType) -> Result<(), String> {
-        if self.variables.contains_key(name) {
-            return Err(format!("The variable type named '{}' already exist", name));
-        }
-        info!("Adding variable '{}' - {}", name, variable_type);
-        self.variables.insert(name.to_string(), variable_type);
-        Ok(())
-    }
-
-    /// Add a new objective to the problem.
-    ///
-    /// # Arguments
-    ///
-    /// * `objective`: The objective to add.
-    ///
-    /// returns: `Result<(), String>` An error is returned if an objective with the same name
-    /// already exists.
-    pub fn add_objective(&mut self, objective: Objective) -> Result<(), String> {
-        let name = objective.name();
-        if self.objectives.contains_key(&name) {
-            return Err(format!("The objective named '{}' already exist", name));
-        }
-        info!("Adding objective '{}' - {}", name, objective);
-        self.objectives.insert(name, objective);
-        Ok(())
-    }
-
-    /// Add a new constraint to the problem.
-    ///
-    /// # Arguments
-    ///
-    /// * `constraint`: The constraint to add.
-    ///
-    /// returns: `Result<(), String>` An error is returned if a constraint with the same name
-    /// already exists.
-    pub fn add_constraint(&mut self, constraint: Constraint) -> Result<(), String> {
-        let name = constraint.name();
-        if self.constraints.contains_key(&name) {
-            return Err(format!("The constraint named '{}' already exist", name));
-        }
-        info!("Adding constraint '{}' - {}", name, constraint);
-        self.constraints.insert(name, constraint);
-        Ok(())
     }
 
     /// Get the name of the variables set on the problem.
@@ -220,10 +251,13 @@ impl Problem {
     ///
     /// * `name`: The name of the variable to fetch.
     ///
-    /// return `Result<VariableType, String>`
-    pub fn get_variable(&self, name: &str) -> Result<VariableType, String> {
+    /// return `Result<VariableType, OError>`
+    pub fn get_variable(&self, name: &str) -> Result<VariableType, OError> {
         if !self.variable_names().contains(&name.to_string()) {
-            return Err(format!("The variable named '{}' does not exist", name));
+            return Err(OError::NonExistingName(
+                "variable".to_string(),
+                name.to_string(),
+            ));
         }
         Ok(self.variables[name].clone())
     }
@@ -253,24 +287,30 @@ impl Problem {
 
 #[cfg(test)]
 mod test {
-    use crate::core::{Constraint, Objective, ObjectiveDirection, Problem, RelationalOperator};
+    use crate::core::{
+        BoundedNumber, Constraint, Objective, ObjectiveDirection, Problem, RelationalOperator,
+        VariableType,
+    };
 
     #[test]
     /// Test when objectives and constraints already exist
     fn test_already_existing_data() {
-        let mut problem = Problem::new();
-        problem
-            .add_objective(Objective::new("obj1", ObjectiveDirection::Minimise))
-            .unwrap();
-        assert!(problem
-            .add_objective(Objective::new("obj1", ObjectiveDirection::Maximise))
-            .is_err());
+        let objectives = vec![
+            Objective::new("obj1", ObjectiveDirection::Minimise),
+            Objective::new("obj1", ObjectiveDirection::Maximise),
+        ];
+        let var_types = vec![VariableType::Real(
+            BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
+        )];
+        let var_types2 = var_types.clone();
 
-        problem
-            .add_constraint(Constraint::new("c1", RelationalOperator::EqualTo, 1.0))
-            .unwrap();
-        assert!(problem
-            .add_constraint(Constraint::new("c1", RelationalOperator::GreaterThan, -1.0))
-            .is_err());
+        assert!(Problem::new(objectives, var_types, None).is_err());
+
+        let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
+        let constraints = vec![
+            Constraint::new("c1", RelationalOperator::EqualTo, 1.0),
+            Constraint::new("c1", RelationalOperator::GreaterThan, -1.0),
+        ];
+        assert!(Problem::new(objectives, var_types2, Some(constraints)).is_err());
     }
 }

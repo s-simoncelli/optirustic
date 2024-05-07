@@ -57,16 +57,14 @@ impl<Operator: BinaryComparisonOperator> TournamentSelector<Operator> {
     ///
     /// # Arguments
     ///
-    /// * `fitness_function`: The function to use to assess the fitness and determine which
-    /// individual wins a tournament.
     /// * `number_of_competitors`: The number of competitors in the tournament. Default to 2
     /// individuals.
     ///
     /// returns: `TournamentSelector`
-    pub fn new(number_of_competitors: Option<usize>) -> Self {
+    pub fn new(number_of_competitors: usize) -> Self {
         Self {
             _fitness_function: PhantomData::<Operator>,
-            number_of_competitors: number_of_competitors.unwrap_or(2),
+            number_of_competitors,
         }
     }
 }

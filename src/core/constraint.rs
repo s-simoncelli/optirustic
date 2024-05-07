@@ -20,17 +20,17 @@ pub enum RelationalOperator {
 }
 
 /// Define a constraint where a value is compared with a relational operator as follows:
-///  - Equality operator (`RelationalOperator::EqualTo`): value == target
-///  - Inequality operator (`RelationalOperator::NotEqualTo`): value != target
-///  - Greater than operator (`RelationalOperator::GreaterThan`): value > target
-///  - Greater or equal to operator (`RelationalOperator::GreaterOrEqualTo`): value >= target
-///  - less than operator (`RelationalOperator::LessThan`): value < target
-///  - less or equal to operator (`RelationalOperator::LessOrEqualTo`): value <= target
+///  - Equality operator ([`RelationalOperator::EqualTo`]): value == target
+///  - Inequality operator ([`RelationalOperator::NotEqualTo`]): value != target
+///  - Greater than operator ([`RelationalOperator::GreaterThan`]): value > target
+///  - Greater or equal to operator ([`RelationalOperator::GreaterOrEqualTo`]): value >= target
+///  - less than operator ([`RelationalOperator::LessThan`]): value < target
+///  - less or equal to operator ([`RelationalOperator::LessOrEqualTo`]): value <= target
 ///
 /// # Example
 ///
 /// ```
-///   use GA::core::constraint::{Constraint, RelationalOperator};
+///   use optirustic::core::constraint::{Constraint, RelationalOperator};
 ///   let c = Constraint::new("Z>=5.2",RelationalOperator::GreaterOrEqualTo, 5.2);
 ///   assert_eq!(c.is_met(10.1), true);
 ///   assert_eq!(c.is_met(3.11), false);
@@ -97,12 +97,12 @@ impl Constraint {
     }
 
     /// Check whether the constraint is met. This is assessed as follows:
-    ///  - Equality operator (`RelationalOperator::EqualTo`): value == target
-    ///  - Inequality operator (`RelationalOperator::NotEqualTo`): value != target
-    ///  - Greater than operator (`RelationalOperator::GreaterThan`): value > target
-    ///  - Greater or equal to operator (`RelationalOperator::GreaterOrEqualTo`): value >= target
-    ///  - less than operator (`RelationalOperator::LessThan`): value < target
-    ///  - less or equal to operator (`RelationalOperator::LessOrEqualTo`): value <= target
+    ///  - Equality operator ([`RelationalOperator::EqualTo`]): value == target
+    ///  - Inequality operator ([`RelationalOperator::NotEqualTo`]): value != target
+    ///  - Greater than operator ([`RelationalOperator::GreaterThan`]): value > target
+    ///  - Greater or equal to operator ([`RelationalOperator::GreaterOrEqualTo`]): value >= target
+    ///  - less than operator ([`RelationalOperator::LessThan`]): value < target
+    ///  - less or equal to operator ([`RelationalOperator::LessOrEqualTo`]): value <= target
     ///
     /// # Arguments
     ///
@@ -123,7 +123,7 @@ impl Constraint {
     /// Calculate the amount of violation of the constraint for a solution value. This is a measure
     /// about how close (or far) the constraint value is from the constraint target. If the
     /// constraint is met (i.e. the solution associated to the constraint is feasible), then the
-    /// violation is 0.0. Otherwise, the absolute difference between [`self.target`] and `value`
+    /// violation is 0.0. Otherwise, the absolute difference between `target` and `value`
     /// is returned.
     ///
     /// See:

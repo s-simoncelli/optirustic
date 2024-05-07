@@ -5,9 +5,10 @@ use rand::distributions::uniform::SampleUniform;
 use rand::prelude::{IteratorRandom, SliceRandom};
 use rand::Rng;
 
-use crate::core::Problem;
+use crate::core::{Individual, Problem};
+use crate::core::error::OError;
 
-/// The trait for a decision variable.
+/// A trait to define a decision variable.
 pub trait Variable<T>: Display {
     /// Generate a new random value for the variable.
     fn generate(&self) -> T;
@@ -15,8 +16,8 @@ pub trait Variable<T>: Display {
     fn name(&self) -> String;
 }
 
-pub trait BoundedNumberTrait: SampleUniform + PartialOrd + Display {}
-impl<T: SampleUniform + PartialOrd + Display> BoundedNumberTrait for T {}
+pub trait BoundedNumberTrait: SampleUniform + PartialOrd + Display + Clone {}
+impl<T: SampleUniform + PartialOrd + Display + Clone> BoundedNumberTrait for T {}
 
 /// A number between a lower and upper bound.
 #[derive(Clone, Debug)]
@@ -40,12 +41,12 @@ impl<N: BoundedNumberTrait> BoundedNumber<N> {
     /// * `min_value`: The lower bound.
     /// * `max_value`: The upper bound.
     ///
-    /// returns: `Result<BoundedNumber, String>`
-    pub fn new(name: &str, min_value: N, max_value: N) -> Result<Self, String> {
+    /// returns: `Result<BoundedNumber, OError>`
+    pub fn new(name: &str, min_value: N, max_value: N) -> Result<Self, OError> {
         if min_value >= max_value {
-            return Err(format!(
-                "The min value ({}) must be strictly smaller than the max value ({}).",
-                min_value, max_value
+            return Err(OError::TooLargeLowerBound(
+                min_value.to_string(),
+                max_value.to_string(),
             ));
         }
         Ok(Self {
@@ -53,6 +54,27 @@ impl<N: BoundedNumberTrait> BoundedNumber<N> {
             min_value,
             max_value,
         })
+    }
+
+    /// The variable lower bound.
+    ///
+    /// return: `N`
+    pub fn min_value(&self) -> N {
+        self.min_value.clone()
+    }
+
+    /// The variable upper bound.
+    ///
+    /// return: `N`
+    pub fn max_value(&self) -> N {
+        self.max_value.clone()
+    }
+
+    /// The variable upper and lower bound.
+    ///
+    /// return: `N`
+    pub fn bounds(&self) -> (N, N) {
+        (self.min_value.clone(), self.max_value.clone())
     }
 }
 
@@ -134,12 +156,12 @@ impl Choice {
     /// * `name`: The variable name.
     /// * `choices`: The list of choices.
     ///
-    /// returns: `Result<Choice, String>`
-    pub fn new(name: &str, choices: Vec<String>) -> Result<Self, String> {
-        Ok(Self {
+    /// returns: `Choice`
+    pub fn new(name: &str, choices: Vec<String>) -> Self {
+        Self {
             name: name.to_string(),
             choices,
-        })
+        }
     }
 }
 
@@ -165,13 +187,13 @@ impl Variable<String> for Choice {
 /// The types of variables to set on a problem.
 #[derive(Clone, Debug)]
 pub enum VariableType {
-    F64(BoundedNumber<f64>),
-    F32(BoundedNumber<f32>),
-    I64(BoundedNumber<i64>),
-    I32(BoundedNumber<i32>),
-    U64(BoundedNumber<u64>),
-    U32(BoundedNumber<u32>),
+    /// A continuous bounded variable (f64)
+    Real(BoundedNumber<f64>),
+    /// A discrete bounded variable (u64)
+    Integer(BoundedNumber<u64>),
+    /// A boolean variable
     Boolean(Boolean),
+    /// A variable representing a choice (as string)
     Choice(Choice),
 }
 
@@ -181,27 +203,38 @@ impl VariableType {
     /// return: `VariableValue`.
     pub(crate) fn initial_value(&self) -> VariableValue {
         match self {
-            VariableType::F64(t) => VariableValue::F64(t.min_value),
-            VariableType::F32(t) => VariableValue::F32(t.min_value),
-            VariableType::I64(t) => VariableValue::I64(t.min_value),
-            VariableType::I32(t) => VariableValue::I32(t.min_value),
-            VariableType::U64(t) => VariableValue::U64(t.min_value),
-            VariableType::U32(t) => VariableValue::U32(t.min_value),
+            VariableType::Real(t) => VariableValue::Real(t.min_value),
+            VariableType::Integer(t) => VariableValue::Integer(t.min_value),
             VariableType::Boolean(_) => VariableValue::Boolean(false),
             VariableType::Choice(_) => VariableValue::Choice("NA".to_string()),
         }
+    }
+
+    /// Get the variable name.
+    ///
+    /// return: `String`
+    pub fn name(&self) -> String {
+        match self {
+            VariableType::Real(t) => t.name.clone(),
+            VariableType::Integer(t) => t.name.clone(),
+            VariableType::Boolean(t) => t.name.clone(),
+            VariableType::Choice(t) => t.name.clone(),
+        }
+    }
+
+    /// Check if the variable is a real number.
+    ///
+    /// return: `bool`
+    pub(crate) fn is_real(&self) -> bool {
+        matches!(self, VariableType::Real(_))
     }
 }
 
 impl Display for VariableType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            VariableType::F64(v) => write!(f, "{v}").unwrap(),
-            VariableType::F32(v) => write!(f, "{v}").unwrap(),
-            VariableType::I64(v) => write!(f, "{v}").unwrap(),
-            VariableType::I32(v) => write!(f, "{v}").unwrap(),
-            VariableType::U64(v) => write!(f, "{v}").unwrap(),
-            VariableType::U32(v) => write!(f, "{v}").unwrap(),
+            VariableType::Real(v) => write!(f, "{v}").unwrap(),
+            VariableType::Integer(v) => write!(f, "{v}").unwrap(),
             VariableType::Boolean(v) => write!(f, "{v}").unwrap(),
             VariableType::Choice(v) => write!(f, "{v}").unwrap(),
         };
@@ -209,20 +242,18 @@ impl Display for VariableType {
     }
 }
 
+/// A trait to allow generating a value for an individual.
+pub trait VariableValueGenerator {
+    fn generate(individual: &Individual);
+}
+
 /// The value of a variable to set on an individual.
+#[derive(Clone)]
 pub enum VariableValue {
-    /// The value for a f64 variable.
-    F64(f64),
-    /// The value for a f32 variable.
-    F32(f32),
-    /// The value for an i64 variable.
-    I64(i64),
-    /// The value for an i32 variable.
-    I32(i32),
-    /// The value for an u64 variable.
-    U64(u64),
-    /// The value for an u32 variable.
-    U32(u32),
+    /// The value for a floating-point number. This is a f64.
+    Real(f64),
+    /// The value for an integer number. This is an u64.
+    Integer(u64),
     /// The value for a boolean variable.
     Boolean(bool),
     /// The value for a choice variable.
@@ -230,7 +261,8 @@ pub enum VariableValue {
 }
 
 impl VariableValue {
-    /// Generate a new random variable value.
+    /// Generate a new random variable value. This return an error if the variable name does not
+    /// exist in the problem.
     ///
     /// # Arguments
     ///
@@ -238,33 +270,52 @@ impl VariableValue {
     /// * `problem`: The problem being solved.
     ///
     /// returns: `VariableValue`
-    pub(crate) fn generate_random(
+    pub fn generate_random_value(
         &self,
         name: &str,
         problem: &Problem,
-    ) -> Result<VariableValue, String> {
+    ) -> Result<VariableValue, OError> {
         let value = match problem.get_variable(name)? {
-            VariableType::F64(v) => VariableValue::F64(v.generate()),
-            VariableType::F32(v) => VariableValue::F32(v.generate()),
-            VariableType::I64(v) => VariableValue::I64(v.generate()),
-            VariableType::I32(v) => VariableValue::I32(v.generate()),
-            VariableType::U64(v) => VariableValue::U64(v.generate()),
-            VariableType::U32(v) => VariableValue::U32(v.generate()),
+            VariableType::Real(v) => VariableValue::Real(v.generate()),
+            VariableType::Integer(v) => VariableValue::Integer(v.generate()),
             VariableType::Boolean(v) => VariableValue::Boolean(v.generate()),
             VariableType::Choice(v) => VariableValue::Choice(v.generate()),
         };
         Ok(value)
     }
+
+    /// Check if the variable value matches the variable type set on the problem. This return an
+    /// error if the variable name does not exist in the problem.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The name of the variable in the problem.
+    /// * `problem`: The problem being solved.
+    ///
+    /// returns: `Result<bool, OError>`
+    pub fn match_type(&self, name: &str, problem: &Problem) -> Result<bool, OError> {
+        let value = match problem.get_variable(name)? {
+            VariableType::Real(_) => matches!(self, VariableValue::Real(_)),
+            VariableType::Integer(_) => matches!(self, VariableValue::Integer(_)),
+            VariableType::Boolean(_) => matches!(self, VariableValue::Boolean(_)),
+            VariableType::Choice(_) => matches!(self, VariableValue::Choice(_)),
+        };
+        Ok(value)
+    }
 }
+
+impl VariableValueGenerator for VariableValue {
+    fn generate(individual: &Individual) {
+        // TODO loop variables
+        todo!()
+    }
+}
+
 impl Debug for VariableValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            VariableValue::F64(v) => write!(f, "{v}").unwrap(),
-            VariableValue::F32(v) => write!(f, "{v}").unwrap(),
-            VariableValue::I64(v) => write!(f, "{v}").unwrap(),
-            VariableValue::I32(v) => write!(f, "{v}").unwrap(),
-            VariableValue::U64(v) => write!(f, "{v}").unwrap(),
-            VariableValue::U32(v) => write!(f, "{v}").unwrap(),
+            VariableValue::Real(v) => write!(f, "{v}").unwrap(),
+            VariableValue::Integer(v) => write!(f, "{v}").unwrap(),
             VariableValue::Boolean(v) => write!(f, "{v}").unwrap(),
             VariableValue::Choice(v) => write!(f, "{v}").unwrap(),
         };

@@ -3,10 +3,31 @@ use std::fmt::{Display, Formatter};
 
 use serde::Serialize;
 
+use crate::core::error::OError;
 use crate::core::problem::Problem;
 use crate::core::variable::VariableValue;
 
-/// An individual in the population containing the problem solution.
+/// An individual in the population containing the problem solution, and the objective and
+/// constraint values.
+///
+/// # Example
+/// ```
+/// use std::error::Error;
+/// use optirustic::core::{BoundedNumber, Constraint, Individual, Problem, Objective, ObjectiveDirection, RelationalOperator, VariableType, VariableValue};
+/// fn main() -> Result<(), Box<dyn Error>> {
+///     let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
+///     let var_types = vec![VariableType::Real(BoundedNumber::new("var1", 0.0, 2.0)?)];
+///     let constraints = vec![Constraint::new("C1", RelationalOperator::EqualTo, 5.0)];
+///
+///     // create a new one-variable problem
+///     let problem = Problem::new(objectives, var_types, Some(constraints))?;
+///
+///     // create an individual and set the calculated variable
+///     let mut a = Individual::new(&problem);
+///     a.update_variable("var1", VariableValue::Real(0.2))?;
+///     Ok(())
+/// }
+/// ```
 #[derive(Debug)]
 pub struct Individual<'a> {
     /// The problem being solved
@@ -80,17 +101,58 @@ impl<'a> Individual<'a> {
         self.problem
     }
 
-    /// Update the objective for a solution.
+    /// Clone an individual by preserving only its solutions.
+    ///
+    /// return: `Individual`
+    pub(crate) fn clone_variables(&self) -> Self {
+        let mut i = Self::new(self.problem);
+        for (var_name, var_value) in self.variable_values.iter() {
+            i.update_variable(var_name, var_value.clone()).unwrap()
+        }
+        i
+    }
+
+    /// Update the variable for a solution. This returns an error if the variable name does not
+    /// exist or the variable value does not match the variable type set on the problem (for
+    /// example [`VariableValue::Integer`] is provided but the type is [`crate::core::VariableType::Real`]).
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The variable to update.
+    /// * `value`: The value to set.
+    ///
+    /// returns: `Result<(), OError>`
+    pub fn update_variable(&mut self, name: &str, value: VariableValue) -> Result<(), OError> {
+        if !self.variable_values.contains_key(name) {
+            return Err(OError::NonExistingName(
+                "variable".to_string(),
+                name.to_string(),
+            ));
+        }
+        if !value.match_type(name, self.problem)? {
+            return Err(OError::NonMatchingVariableType(name.to_string()));
+        }
+        if let Some(x) = self.variable_values.get_mut(name) {
+            *x = value;
+        }
+        Ok(())
+    }
+
+    /// Update the objective for a solution. This returns an error if the name does not exist in
+    /// the problem.
     ///
     /// # Arguments
     ///
     /// * `name`: The objective to update.
     /// * `value`: The value to set.
     ///
-    /// returns: `Result<(), String>`
-    pub fn update_objective(&mut self, name: &str, value: f64) -> Result<(), String> {
+    /// returns: `Result<(), OError>`
+    pub fn update_objective(&mut self, name: &str, value: f64) -> Result<(), OError> {
         if !self.objective_values.contains_key(name) {
-            return Err(format!("The objective named '{}' does not exist", name));
+            return Err(OError::NonExistingName(
+                "objective".to_string(),
+                name.to_string(),
+            ));
         }
         if let Some(x) = self.objective_values.get_mut(name) {
             *x = value;
@@ -105,10 +167,13 @@ impl<'a> Individual<'a> {
     /// * `name`: The constraint to update.
     /// * `value`: The value to set.
     ///
-    /// returns: `Result<(), String>`
-    pub fn update_constraint(&mut self, name: &str, value: f64) -> Result<(), String> {
+    /// returns: `Result<(), OError>`
+    pub fn update_constraint(&mut self, name: &str, value: f64) -> Result<(), OError> {
         if !self.constraint_values.contains_key(name) {
-            return Err(format!("The constrained named '{}' does not exist", name));
+            return Err(OError::NonExistingName(
+                "constrain".to_string(),
+                name.to_string(),
+            ));
         }
         if let Some(x) = self.constraint_values.get_mut(name) {
             *x = value;
@@ -152,13 +217,45 @@ impl<'a> Individual<'a> {
         true
     }
 
+    /// Ge the variable value by name. This return an error if the variable name does not exist.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The variable name.
+    ///
+    /// returns: `Result<&VariableValue, OError>`
+    pub fn get_variable_value(&'a self, name: &str) -> Result<&'a VariableValue, OError> {
+        if !self.variable_values.contains_key(name) {
+            return Err(OError::NonExistingName(
+                "variable".to_string(),
+                name.to_string(),
+            ));
+        }
+
+        Ok(&self.variable_values[name])
+    }
+
+    /// Get the number stored in a real variable by name.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The variable name.
+    ///
+    /// returns: `Result<f64, String>`
+    pub fn get_real_value(&'a self, name: &str) -> Result<f64, String> {
+        match self.variable_values[name] {
+            VariableValue::Real(v) => Ok(v),
+            _ => Err(format!("The variable '{}' is not real", name)),
+        }
+    }
+
     /// Ge the objective value by name.
     ///
     /// # Arguments
     ///
     /// * `name`: The objective name.
     ///
-    /// returns: `f64`
+    /// returns: `Result<f64, String>`
     pub fn get_objective_value(&self, name: &str) -> Result<f64, String> {
         if !self.objective_values.contains_key(name) {
             return Err(format!("The objective named '{}' does not exist", name));
@@ -181,15 +278,15 @@ impl<'a> Individual<'a> {
     }
 }
 
-/// The population
-pub struct Population<'a>(pub Vec<&'a Individual<'a>>);
+/// The population with the solutions.
+pub struct Population<'a>(pub Vec<Individual<'a>>);
 
 impl<'a> Population<'a> {
     /// Get the population individuals.
     ///
     /// return: `&[Individual]` .
-    pub fn individuals(&self) -> Vec<&Individual> {
-        self.0.clone()
+    pub fn individuals(&self) -> &[Individual] {
+        self.0.as_ref()
     }
 
     /// Get the population size.
@@ -215,25 +312,45 @@ impl<'a> Population<'a> {
     /// * `number_of_individuals`: The number of individuals to add to the population.
     ///
     /// returns: `Vec<Individual>`
-    pub fn init(problem: &Problem, number_of_individuals: usize) -> Vec<Individual> {
+    pub fn init(problem: &'a Problem, number_of_individuals: usize) -> Self {
         let mut population: Vec<Individual> = vec![];
         for _ in 0..number_of_individuals {
             population.push(Individual::new(problem));
         }
-        population
+        Self(population)
+    }
+
+    /// Get the numbers stored in a real variable in all individuals.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The variable name.
+    ///
+    /// returns: `Result<f64, String>`
+    pub fn to_real_vec(&'a self, name: &str) -> Result<Vec<f64>, String> {
+        let mut values: Vec<f64> = vec![];
+        for individual in self.individuals() {
+            values.push(individual.get_real_value(name)?);
+        }
+        Ok(values)
     }
 }
 
 #[cfg(test)]
 mod test {
     use crate::core::{
-        Constraint, Individual, Objective, ObjectiveDirection, Problem, RelationalOperator,
+        BoundedNumber, Constraint, Individual, Objective, ObjectiveDirection, Problem,
+        RelationalOperator, VariableType,
     };
 
     #[test]
     /// Test when an objective does not exist
-    fn test_already_existing_data() {
-        let problem = Problem::new();
+    fn test_non_existing_data() {
+        let objectives = vec![Objective::new("objX", ObjectiveDirection::Minimise)];
+        let var_types = vec![VariableType::Real(
+            BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
+        )];
+        let problem = Problem::new(objectives, var_types, None).unwrap();
         let mut solution1 = Individual::new(&problem);
 
         assert!(solution1.update_objective("obj1", 5.0).is_err());
@@ -243,16 +360,15 @@ mod test {
     #[test]
     /// The is_feasible and constraint violation
     fn test_feasibility() {
-        let mut problem = Problem::new();
-        problem
-            .add_objective(Objective::new("obj1", ObjectiveDirection::Minimise))
-            .unwrap();
-        problem
-            .add_constraint(Constraint::new("c1", RelationalOperator::EqualTo, 1.0))
-            .unwrap();
-        problem
-            .add_constraint(Constraint::new("c2", RelationalOperator::EqualTo, 599.0))
-            .unwrap();
+        let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
+        let variables = vec![VariableType::Real(
+            BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
+        )];
+        let constraints = vec![
+            Constraint::new("c1", RelationalOperator::EqualTo, 1.0),
+            Constraint::new("c2", RelationalOperator::EqualTo, 599.0),
+        ];
+        let problem = Problem::new(objectives, variables, Some(constraints)).unwrap();
 
         let mut solution1 = Individual::new(&problem);
         solution1.update_objective("obj1", 5.0).unwrap();

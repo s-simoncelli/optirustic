@@ -114,6 +114,7 @@ impl BinaryComparisonOperator for ParetoConstrainedDominance {
 
 #[cfg(test)]
 mod test {
+    use crate::core::{BoundedNumber, VariableType};
     use crate::core::constraint::{Constraint, RelationalOperator};
     use crate::core::individual::Individual;
     use crate::core::problem::{Objective, ObjectiveDirection, Problem};
@@ -124,10 +125,11 @@ mod test {
     #[test]
     /// Test unconstrained problem with one objective
     fn test_unconstrained_solutions_1_objective() {
-        let mut problem = Problem::new();
-        problem
-            .add_objective(Objective::new("obj1", ObjectiveDirection::Minimise))
-            .unwrap();
+        let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
+        let variables = vec![VariableType::Real(
+            BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
+        )];
+        let problem = Problem::new(objectives, variables, None).unwrap();
 
         let mut solution1 = Individual::new(&problem);
         let mut solution2 = Individual::new(&problem);
@@ -157,10 +159,11 @@ mod test {
         );
 
         // Maximisation problem
-        let mut problem = Problem::new();
-        problem
-            .add_objective(Objective::new("obj1", ObjectiveDirection::Maximise))
-            .unwrap();
+        let objectives = vec![Objective::new("obj1", ObjectiveDirection::Maximise)];
+        let variables = vec![VariableType::Real(
+            BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
+        )];
+        let problem = Problem::new(objectives, variables, None).unwrap();
 
         let mut solution1 = Individual::new(&problem);
         let mut solution2 = Individual::new(&problem);
@@ -177,13 +180,14 @@ mod test {
     #[test]
     /// Test unconstrained problem with two objectives
     fn test_unconstrained_solutions_2_objectives() {
-        let mut problem = Problem::new();
-        problem
-            .add_objective(Objective::new("obj1", ObjectiveDirection::Minimise))
-            .unwrap();
-        problem
-            .add_objective(Objective::new("obj2", ObjectiveDirection::Minimise))
-            .unwrap();
+        let objectives = vec![
+            Objective::new("obj1", ObjectiveDirection::Minimise),
+            Objective::new("obj2", ObjectiveDirection::Minimise),
+        ];
+        let variables = vec![VariableType::Real(
+            BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
+        )];
+        let problem = Problem::new(objectives, variables, None).unwrap();
 
         let mut solution1 = Individual::new(&problem);
         let mut solution2 = Individual::new(&problem);
@@ -278,13 +282,14 @@ mod test {
         );
 
         // Maximisation problem
-        let mut problem = Problem::new();
-        problem
-            .add_objective(Objective::new("obj1", ObjectiveDirection::Minimise))
-            .unwrap();
-        problem
-            .add_objective(Objective::new("obj2", ObjectiveDirection::Maximise))
-            .unwrap();
+        let objectives = vec![
+            Objective::new("obj1", ObjectiveDirection::Minimise),
+            Objective::new("obj2", ObjectiveDirection::Maximise),
+        ];
+        let variables = vec![VariableType::Real(
+            BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
+        )];
+        let problem = Problem::new(objectives, variables, None).unwrap();
 
         let mut solution1 = Individual::new(&problem);
         let mut solution2 = Individual::new(&problem);
@@ -313,13 +318,12 @@ mod test {
     #[test]
     /// Test constrained problem with. The constraint violation determines the dominance relation.
     fn test_constrained_solutions() {
-        let mut problem = Problem::new();
-        problem
-            .add_objective(Objective::new("obj1", ObjectiveDirection::Minimise))
-            .unwrap();
-        problem
-            .add_constraint(Constraint::new("c1", RelationalOperator::EqualTo, 1.0))
-            .unwrap();
+        let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
+        let variables = vec![VariableType::Real(
+            BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
+        )];
+        let constraints = vec![Constraint::new("c1", RelationalOperator::EqualTo, 1.0)];
+        let problem = Problem::new(objectives, variables, Some(constraints)).unwrap();
 
         let mut solution1 = Individual::new(&problem);
         let mut solution2 = Individual::new(&problem);
@@ -351,16 +355,15 @@ mod test {
         );
 
         // Two objectives
-        let mut problem2 = Problem::new();
-        problem2
-            .add_objective(Objective::new("obj1", ObjectiveDirection::Minimise))
-            .unwrap();
-        problem2
-            .add_objective(Objective::new("obj2", ObjectiveDirection::Minimise))
-            .unwrap();
-        problem2
-            .add_constraint(Constraint::new("c1", RelationalOperator::EqualTo, 5.0))
-            .unwrap();
+        let objectives = vec![
+            Objective::new("obj1", ObjectiveDirection::Minimise),
+            Objective::new("obj2", ObjectiveDirection::Minimise),
+        ];
+        let variables = vec![VariableType::Real(
+            BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
+        )];
+        let constraints = vec![Constraint::new("c1", RelationalOperator::EqualTo, 5.0)];
+        let problem2 = Problem::new(objectives, variables, Some(constraints)).unwrap();
 
         let mut solution1 = Individual::new(&problem2);
         let mut solution2 = Individual::new(&problem2);
