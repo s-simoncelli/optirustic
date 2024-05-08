@@ -20,4 +20,6 @@ pub enum OError {
     SelectorOperator(String, String),
     #[error("An error occurred in {0}: {1}")]
     CrossoverOperator(String, String),
+    #[error("An error occurred in {0}: {1}")]
+    MutationOperator(String, String),
 }

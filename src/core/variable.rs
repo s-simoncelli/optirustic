@@ -228,6 +228,13 @@ impl VariableType {
     pub(crate) fn is_real(&self) -> bool {
         matches!(self, VariableType::Real(_))
     }
+
+    /// Check if the variable is an integer number.
+    ///
+    /// return: `bool`
+    pub(crate) fn is_integer(&self) -> bool {
+        matches!(self, VariableType::Integer(_))
+    }
 }
 
 impl Display for VariableType {
