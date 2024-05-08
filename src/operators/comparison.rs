@@ -12,7 +12,7 @@ pub enum PreferredSolution {
     MutuallyPreferred,
 }
 
-// A trait to implement a comparison between two solutions.
+/// A trait to implement a comparison operator between two solutions.
 pub trait BinaryComparisonOperator {
     /// Compare two solution and select the best one.
     ///
@@ -122,6 +122,8 @@ mod test {
     use crate::operators::comparison::{
         BinaryComparisonOperator, ParetoConstrainedDominance, PreferredSolution,
     };
+
+    use crate::core::{BoundedNumber, VariableType};
 
     #[test]
     /// Test unconstrained problem with one objective

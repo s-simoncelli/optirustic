@@ -32,6 +32,7 @@ impl Display for ObjectiveDirection {
 /// # Example
 /// ```
 ///  use optirustic::core::{Objective, ObjectiveDirection};
+///
 ///  let o = Objective::new("Reduce cost", ObjectiveDirection::Minimise);
 ///  println!("{}", o);
 /// ```
@@ -84,7 +85,23 @@ impl Display for Objective {
 /// - $$$ g_j(x) \geq 0 $ with $j=1,2,...,J$ and $J$ the number of inequality constraints.
 /// - $$$ h_k(x) = 0 $ with $k=1,2,...,H$ and $H$ the number of equality constraints.
 ///
+/// # Example
+/// ```
+///  use optirustic::core::{BoundedNumber, Constraint, Objective, ObjectiveDirection, Problem, RelationalOperator, VariableType};
 ///
+///  // Define a one-objective one-variable problem with two constraints
+///  let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
+///  let variables = vec![VariableType::Real(
+///     BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
+///  )];
+///  let constraints = vec![
+///     Constraint::new("c1", RelationalOperator::EqualTo, 1.0),
+///     Constraint::new("c2", RelationalOperator::EqualTo, 599.0),
+///  ];
+///
+///  let problem = Problem::new(objectives, variables, Some(constraints)).unwrap();
+///  println!("{}", problem);
+/// ```
 #[derive(Default, Debug)]
 pub struct Problem {
     /// The problem objectives.

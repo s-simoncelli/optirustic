@@ -235,7 +235,8 @@ impl<'a> Individual<'a> {
         Ok(&self.variable_values[name])
     }
 
-    /// Get the number stored in a real variable by name.
+    /// Get the number stored in a real variable by name. This returns an error if the variable
+    /// name does not exist or the variable is not of type real.
     ///
     /// # Arguments
     ///
@@ -243,11 +244,29 @@ impl<'a> Individual<'a> {
     ///
     /// returns: `Result<f64, OError>`
     pub fn get_real_value(&'a self, name: &str) -> Result<f64, OError> {
-        match self.variable_values[name] {
-            VariableValue::Real(v) => Ok(v),
+        match self.get_variable_value(name)? {
+            VariableValue::Real(v) => Ok(*v),
             _ => Err(OError::WrongTypeVariable(
                 name.to_string(),
                 "real".to_string(),
+            )),
+        }
+    }
+
+    /// Get the number stored in an integer variable by name. This returns an error if the variable
+    /// name does not exist or the variable is not of type integer.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The variable name.
+    ///
+    /// returns: `Result<u64, OError>`
+    pub fn get_integer_value(&'a self, name: &str) -> Result<u64, OError> {
+        match self.get_variable_value(name)? {
+            VariableValue::Integer(v) => Ok(*v),
+            _ => Err(OError::WrongTypeVariable(
+                name.to_string(),
+                "integer".to_string(),
             )),
         }
     }

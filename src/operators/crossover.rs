@@ -43,8 +43,9 @@ pub trait Crossover<'a> {
 /// > the C implementation available at <https://gist.github.com/Tiagoperes/1779d5f1c89bae0cfdb87b1960bba36d>
 /// to account for bounded variables.
 ///
-/// See: <https://doi.org/10.1145/1276958.1277190>.
-/// Full text available on [Researchgate](https://www.researchgate.net/publication/220742263_Self-adaptive_simulated_binary_crossover_for_real-parameter_optimization)
+/// See: <https://doi.org/10.1145/1276958.1277190>,
+/// full text available at <https://content.wolfram.com/sites/13/2018/02/09-2-2.pdf>. An alternative
+/// shorter description of the algorithm is available in [Deb et al. (2007)](https://www.researchgate.net/publication/220742263_Self-adaptive_simulated_binary_crossover_for_real-parameter_optimization).
 ///
 /// # Example
 ///
