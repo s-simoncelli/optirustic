@@ -1,5 +1,4 @@
-use crate::core::{Individual, Problem};
-use crate::core::error::OError;
+use crate::core::{Individual, OError, Problem};
 
 /// The preferred solution with the `BinaryComparisonOperator`.
 #[derive(Debug, PartialOrd, PartialEq)]
@@ -115,15 +114,16 @@ impl BinaryComparisonOperator for ParetoConstrainedDominance {
 
 #[cfg(test)]
 mod test {
-    use crate::core::{BoundedNumber, VariableType};
-    use crate::core::constraint::{Constraint, RelationalOperator};
-    use crate::core::individual::Individual;
-    use crate::core::problem::{Objective, ObjectiveDirection, Problem};
-    use crate::operators::comparison::{
+    use std::sync::Arc;
+
+    use crate::core::{
+        BoundedNumber, Constraint, Individual, Objective, ObjectiveDirection, Problem,
+        RelationalOperator, VariableType,
+    };
+    use crate::core::utils::dummy_evaluator;
+    use crate::operators::{
         BinaryComparisonOperator, ParetoConstrainedDominance, PreferredSolution,
     };
-
-    use crate::core::{BoundedNumber, VariableType};
 
     #[test]
     /// Test unconstrained problem with one objective
@@ -132,10 +132,11 @@ mod test {
         let variables = vec![VariableType::Real(
             BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
         )];
-        let problem = Problem::new(objectives, variables, None).unwrap();
+        let e = dummy_evaluator();
+        let problem = Arc::new(Problem::new(objectives, variables, None, e).unwrap());
 
-        let mut solution1 = Individual::new(&problem);
-        let mut solution2 = Individual::new(&problem);
+        let mut solution1 = Individual::new(problem.clone());
+        let mut solution2 = Individual::new(problem.clone());
 
         // Sol 1 dominates
         solution1.update_objective("obj1", 5.0).unwrap();
@@ -166,10 +167,11 @@ mod test {
         let variables = vec![VariableType::Real(
             BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
         )];
-        let problem = Problem::new(objectives, variables, None).unwrap();
+        let e = dummy_evaluator();
+        let problem = Arc::new(Problem::new(objectives, variables, None, e).unwrap());
 
-        let mut solution1 = Individual::new(&problem);
-        let mut solution2 = Individual::new(&problem);
+        let mut solution1 = Individual::new(problem.clone());
+        let mut solution2 = Individual::new(problem.clone());
 
         // Sol 2 dominates with largets objective
         solution1.update_objective("obj1", 5.0).unwrap();
@@ -190,10 +192,11 @@ mod test {
         let variables = vec![VariableType::Real(
             BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
         )];
-        let problem = Problem::new(objectives, variables, None).unwrap();
+        let e = dummy_evaluator();
+        let problem = Arc::new(Problem::new(objectives, variables, None, e).unwrap());
 
-        let mut solution1 = Individual::new(&problem);
-        let mut solution2 = Individual::new(&problem);
+        let mut solution1 = Individual::new(problem.clone());
+        let mut solution2 = Individual::new(problem.clone());
 
         // Sol 1 dominates
         solution1.update_objective("obj1", 5.0).unwrap();
@@ -226,7 +229,7 @@ mod test {
         );
 
         // compare three solutions
-        let mut solution3 = Individual::new(&problem);
+        let mut solution3 = Individual::new(problem.clone());
         solution1.update_objective("obj1", 0.0).unwrap();
         solution1.update_objective("obj2", 0.0).unwrap();
         solution2.update_objective("obj1", 1.0).unwrap();
@@ -292,10 +295,11 @@ mod test {
         let variables = vec![VariableType::Real(
             BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
         )];
-        let problem = Problem::new(objectives, variables, None).unwrap();
+        let e = dummy_evaluator();
+        let problem = Arc::new(Problem::new(objectives, variables, None, e).unwrap());
 
-        let mut solution1 = Individual::new(&problem);
-        let mut solution2 = Individual::new(&problem);
+        let mut solution1 = Individual::new(problem.clone());
+        let mut solution2 = Individual::new(problem.clone());
 
         // Neither dominates
         solution1.update_objective("obj1", 5.0).unwrap();
@@ -326,10 +330,12 @@ mod test {
             BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
         )];
         let constraints = vec![Constraint::new("c1", RelationalOperator::EqualTo, 1.0)];
-        let problem = Problem::new(objectives, variables, Some(constraints)).unwrap();
 
-        let mut solution1 = Individual::new(&problem);
-        let mut solution2 = Individual::new(&problem);
+        let e = dummy_evaluator();
+        let problem = Arc::new(Problem::new(objectives, variables, Some(constraints), e).unwrap());
+
+        let mut solution1 = Individual::new(problem.clone());
+        let mut solution2 = Individual::new(problem.clone());
         solution1.update_objective("obj1", 5.0).unwrap();
         solution2.update_objective("obj1", 15.0).unwrap();
 
@@ -366,10 +372,12 @@ mod test {
             BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
         )];
         let constraints = vec![Constraint::new("c1", RelationalOperator::EqualTo, 5.0)];
-        let problem2 = Problem::new(objectives, variables, Some(constraints)).unwrap();
 
-        let mut solution1 = Individual::new(&problem2);
-        let mut solution2 = Individual::new(&problem2);
+        let e = dummy_evaluator();
+        let problem2 = Arc::new(Problem::new(objectives, variables, Some(constraints), e).unwrap());
+
+        let mut solution1 = Individual::new(problem2.clone());
+        let mut solution2 = Individual::new(problem2);
         solution1.update_objective("obj2", 100.0).unwrap();
         solution2.update_objective("obj2", 15.0).unwrap();
         solution1.update_constraint("c1", 0.5).unwrap();

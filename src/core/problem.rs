@@ -1,115 +1,33 @@
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
+use std::error::Error;
+use std::fmt::{Debug, Display, Formatter};
 
 use log::info;
 use serde::Serialize;
 
-use crate::core::{Constraint, VariableType};
-use crate::core::error::OError;
-use crate::core::error::OError::DuplicatedName;
+use crate::core::{Constraint, Individual, Objective, ObjectiveDirection, OError, VariableType};
 
-/// Whether the objective should be minimised or maximised. Default is minimise.
-#[derive(Default, Debug, PartialOrd, PartialEq, Serialize)]
-pub enum ObjectiveDirection {
-    #[default]
-    /// Minimise an objective.
-    Minimise,
-    /// Maximise an objective.
-    Maximise,
+/// The struct containing the results of the evaluation function. This is the output of
+/// [`Evaluator::evaluate`], the user-defined function should produce.
+#[derive(Debug)]
+pub struct EvaluationResult {
+    pub constraints: HashMap<String, f64>,
+    pub objectives: HashMap<String, f64>,
 }
 
-impl Display for ObjectiveDirection {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ObjectiveDirection::Minimise => f.write_str("minimised"),
-            ObjectiveDirection::Maximise => f.write_str("maximised"),
-        }
-    }
-}
-
-/// Define a problem objective to minimise or maximise.
-///
-/// # Example
-/// ```
-///  use optirustic::core::{Objective, ObjectiveDirection};
-///
-///  let o = Objective::new("Reduce cost", ObjectiveDirection::Minimise);
-///  println!("{}", o);
-/// ```
-#[derive(Serialize, Debug)]
-pub struct Objective {
-    /// The objective name.
-    name: String,
-    /// Whether the objective should be minimised or maximised.
-    direction: ObjectiveDirection,
-}
-
-impl Objective {
-    /// Create a new objective.
+/// The trait to use to evaluate the objective and constraint values when a new offspring is
+/// created.
+pub trait Evaluator: Sync + Send + Debug {
+    /// A custom-defined function to use to assess the constraint and objective. When a new
+    /// offspring is generated via crossover and mutation, new variables (or solutions) are
+    /// assigned to it and the problem constraints and objective need to be evaluated.
     ///
     /// # Arguments
     ///
-    /// * `name`: The objective name.
-    /// * `direction`:  Whether the objective should be minimised or maximised.
+    /// * `individual`: The individual.
     ///
-    /// returns: `Objective`
-    pub fn new(name: &str, direction: ObjectiveDirection) -> Self {
-        Self {
-            name: name.to_string(),
-            direction,
-        }
-    }
-
-    /// Get the constraint name.
-    pub fn name(&self) -> String {
-        self.name.clone()
-    }
-}
-
-impl Display for Objective {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Objective '{}' is {}", self.name, self.direction)
-    }
-}
-
-/// Define a new problem to optimise as:
-///
-///  $$$ Min/Max(f_1(x), f_2(x), ..., f_M(x)) $
-///
-/// where
-///   - where the integer $M \geq 1$ is the number of objectives;
-///   - $x$ the $N$-variable solution vector bounded to $$$ x_i^{(L)} \leq x_i \leq x_i^{(U)}$ with
-/// $i=1,2,...,N$.
-///
-/// The problem is also subjected to the following constraints:
-/// - $$$ g_j(x) \geq 0 $ with $j=1,2,...,J$ and $J$ the number of inequality constraints.
-/// - $$$ h_k(x) = 0 $ with $k=1,2,...,H$ and $H$ the number of equality constraints.
-///
-/// # Example
-/// ```
-///  use optirustic::core::{BoundedNumber, Constraint, Objective, ObjectiveDirection, Problem, RelationalOperator, VariableType};
-///
-///  // Define a one-objective one-variable problem with two constraints
-///  let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
-///  let variables = vec![VariableType::Real(
-///     BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
-///  )];
-///  let constraints = vec![
-///     Constraint::new("c1", RelationalOperator::EqualTo, 1.0),
-///     Constraint::new("c2", RelationalOperator::EqualTo, 599.0),
-///  ];
-///
-///  let problem = Problem::new(objectives, variables, Some(constraints)).unwrap();
-///  println!("{}", problem);
-/// ```
-#[derive(Default, Debug)]
-pub struct Problem {
-    /// The problem objectives.
-    objectives: HashMap<String, Objective>,
-    /// The problem constraints.
-    constraints: HashMap<String, Constraint>,
-    /// The problem variable types.
-    variables: HashMap<String, VariableType>,
+    /// returns: `Result<EvaluationResult, Box<dyn Error>>`
+    fn evaluate(&self, individual: &Individual) -> Result<EvaluationResult, Box<dyn Error>>;
 }
 
 #[derive(Serialize)]
@@ -128,6 +46,72 @@ pub struct ProblemExport {
     number_of_constraints: usize,
 }
 
+/// Define a new problem to optimise as:
+///
+///  $$$ Min/Max(f_1(x), f_2(x), ..., f_M(x)) $
+///
+/// where
+///   - where the integer $M \geq 1$ is the number of objectives;
+///   - $x$ the $N$-variable solution vector bounded to $$$ x_i^{(L)} \leq x_i \leq x_i^{(U)}$ with
+/// $i=1,2,...,N$.
+///
+/// The problem is also subjected to the following constraints:
+/// - $$$ g_j(x) \geq 0 $ with $j=1,2,...,J$ and $J$ the number of inequality constraints.
+/// - $$$ h_k(x) = 0 $ with $k=1,2,...,H$ and $H$ the number of equality constraints.
+///
+/// # Example
+/// ```
+///  use std::error::Error;
+///  use optirustic::core::{BoundedNumber, Constraint, EvaluationResult, Evaluator, Individual, Objective, ObjectiveDirection, Problem, RelationalOperator, VariableType};
+///
+///  // Define a one-objective one-variable problem with two constraints
+///  let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
+///  let variables = vec![VariableType::Real(
+///     BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
+///  )];
+///  let constraints = vec![
+///     Constraint::new("c1", RelationalOperator::EqualTo, 1.0),
+///     Constraint::new("c2", RelationalOperator::EqualTo, 599.0),
+///  ];
+///
+///  #[derive(Debug)]
+///  struct UserEvaluator;
+///  impl Evaluator for UserEvaluator {
+///     fn evaluate(&self, individual: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+///         Ok(EvaluationResult {
+///             constraints: Default::default(),
+///             objectives: Default::default(),
+///         })
+///     }
+///  }
+///
+///  let problem = Problem::new(objectives, variables, Some(constraints), Box::new(UserEvaluator{})).unwrap();
+///  println!("{}", problem);
+/// ```
+#[derive(Debug)]
+pub struct Problem {
+    /// The problem objectives.
+    objectives: HashMap<String, Objective>,
+    /// The problem constraints.
+    constraints: HashMap<String, Constraint>,
+    /// The problem variable types.
+    variables: HashMap<String, VariableType>,
+    /// The trait with the function to use to evaluate the objective and constraint values of
+    /// new offsprings.
+    evaluator: Box<dyn Evaluator>,
+}
+
+impl Display for Problem {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Problem with {} variables, {} objectives and {} constraints",
+            self.number_of_variables(),
+            self.number_of_objectives(),
+            self.number_of_constraints(),
+        )
+    }
+}
 impl Problem {
     /// Initialise the problem.
     ///
@@ -136,12 +120,17 @@ impl Problem {
     /// * `objectives`: The vector of objective to set on the problem.
     /// * `variable_types`: The vector of variable types to set on the problem.
     /// * `constraints`: The optional vector of constraints.
+    /// * `evaluator`: The trait with the function to use to evaluate the objective and constraint
+    /// values when new offsprings are generated by an algorithm. The [`Evaluator::evaluate`]
+    /// receives the [`Individual`] with the new variables/solutions and should return the
+    /// [`EvaluationResult`].
     ///
     /// returns: `Result<Problem, OError>`
     pub fn new(
         objectives: Vec<Objective>,
         variable_types: Vec<VariableType>,
         constraints: Option<Vec<Constraint>>,
+        evaluator: Box<dyn Evaluator>,
     ) -> Result<Self, OError> {
         // Check vector lengths
         if objectives.is_empty() {
@@ -153,9 +142,9 @@ impl Problem {
 
         let mut p_objectives: HashMap<String, Objective> = HashMap::new();
         for objective in objectives.into_iter() {
-            let name = objective.name.to_string();
+            let name = objective.name();
             if p_objectives.contains_key(&name) {
-                return Err(DuplicatedName("objective".to_string(), name));
+                return Err(OError::DuplicatedName("objective".to_string(), name));
             }
             info!("Adding objective '{}' - {}", name, objective);
             p_objectives.insert(name, objective);
@@ -165,7 +154,7 @@ impl Problem {
         for var_type in variable_types.into_iter() {
             let name = var_type.name().to_string();
             if p_variables.contains_key(&name) {
-                return Err(DuplicatedName("variable".to_string(), name));
+                return Err(OError::DuplicatedName("variable".to_string(), name));
             }
             info!("Adding variable type '{}' - {}", name, var_type);
             p_variables.insert(name, var_type);
@@ -178,7 +167,7 @@ impl Problem {
                 for constraint in c.into_iter() {
                     let name = constraint.name().to_string();
                     if p_constraints.contains_key(&name) {
-                        return Err(DuplicatedName("constraint".to_string(), name));
+                        return Err(OError::DuplicatedName("constraint".to_string(), name));
                     }
                     info!("Adding constraint '{}' - {}", name, constraint);
                     p_constraints.insert(name, constraint);
@@ -191,6 +180,7 @@ impl Problem {
             variables: p_variables,
             objectives: p_objectives,
             constraints: p_constraints,
+            evaluator,
         })
     }
 
@@ -210,7 +200,7 @@ impl Problem {
                 name.to_string(),
             ));
         }
-        Ok(self.objectives[name].direction == ObjectiveDirection::Minimise)
+        Ok(self.objectives[name].direction() == ObjectiveDirection::Minimise)
     }
 
     /// Get the total number of objectives of the problem.
@@ -257,12 +247,12 @@ impl Problem {
 
     /// Get the map of variables.
     ///
-    /// return `HashMap<VariableType>`
+    /// return `HashMap<String, VariableType>`
     pub fn variables(&self) -> HashMap<String, VariableType> {
         self.variables.clone()
     }
 
-    /// Get a variable type by name.
+    /// Get a variable type by name. This returns an error if the variable does not exist.
     ///
     /// # Arguments
     ///
@@ -281,9 +271,16 @@ impl Problem {
 
     /// Get the list of constraints.
     ///
-    /// return `HashMap<Constraint>`
+    /// return `HashMap<String, Constraint>`
     pub fn constraints(&self) -> HashMap<String, Constraint> {
         self.constraints.clone()
+    }
+
+    /// The function used to evaluate the constraint and objective values for a new offsprings.
+    ///
+    /// return `&Evaluator`
+    pub fn evaluator(&self) -> &dyn Evaluator {
+        self.evaluator.as_ref()
     }
 
     /// Export the problem data.
@@ -308,6 +305,7 @@ mod test {
         BoundedNumber, Constraint, Objective, ObjectiveDirection, Problem, RelationalOperator,
         VariableType,
     };
+    use crate::core::utils::dummy_evaluator;
 
     #[test]
     /// Test when objectives and constraints already exist
@@ -320,14 +318,16 @@ mod test {
             BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
         )];
         let var_types2 = var_types.clone();
+        let e = dummy_evaluator();
 
-        assert!(Problem::new(objectives, var_types, None).is_err());
+        assert!(Problem::new(objectives, var_types, None, e).is_err());
 
+        let e = dummy_evaluator();
         let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
         let constraints = vec![
             Constraint::new("c1", RelationalOperator::EqualTo, 1.0),
             Constraint::new("c1", RelationalOperator::GreaterThan, -1.0),
         ];
-        assert!(Problem::new(objectives, var_types2, Some(constraints)).is_err());
+        assert!(Problem::new(objectives, var_types2, Some(constraints), e).is_err());
     }
 }

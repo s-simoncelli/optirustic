@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::sync::Arc;
 
 use serde::Serialize;
 
-use crate::core::error::OError;
-use crate::core::problem::Problem;
-use crate::core::variable::VariableValue;
+use crate::core::{OError, Problem, VariableValue};
 
 /// An individual in the population containing the problem solution, and the objective and
 /// constraint values.
@@ -13,31 +12,53 @@ use crate::core::variable::VariableValue;
 /// # Example
 /// ```
 /// use std::error::Error;
-/// use optirustic::core::{BoundedNumber, Constraint, Individual, Problem, Objective, ObjectiveDirection, RelationalOperator, VariableType, VariableValue};
+/// use optirustic::core::{BoundedNumber, Constraint, Individual, Problem, Objective,
+/// ObjectiveDirection, RelationalOperator, EvaluationResult, Evaluator, VariableType, VariableValue};
+/// use std::sync::Arc;
+///
 /// fn main() -> Result<(), Box<dyn Error>> {
 ///     let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
+///
 ///     let var_types = vec![VariableType::Real(BoundedNumber::new("var1", 0.0, 2.0)?)];
 ///     let constraints = vec![Constraint::new("C1", RelationalOperator::EqualTo, 5.0)];
 ///
+///     // dummy evaluator function
+///     #[derive(Debug)]
+///     struct UserEvaluator;
+///     impl Evaluator for UserEvaluator {
+///         fn evaluate(&self, _: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+///             Ok(EvaluationResult {
+///                 constraints: Default::default(),
+///                 objectives: Default::default(),
+///             })
+///         }
+///     }
 ///     // create a new one-variable problem
-///     let problem = Problem::new(objectives, var_types, Some(constraints))?;
+///     let problem = Arc::new(Problem::new(objectives, var_types, Some(constraints), Box::new(UserEvaluator))?);
 ///
 ///     // create an individual and set the calculated variable
-///     let mut a = Individual::new(&problem);
+///     let mut a = Individual::new(problem.clone());
 ///     a.update_variable("var1", VariableValue::Real(0.2))?;
 ///     Ok(())
 /// }
 /// ```
-#[derive(Debug)]
-pub struct Individual<'a> {
+#[derive(Debug, Clone)]
+pub struct Individual {
     /// The problem being solved
-    problem: &'a Problem,
+    problem: Arc<Problem>,
     /// The value of the problem variables for the individual.
     variable_values: HashMap<String, VariableValue>,
     /// The value of the constraints.
     constraint_values: HashMap<String, f64>,
     /// The values of the objectives.
     objective_values: HashMap<String, f64>,
+    /// Whether the individual has been evaluated and the problem constraint and objective values
+    /// are available. When an individual is created with some variables after the population
+    /// evolution, constraints and objectives need to be evaluated using a user-defined function.
+    evaluated: bool,
+    /// Additional numeric data to store for the individuals (such as crowding distance or rank)
+    /// depending on the algorithm the individuals are derived from.
+    data: HashMap<String, f64>,
 }
 
 #[derive(Serialize)]
@@ -52,7 +73,7 @@ pub struct IndividualExport {
     is_feasible: bool,
 }
 
-impl<'a> Display for Individual<'a> {
+impl Display for Individual {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -62,7 +83,7 @@ impl<'a> Display for Individual<'a> {
     }
 }
 
-impl<'a> Individual<'a> {
+impl Individual {
     /// Create a new individual. An individual contains the solution after an evolution.
     ///
     /// # Arguments
@@ -70,7 +91,7 @@ impl<'a> Individual<'a> {
     /// * `problem`: The problem being solved.
     ///
     /// returns: `Individual`
-    pub fn new(problem: &'a Problem) -> Self {
+    pub fn new(problem: Arc<Problem>) -> Self {
         let mut variable_values: HashMap<String, VariableValue> = HashMap::new();
         for (variable_name, var_type) in problem.variables() {
             variable_values.insert(variable_name, var_type.initial_value());
@@ -91,21 +112,23 @@ impl<'a> Individual<'a> {
             variable_values,
             constraint_values,
             objective_values,
+            evaluated: false,
+            data: HashMap::new(),
         }
     }
 
     /// Get the problem being solved with the individual.
     ///
-    /// return `&Problem`
-    pub fn problem(&self) -> &Problem {
-        self.problem
+    /// return `Arc<Problem>`
+    pub fn problem(&self) -> Arc<Problem> {
+        self.problem.clone()
     }
 
     /// Clone an individual by preserving only its solutions.
     ///
     /// return: `Individual`
     pub(crate) fn clone_variables(&self) -> Self {
-        let mut i = Self::new(self.problem);
+        let mut i = Self::new(self.problem.clone());
         for (var_name, var_value) in self.variable_values.iter() {
             i.update_variable(var_name, var_value.clone()).unwrap()
         }
@@ -129,7 +152,7 @@ impl<'a> Individual<'a> {
                 name.to_string(),
             ));
         }
-        if !value.match_type(name, self.problem)? {
+        if !value.match_type(name, self.problem.clone())? {
             return Err(OError::NonMatchingVariableType(name.to_string()));
         }
         if let Some(x) = self.variable_values.get_mut(name) {
@@ -187,7 +210,6 @@ impl<'a> Individual<'a> {
     ///
     /// return: `f64`
     pub fn constraint_violation(&self) -> f64 {
-        // TODO this may panic is problem has no constraint with same name in hashmap
         return self
             .problem
             .constraints()
@@ -224,7 +246,7 @@ impl<'a> Individual<'a> {
     /// * `name`: The variable name.
     ///
     /// returns: `Result<&VariableValue, OError>`
-    pub fn get_variable_value(&'a self, name: &str) -> Result<&'a VariableValue, OError> {
+    pub fn get_variable_value(&self, name: &str) -> Result<&VariableValue, OError> {
         if !self.variable_values.contains_key(name) {
             return Err(OError::NonExistingName(
                 "variable".to_string(),
@@ -243,7 +265,7 @@ impl<'a> Individual<'a> {
     /// * `name`: The variable name.
     ///
     /// returns: `Result<f64, OError>`
-    pub fn get_real_value(&'a self, name: &str) -> Result<f64, OError> {
+    pub fn get_real_value(&self, name: &str) -> Result<f64, OError> {
         match self.get_variable_value(name)? {
             VariableValue::Real(v) => Ok(*v),
             _ => Err(OError::WrongTypeVariable(
@@ -261,7 +283,7 @@ impl<'a> Individual<'a> {
     /// * `name`: The variable name.
     ///
     /// returns: `Result<u64, OError>`
-    pub fn get_integer_value(&'a self, name: &str) -> Result<u64, OError> {
+    pub fn get_integer_value(&self, name: &str) -> Result<u64, OError> {
         match self.get_variable_value(name)? {
             VariableValue::Integer(v) => Ok(*v),
             _ => Err(OError::WrongTypeVariable(
@@ -289,6 +311,19 @@ impl<'a> Individual<'a> {
         Ok(self.objective_values[name])
     }
 
+    /// Check if the individual was evaluated.
+    ///
+    /// return: `bool`
+    pub fn is_evaluated(&self) -> bool {
+        self.evaluated
+    }
+
+    /// Set the individual as evaluated. This means that its constraints and objectives have been
+    /// calculated for its solution.
+    pub fn set_evaluated(&mut self) {
+        self.evaluated = true;
+    }
+
     /// Export all the solution data (constraint and objective values, constraint violation and
     /// feasibility).
     ///
@@ -304,14 +339,27 @@ impl<'a> Individual<'a> {
 }
 
 /// The population with the solutions.
-pub struct Population<'a>(pub Vec<Individual<'a>>);
+#[derive(Clone, Default)]
+pub struct Population(pub Vec<Individual>);
 
-impl<'a> Population<'a> {
+impl Population {
+    /// Initialise a population with no individuals.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Get the population individuals.
     ///
     /// return: `&[Individual]` .
     pub fn individuals(&self) -> &[Individual] {
         self.0.as_ref()
+    }
+
+    /// Borrow the population individuals as mutable reference.
+    ///
+    /// return: `&mut [Individual]` .
+    pub fn individuals_as_mut(&mut self) -> &mut [Individual] {
+        self.0.as_mut()
     }
 
     /// Get the population size.
@@ -328,19 +376,31 @@ impl<'a> Population<'a> {
         self.0.is_empty()
     }
 
+    /// Add new individuals to the population.
+    ///
+    /// # Arguments
+    ///
+    /// * `individual`: The vector of individuals to add.
+    ///
+    /// returns: `()`
+    pub fn add_new_individuals(&mut self, individual: Vec<Individual>) {
+        self.0.extend(individual);
+    }
+
     /// Generate a population with a number of individuals equal to `number_of_individuals`. All
-    /// variable values for all individuals are initialised to an initial value.  
+    /// variable values for all individuals are initialised to an initial value depending on the
+    /// variable type (for example min for a bounded real variable).  
     ///
     /// # Arguments
     ///
     /// * `problem`: The problem being solved.
     /// * `number_of_individuals`: The number of individuals to add to the population.
     ///
-    /// returns: `Vec<Individual>`
-    pub fn init(problem: &'a Problem, number_of_individuals: usize) -> Self {
+    /// returns: `Population`
+    pub fn init(problem: Arc<Problem>, number_of_individuals: usize) -> Self {
         let mut population: Vec<Individual> = vec![];
         for _ in 0..number_of_individuals {
-            population.push(Individual::new(problem));
+            population.push(Individual::new(problem.clone()));
         }
         Self(population)
     }
@@ -353,7 +413,7 @@ impl<'a> Population<'a> {
     /// * `name`: The variable name.
     ///
     /// returns: `Result<f64, OError>`
-    pub fn to_real_vec(&'a self, name: &str) -> Result<Vec<f64>, OError> {
+    pub fn to_real_vec(&mut self, name: &str) -> Result<Vec<f64>, OError> {
         let mut values: Vec<f64> = vec![];
         for individual in self.individuals() {
             values.push(individual.get_real_value(name)?);
@@ -364,10 +424,13 @@ impl<'a> Population<'a> {
 
 #[cfg(test)]
 mod test {
+    use std::sync::Arc;
+
     use crate::core::{
         BoundedNumber, Constraint, Individual, Objective, ObjectiveDirection, Problem,
         RelationalOperator, VariableType,
     };
+    use crate::core::utils::dummy_evaluator;
 
     #[test]
     /// Test when an objective does not exist
@@ -376,8 +439,10 @@ mod test {
         let var_types = vec![VariableType::Real(
             BoundedNumber::new("X1", 0.0, 2.0).unwrap(),
         )];
-        let problem = Problem::new(objectives, var_types, None).unwrap();
-        let mut solution1 = Individual::new(&problem);
+        let e = dummy_evaluator();
+
+        let problem = Arc::new(Problem::new(objectives, var_types, None, e).unwrap());
+        let mut solution1 = Individual::new(problem);
 
         assert!(solution1.update_objective("obj1", 5.0).is_err());
         assert!(solution1.get_objective_value("obj1").is_err());
@@ -394,9 +459,10 @@ mod test {
             Constraint::new("c1", RelationalOperator::EqualTo, 1.0),
             Constraint::new("c2", RelationalOperator::EqualTo, 599.0),
         ];
-        let problem = Problem::new(objectives, variables, Some(constraints)).unwrap();
+        let e = dummy_evaluator();
+        let problem = Arc::new(Problem::new(objectives, variables, Some(constraints), e).unwrap());
 
-        let mut solution1 = Individual::new(&problem);
+        let mut solution1 = Individual::new(problem);
         solution1.update_objective("obj1", 5.0).unwrap();
 
         // Unfeasible solution

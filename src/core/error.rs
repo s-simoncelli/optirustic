@@ -22,4 +22,6 @@ pub enum OError {
     CrossoverOperator(String, String),
     #[error("An error occurred in {0}: {1}")]
     MutationOperator(String, String),
+    #[error("An error occurred when evaluating a solution: {0}")]
+    Evaluation(String),
 }

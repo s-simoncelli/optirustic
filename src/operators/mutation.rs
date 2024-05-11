@@ -1,10 +1,9 @@
 use rand::Rng;
 
-use crate::core::error::OError;
-use crate::core::{Individual, Problem, VariableType, VariableValue};
+use crate::core::{Individual, OError, Problem, VariableType, VariableValue};
 
 /// The trait to implement a mutation operator to modify the genetic material of an individual.
-pub trait Mutation<'a> {
+pub trait Mutation {
     /// Mutate a population individual.
     ///
     /// # Arguments
@@ -12,7 +11,7 @@ pub trait Mutation<'a> {
     /// * `individual`: The individual to mutate.
     ///
     /// returns: `Result<Individual, OError>`. The mutated individual.
-    fn mutate_offsprings(&self, individual: &'a Individual) -> Result<Individual<'a>, OError>;
+    fn mutate_offsprings(&self, individual: &Individual) -> Result<Individual, OError>;
 }
 
 /// The Polynomial mutation (PM) operator.
@@ -57,6 +56,12 @@ impl PolynomialMutation {
     /// distribution index or index parameter of 20 and variable probability equal 1 divided by
     /// the number of real variables in the problem (i.e. each variable will have the same
     /// probability of being mutated).
+    ///
+    /// # Arguments
+    ///
+    /// * `problem`: THe problem being solved.
+    ///
+    /// returns: `Self`
     pub fn default(problem: &Problem) -> Self {
         let num_real_vars = problem
             .variables()
@@ -71,8 +76,8 @@ impl PolynomialMutation {
     }
 }
 
-impl<'a> Mutation<'a> for PolynomialMutation {
-    fn mutate_offsprings(&self, individual: &'a Individual) -> Result<Individual<'a>, OError> {
+impl Mutation for PolynomialMutation {
+    fn mutate_offsprings(&self, individual: &Individual) -> Result<Individual, OError> {
         let mut mutated_individual = individual.clone_variables();
         let problem = individual.problem();
         let mut rng = rand::thread_rng();

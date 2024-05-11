@@ -1,12 +1,12 @@
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
+use std::sync::Arc;
 
 use rand::distributions::uniform::SampleUniform;
 use rand::prelude::{IteratorRandom, SliceRandom};
 use rand::Rng;
 
-use crate::core::{Individual, Problem};
-use crate::core::error::OError;
+use crate::core::{Individual, OError, Problem};
 
 /// A trait to define a decision variable.
 pub trait Variable<T>: Display {
@@ -255,7 +255,7 @@ pub trait VariableValueGenerator {
 }
 
 /// The value of a variable to set on an individual.
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum VariableValue {
     /// The value for a floating-point number. This is a f64.
     Real(f64),
@@ -300,7 +300,7 @@ impl VariableValue {
     /// * `problem`: The problem being solved.
     ///
     /// returns: `Result<bool, OError>`
-    pub fn match_type(&self, name: &str, problem: &Problem) -> Result<bool, OError> {
+    pub fn match_type(&self, name: &str, problem: Arc<Problem>) -> Result<bool, OError> {
         let value = match problem.get_variable(name)? {
             VariableType::Real(_) => matches!(self, VariableValue::Real(_)),
             VariableType::Integer(_) => matches!(self, VariableValue::Integer(_)),
@@ -312,7 +312,7 @@ impl VariableValue {
 }
 
 impl VariableValueGenerator for VariableValue {
-    fn generate(individual: &Individual) {
+    fn generate(_individual: &Individual) {
         // TODO loop variables
         todo!()
     }

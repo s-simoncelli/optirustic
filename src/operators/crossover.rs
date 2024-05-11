@@ -1,21 +1,20 @@
 use rand::prelude::SliceRandom;
 use rand::Rng;
 
-use crate::core::{Individual, VariableType, VariableValue};
-use crate::core::error::OError;
+use crate::core::{Individual, OError, VariableType, VariableValue};
 
 /// Struct containing the offsprings from the crossover operation.
 #[derive(Debug)]
-pub struct CrossoverChildren<'a> {
+pub struct CrossoverChildren {
     /// The first generated child.
-    pub child1: Individual<'a>,
+    pub child1: Individual,
     /// The second generated child.
-    pub child2: Individual<'a>,
+    pub child2: Individual,
 }
 
 /// Trait to define a crossover operator to generate a new child by recombining the genetic
 /// material of two parents.
-pub trait Crossover<'a> {
+pub trait Crossover {
     /// Generate two children from their parents.
     ///
     /// # Arguments
@@ -25,9 +24,9 @@ pub trait Crossover<'a> {
     ///
     /// returns: `Result<CrossoverChildren, OError>`.
     fn generate_offsprings(
-        &'a self,
-        parent1: &'a Individual,
-        parent2: &'a Individual,
+        &self,
+        parent1: &Individual,
+        parent2: &Individual,
     ) -> Result<CrossoverChildren, OError>;
 }
 
@@ -51,21 +50,35 @@ pub trait Crossover<'a> {
 ///
 /// ```
 /// use std::error::Error;
-/// use optirustic::core::{BoundedNumber, Individual, Problem, VariableType, VariableValue, Objective, Constraint, ObjectiveDirection, RelationalOperator};
+/// use optirustic::core::{BoundedNumber, Individual, Problem, VariableType, VariableValue,
+/// Objective, Constraint, ObjectiveDirection, RelationalOperator, EvaluationResult, Evaluator};
 /// use optirustic::operators::{Crossover, SimulatedBinaryCrossover};
+/// use std::sync::Arc;
 ///
 /// fn main() -> Result<(), Box<dyn Error>> {
-///     // create a new one-variable problem
+/// // create a new one-variable problem
 ///     use optirustic::core::{Individual, Objective};
 ///     let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
 ///     let variables = vec![VariableType::Real(BoundedNumber::new("var1", 0.0, 1000.0)?)];
 ///     let constraints = vec![Constraint::new("c1", RelationalOperator::EqualTo, 1.0)];
-///     let problem = Problem::new(objectives, variables, Some(constraints))?;
+///
+///     // dummy evaluator function
+///     #[derive(Debug)]
+///     struct UserEvaluator;
+///     impl Evaluator for UserEvaluator {
+///         fn evaluate(&self, _: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+///             Ok(EvaluationResult {
+///                 constraints: Default::default(),
+///                 objectives: Default::default(),
+///             })
+///         }
+///     }
+///     let problem = Arc::new(Problem::new(objectives, variables, Some(constraints), Box::new(UserEvaluator))?);
 ///
 ///     // add new individuals
-///     let mut a = Individual::new(&problem);
+///     let mut a = Individual::new(problem.clone());
 ///     a.update_variable("var1", VariableValue::Real(0.2))?;
-///     let mut b = Individual::new(&problem);
+///     let mut b = Individual::new(problem.clone());
 ///     b.update_variable("var1", VariableValue::Real(0.8))?;
 ///
 ///     // crossover
@@ -96,6 +109,7 @@ impl Default for SimulatedBinaryCrossover {
         }
     }
 }
+
 impl SimulatedBinaryCrossover {
     /// Initialise the Simulated Binary Crossover (SBX) operator for bounded real variables.
     ///
@@ -174,11 +188,11 @@ impl SimulatedBinaryCrossover {
     }
 }
 
-impl<'a> Crossover<'a> for SimulatedBinaryCrossover {
+impl Crossover for SimulatedBinaryCrossover {
     fn generate_offsprings(
-        &'a self,
-        parent1: &'a Individual,
-        parent2: &'a Individual,
+        &self,
+        parent1: &Individual,
+        parent2: &Individual,
     ) -> Result<CrossoverChildren, OError> {
         let mut child1 = parent1.clone_variables();
         let mut child2 = parent2.clone_variables();

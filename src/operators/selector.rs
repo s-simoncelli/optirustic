@@ -3,12 +3,11 @@ use std::marker::PhantomData;
 use rand::prelude::SliceRandom;
 use rand::thread_rng;
 
-use crate::core::{Individual, Population};
-use crate::core::error::OError;
+use crate::core::{Individual, OError, Population};
 use crate::operators::{BinaryComparisonOperator, PreferredSolution};
 
 /// A trait implementing methods to choose individuals from a population for reproduction.
-pub trait Selector<'a> {
+pub trait Selector {
     /// Select a number of individuals from the population equal to `number_of_winners`.
     ///
     /// # Arguments
@@ -16,13 +15,13 @@ pub trait Selector<'a> {
     /// * `population`: The population.
     /// * `number_of_winners`: The number of winners to select.
     ///
-    /// returns: `Result<[&Individual], OError>`
+    /// returns: `Result<Vec<Individual>, OError>`
     fn select(
-        &'a self,
-        population: &'a Population,
+        &self,
+        population: &Population,
         number_of_winners: usize,
-    ) -> Result<Vec<&'a Individual>, OError> {
-        let mut winners: Vec<&Individual> = Vec::new();
+    ) -> Result<Vec<Individual>, OError> {
+        let mut winners: Vec<Individual> = Vec::new();
         for _ in 0..number_of_winners {
             winners.push(self.select_fit_individual(population)?);
         }
@@ -35,11 +34,8 @@ pub trait Selector<'a> {
     ///
     /// * `population`: The list of individuals.
     ///
-    /// returns: `Result<&Individual, OError>`
-    fn select_fit_individual(
-        &'a self,
-        population: &'a Population,
-    ) -> Result<&'a Individual, OError>;
+    /// returns: `Result<Individual, OError>`
+    fn select_fit_individual(&self, population: &Population) -> Result<Individual, OError>;
 }
 
 /// Tournament selection method between multiple competitors for choosing individuals from a
@@ -70,18 +66,16 @@ impl<Operator: BinaryComparisonOperator> TournamentSelector<Operator> {
     }
 }
 
-impl<'a, Operator: BinaryComparisonOperator> Selector<'a> for TournamentSelector<Operator> {
+impl<Operator: BinaryComparisonOperator> Selector for TournamentSelector<Operator> {
     /// Select the fittest individual from the population.
     ///
     /// # Arguments
     ///
     /// * `population`:The population with the solutions.
     ///
-    /// returns: `Result<&Individual, OError>`
-    fn select_fit_individual(
-        &'a self,
-        population: &'a Population,
-    ) -> Result<&'a Individual, OError> {
+    /// returns: `Result<Individual, OError>`
+    fn select_fit_individual(&self, population: &Population) -> Result<Individual, OError> {
+        // let population = population.lock().unwrap();
         if population.is_empty() {
             return Err(OError::SelectorOperator(
                 "BinaryComparisonOperator".to_string(),
@@ -102,7 +96,7 @@ impl<'a, Operator: BinaryComparisonOperator> Selector<'a> for TournamentSelector
 
         for _ in 0..self.number_of_competitors {
             let potential_winner = individuals.choose(&mut rng).unwrap();
-            let preferred_sol = Operator::compare(problem, winner, potential_winner)?;
+            let preferred_sol = Operator::compare(&problem, winner, potential_winner)?;
             if preferred_sol == PreferredSolution::Second {
                 winner = potential_winner;
             } else if preferred_sol == PreferredSolution::MutuallyPreferred {
@@ -111,6 +105,6 @@ impl<'a, Operator: BinaryComparisonOperator> Selector<'a> for TournamentSelector
             }
         }
 
-        Ok(winner)
+        Ok(winner.clone())
     }
 }
