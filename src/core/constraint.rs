@@ -164,7 +164,7 @@ impl Display for Constraint {
             RelationalOperator::GreaterOrEqualTo => ">=",
             RelationalOperator::GreaterThan => ">",
         };
-        f.write_fmt(format_args!("{} {}{}", self.name, sign, self.target))
+        f.write_fmt(format_args!("{} {} {}", self.name, sign, self.target))
     }
 }
 

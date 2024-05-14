@@ -1,4 +1,4 @@
-use crate::core::{Individual, OError, Problem};
+use crate::core::{Individual, OError};
 
 /// The preferred solution with the `BinaryComparisonOperator`.
 #[derive(Debug, PartialOrd, PartialEq)]
@@ -17,13 +17,11 @@ pub trait BinaryComparisonOperator {
     ///
     /// # Arguments
     ///
-    /// * `problem`: The problem being solved.
     /// * `first_solution`: The first solution to compare.
     /// * `second_solution`: The second solution to compare.
     ///
     /// returns: `Result<PreferredSolution, OError>` The preferred solution.
     fn compare(
-        problem: &Problem,
         first_solution: &Individual,
         second_solution: &Individual,
     ) -> Result<PreferredSolution, OError>
@@ -51,17 +49,16 @@ impl BinaryComparisonOperator for ParetoConstrainedDominance {
     ///
     /// # Arguments
     ///
-    /// * `problem`: The problem being solved.
     /// * `first_solution`: The first solution to compare.
     /// * `second_solution`: The second solution to compare.
     ///
     /// returns: `Result<PreferredSolution, OError>` The dominance relation between solution 1
     /// and 2.
     fn compare(
-        problem: &Problem,
         first_solution: &Individual,
         second_solution: &Individual,
     ) -> Result<PreferredSolution, OError> {
+        let problem = first_solution.problem();
         let cv1 = first_solution.constraint_violation();
         let cv2 = second_solution.constraint_violation();
 
@@ -142,7 +139,7 @@ mod test {
         solution1.update_objective("obj1", 5.0).unwrap();
         solution2.update_objective("obj1", 15.0).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::First
         );
 
@@ -150,7 +147,7 @@ mod test {
         solution1.update_objective("obj1", 5.0).unwrap();
         solution2.update_objective("obj1", 1.0).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::Second
         );
 
@@ -158,7 +155,7 @@ mod test {
         solution1.update_objective("obj1", 5.0).unwrap();
         solution2.update_objective("obj1", 5.0).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::MutuallyPreferred
         );
 
@@ -177,7 +174,7 @@ mod test {
         solution1.update_objective("obj1", 5.0).unwrap();
         solution2.update_objective("obj1", 15.0).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::Second
         );
     }
@@ -204,7 +201,7 @@ mod test {
         solution2.update_objective("obj1", 15.0).unwrap();
         solution2.update_objective("obj2", 25.0).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::First
         );
 
@@ -214,7 +211,7 @@ mod test {
         solution2.update_objective("obj1", -15.0).unwrap();
         solution2.update_objective("obj2", -25.0).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::Second
         );
 
@@ -224,7 +221,7 @@ mod test {
         solution2.update_objective("obj1", 15.0).unwrap();
         solution2.update_objective("obj2", 25.0).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::MutuallyPreferred
         );
 
@@ -238,20 +235,20 @@ mod test {
         solution3.update_objective("obj2", 1.0).unwrap();
 
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::First
         );
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution2, &solution1).unwrap(),
+            ParetoConstrainedDominance::compare(&solution2, &solution1).unwrap(),
             PreferredSolution::Second
         );
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution3).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution3).unwrap(),
             PreferredSolution::First
         );
         // mutually dominated for obj1, but obj2 of sol1 dominates
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution3, &solution1).unwrap(),
+            ParetoConstrainedDominance::compare(&solution3, &solution1).unwrap(),
             PreferredSolution::Second
         );
 
@@ -263,27 +260,27 @@ mod test {
         solution3.update_objective("obj1", 1.0).unwrap();
         solution3.update_objective("obj2", 0.0).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::MutuallyPreferred
         );
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution2, &solution1).unwrap(),
+            ParetoConstrainedDominance::compare(&solution2, &solution1).unwrap(),
             PreferredSolution::MutuallyPreferred
         );
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution2, &solution3).unwrap(),
+            ParetoConstrainedDominance::compare(&solution2, &solution3).unwrap(),
             PreferredSolution::MutuallyPreferred
         );
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution3, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution3, &solution2).unwrap(),
             PreferredSolution::MutuallyPreferred
         );
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution3).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution3).unwrap(),
             PreferredSolution::MutuallyPreferred
         );
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution3, &solution1).unwrap(),
+            ParetoConstrainedDominance::compare(&solution3, &solution1).unwrap(),
             PreferredSolution::MutuallyPreferred
         );
 
@@ -307,7 +304,7 @@ mod test {
         solution1.update_objective("obj2", 5.0).unwrap();
         solution2.update_objective("obj2", 15.0).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::MutuallyPreferred
         );
 
@@ -317,7 +314,7 @@ mod test {
         solution2.update_objective("obj1", 1.0).unwrap();
         solution2.update_objective("obj2", 15.0).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::Second
         );
     }
@@ -343,7 +340,7 @@ mod test {
         solution1.update_constraint("c1", 0.0).unwrap();
         solution2.update_constraint("c1", 1.0).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::Second
         );
 
@@ -351,7 +348,7 @@ mod test {
         solution1.update_constraint("c1", 0.5).unwrap();
         solution2.update_constraint("c1", 3.0).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::First
         );
 
@@ -359,7 +356,7 @@ mod test {
         solution1.update_constraint("c1", 0.5).unwrap();
         solution2.update_constraint("c1", 0.5).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::First
         );
 
@@ -383,7 +380,7 @@ mod test {
         solution1.update_constraint("c1", 0.5).unwrap();
         solution2.update_constraint("c1", 3.0).unwrap();
         assert_eq!(
-            ParetoConstrainedDominance::compare(&problem, &solution1, &solution2).unwrap(),
+            ParetoConstrainedDominance::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::Second
         );
     }

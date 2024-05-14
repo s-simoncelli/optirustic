@@ -58,7 +58,7 @@ pub struct Individual {
     evaluated: bool,
     /// Additional numeric data to store for the individuals (such as crowding distance or rank)
     /// depending on the algorithm the individuals are derived from.
-    data: HashMap<String, f64>,
+    data: HashMap<String, VariableValue>,
 }
 
 #[derive(Serialize)]
@@ -266,13 +266,9 @@ impl Individual {
     ///
     /// returns: `Result<f64, OError>`
     pub fn get_real_value(&self, name: &str) -> Result<f64, OError> {
-        match self.get_variable_value(name)? {
-            VariableValue::Real(v) => Ok(*v),
-            _ => Err(OError::WrongTypeVariable(
-                name.to_string(),
-                "real".to_string(),
-            )),
-        }
+        self.get_variable_value(name)?
+            .as_real()
+            .map_err(|_| OError::WrongTypeVariableWithName(name.to_string(), "real".to_string()))
     }
 
     /// Get the number stored in an integer variable by name. This returns an error if the variable
@@ -284,13 +280,9 @@ impl Individual {
     ///
     /// returns: `Result<u64, OError>`
     pub fn get_integer_value(&self, name: &str) -> Result<u64, OError> {
-        match self.get_variable_value(name)? {
-            VariableValue::Integer(v) => Ok(*v),
-            _ => Err(OError::WrongTypeVariable(
-                name.to_string(),
-                "integer".to_string(),
-            )),
-        }
+        self.get_variable_value(name)?
+            .as_integer()
+            .map_err(|_| OError::WrongTypeVariableWithName(name.to_string(), "integer".to_string()))
     }
 
     /// Ge the objective value by name. This returns an error if the objective does not exist.
@@ -324,6 +316,30 @@ impl Individual {
         self.evaluated = true;
     }
 
+    /// Store custom data on the individual.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The name of the data.
+    /// * `value`: The value.
+    ///
+    /// returns: `()`.
+    pub fn set_data(&mut self, name: &str, value: VariableValue) {
+        self.data.insert(name.to_string(), value);
+    }
+
+    /// Get custom data set on the individual.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The name of the data.
+    ///
+    /// returns: `Option<VariableValue>`. This returns `None` if no custom data with the
+    /// given `name` exists.
+    pub fn get_data(&self, name: &str) -> Option<VariableValue> {
+        self.data.get(name).cloned()
+    }
+
     /// Export all the solution data (constraint and objective values, constraint violation and
     /// feasibility).
     ///
@@ -348,16 +364,34 @@ impl Population {
         Self::default()
     }
 
+    /// Get a population individual as mutable.
+    ///
+    /// return: `&mut Individual`
+    pub fn individual_as_mut(&mut self, index: usize) -> Result<&mut Individual, OError> {
+        self.0
+            .get_mut(index)
+            .ok_or(OError::NonExistingIndex("individual".to_string(), index))
+    }
+
+    /// Get a population individual.
+    ///
+    /// return: `&Individual`
+    pub fn individual(&self, index: usize) -> Result<&Individual, OError> {
+        self.0
+            .get(index)
+            .ok_or(OError::NonExistingIndex("individual".to_string(), index))
+    }
+
     /// Get the population individuals.
     ///
-    /// return: `&[Individual]` .
+    /// return: `&[Individual]`
     pub fn individuals(&self) -> &[Individual] {
         self.0.as_ref()
     }
 
     /// Borrow the population individuals as mutable reference.
     ///
-    /// return: `&mut [Individual]` .
+    /// return: `&mut [Individual]`
     pub fn individuals_as_mut(&mut self) -> &mut [Individual] {
         self.0.as_mut()
     }
@@ -413,12 +447,26 @@ impl Population {
     /// * `name`: The variable name.
     ///
     /// returns: `Result<f64, OError>`
-    pub fn to_real_vec(&mut self, name: &str) -> Result<Vec<f64>, OError> {
-        let mut values: Vec<f64> = vec![];
-        for individual in self.individuals() {
-            values.push(individual.get_real_value(name)?);
-        }
-        Ok(values)
+    pub fn to_real_vec(&self, name: &str) -> Result<Vec<f64>, OError> {
+        self.individuals()
+            .iter()
+            .map(|i| i.get_real_value(name))
+            .collect()
+    }
+
+    /// Get the objective values for all individuals. This returns an error if the objective name
+    /// does not exist.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The objective name.
+    ///
+    /// returns: `Result<f64, OError>`
+    pub fn objective_values(&self, name: &str) -> Result<Vec<f64>, OError> {
+        self.individuals()
+            .iter()
+            .map(|i| i.get_objective_value(name))
+            .collect()
     }
 }
 
