@@ -90,13 +90,12 @@ impl<Operator: BinaryComparisonOperator> Selector for TournamentSelector<Operato
         }
 
         let individuals = population.individuals();
-        let problem = individuals.first().unwrap().problem();
         let mut rng = thread_rng();
         let mut winner = individuals.choose(&mut rng).unwrap();
 
         for _ in 0..self.number_of_competitors {
             let potential_winner = individuals.choose(&mut rng).unwrap();
-            let preferred_sol = Operator::compare(&problem, winner, potential_winner)?;
+            let preferred_sol = Operator::compare(winner, potential_winner)?;
             if preferred_sol == PreferredSolution::Second {
                 winner = potential_winner;
             } else if preferred_sol == PreferredSolution::MutuallyPreferred {

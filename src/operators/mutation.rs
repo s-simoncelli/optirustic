@@ -16,7 +16,7 @@ pub trait Mutation {
 
 /// The Polynomial mutation (PM) operator.
 ///
-/// Adapted from [Deb & Deb (2014)](<https://dl.acm.org/doi/10.1504/IJAISC.2014.059280), full
+/// Adapted from [Deb & Deb (2014)](https://dl.acm.org/doi/10.1504/IJAISC.2014.059280), full
 /// text available at <https://www.egr.msu.edu/~kdeb/papers/k2012016.pdf>
 pub struct PolynomialMutation {
     /// The user-defined parameter to control the mutation.

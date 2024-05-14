@@ -309,6 +309,30 @@ impl VariableValue {
         };
         Ok(value)
     }
+
+    /// Get the value if the variable is of real type. This returns an error if the variable is not
+    /// real.
+    ///
+    /// returns: `Result<f64, OError>`
+    pub fn as_real(&self) -> Result<f64, OError> {
+        if let VariableValue::Real(v) = self {
+            Ok(*v)
+        } else {
+            Err(OError::WrongTypeVariable("real".to_string()))
+        }
+    }
+
+    /// Get the value if the variable is of discrete type. This returns an error if the variable is
+    /// not an integer.
+    ///
+    /// returns: `Result<f64, OError>`
+    pub fn as_integer(&self) -> Result<u64, OError> {
+        if let VariableValue::Integer(v) = self {
+            Ok(*v)
+        } else {
+            Err(OError::WrongTypeVariable("integer".to_string()))
+        }
+    }
 }
 
 impl VariableValueGenerator for VariableValue {
