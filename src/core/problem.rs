@@ -20,13 +20,26 @@ pub struct EvaluationResult {
 pub trait Evaluator: Sync + Send + Debug {
     /// A custom-defined function to use to assess the constraint and objective. When a new
     /// offspring is generated via crossover and mutation, new variables (or solutions) are
-    /// assigned to it and the problem constraints and objective need to be evaluated.
+    /// assigned to it and the problem constraints and objective need to be evaluated. This
+    /// function must return all the values for all the objectives and constraints set on
+    /// the problem. An algorithm will return an error if the function fails to do so.
     ///
     /// # Arguments
     ///
     /// * `individual`: The individual.
     ///
     /// returns: `Result<EvaluationResult, Box<dyn Error>>`
+    ///
+    /// ## Example
+    /// ```
+    /// // access new variables to evaluate for the new individuals
+    /// use std::error::Error;
+    /// use optirustic::core::{EvaluationResult, Individual};
+    /// fn evaluate(&self, individual: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+    ///     todo!()
+    ///
+    /// }
+    /// ```
     fn evaluate(&self, individual: &Individual) -> Result<EvaluationResult, Box<dyn Error>>;
 }
 
@@ -34,16 +47,22 @@ pub trait Evaluator: Sync + Send + Debug {
 pub struct ProblemExport {
     /// The problem objectives.
     objectives: HashMap<String, Objective>,
-    /// The objective names.
-    objective_names: Vec<String>,
     /// The problem constraints.
     constraints: HashMap<String, Constraint>,
+    /// The problem variables.
+    variables: HashMap<String, VariableType>,
     /// The constraint names.
     constraint_names: Vec<String>,
-    //The number of objectives
+    /// The variable names.
+    variable_names: Vec<String>,
+    /// The objective names.
+    objective_names: Vec<String>,
+    /// The number of objectives
     number_of_objectives: usize,
-    //The number of constraints
+    /// The number of constraints
     number_of_constraints: usize,
+    /// The number of variables
+    number_of_variables: usize,
 }
 
 /// Define a new problem to optimise as:
@@ -283,19 +302,21 @@ impl Problem {
         self.evaluator.as_ref()
     }
 
-    /// Export the problem data.
+    /// Serialise the problem data.
     ///
     /// return: `ProblemExport`
-    pub fn export(&self) {
-        //     let output = ProblemExport {
-        //         objectives: self.objectives.iter().clone().collect(),
-        //         constraints: self.constraints.clone(),
-        //         objective_names: self.objective_names().clone(),
-        //         constraint_names: self.constraint_names().clone(),
-        //         number_of_objectives: self.number_of_objectives(),
-        //         number_of_constraints: self.number_of_constraints(),
-        //     };
-        //     Ok(serde_json::to_string_pretty(&output)?)
+    pub fn serialise(&self) -> ProblemExport {
+        ProblemExport {
+            objectives: self.objectives.clone(),
+            constraints: self.constraints.clone(),
+            variables: self.variables.clone(),
+            constraint_names: self.constraint_names().clone(),
+            variable_names: self.variable_names(),
+            objective_names: self.objective_names().clone(),
+            number_of_objectives: self.number_of_objectives(),
+            number_of_constraints: self.number_of_constraints(),
+            number_of_variables: self.number_of_variables(),
+        }
     }
 }
 

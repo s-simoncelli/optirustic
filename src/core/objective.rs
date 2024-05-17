@@ -4,6 +4,7 @@ use serde::Serialize;
 
 /// Whether the objective should be minimised or maximised. Default is minimise.
 #[derive(Default, Clone, Debug, PartialOrd, PartialEq, Serialize)]
+#[serde(untagged)]
 pub enum ObjectiveDirection {
     #[default]
     /// Minimise an objective.
@@ -30,7 +31,7 @@ impl Display for ObjectiveDirection {
 ///  let o = Objective::new("Reduce cost", ObjectiveDirection::Minimise);
 ///  println!("{}", o);
 /// ```
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct Objective {
     /// The objective name.
     name: String,

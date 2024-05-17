@@ -69,6 +69,8 @@ pub struct IndividualExport {
     objective_values: HashMap<String, f64>,
     /// The overall amount of violation of the solution constraints.
     constraint_violation: f64,
+    /// The value of the problem variables for the individual.
+    variable_values: HashMap<String, VariableValue>,
     /// Whether the solution meets all the problem constraints.
     is_feasible: bool,
 }
@@ -170,7 +172,7 @@ impl Individual {
     /// * `value`: The value to set.
     ///
     /// returns: `Result<(), OError>`
-    pub fn update_objective(&mut self, name: &str, value: f64) -> Result<(), OError> {
+    pub(crate) fn update_objective(&mut self, name: &str, value: f64) -> Result<(), OError> {
         if !self.objective_values.contains_key(name) {
             return Err(OError::NonExistingName(
                 "objective".to_string(),
@@ -191,7 +193,7 @@ impl Individual {
     /// * `value`: The value to set.
     ///
     /// returns: `Result<(), OError>`
-    pub fn update_constraint(&mut self, name: &str, value: f64) -> Result<(), OError> {
+    pub(crate) fn update_constraint(&mut self, name: &str, value: f64) -> Result<(), OError> {
         if !self.constraint_values.contains_key(name) {
             return Err(OError::NonExistingName(
                 "constrain".to_string(),
@@ -343,12 +345,13 @@ impl Individual {
     /// Export all the solution data (constraint and objective values, constraint violation and
     /// feasibility).
     ///
-    /// return: `SolutionExport`
-    pub fn export(&self) -> IndividualExport {
+    /// return: `IndividualExport`
+    pub fn serialise(&self) -> IndividualExport {
         IndividualExport {
             constraint_values: self.constraint_values.clone(),
             objective_values: self.objective_values.clone(),
             constraint_violation: self.constraint_violation(),
+            variable_values: self.variable_values.clone(),
             is_feasible: self.is_feasible(),
         }
     }
@@ -364,22 +367,11 @@ impl Population {
         Self::default()
     }
 
-    /// Get a population individual as mutable.
+    /// Get the population size.
     ///
-    /// return: `&mut Individual`
-    pub fn individual_as_mut(&mut self, index: usize) -> Result<&mut Individual, OError> {
-        self.0
-            .get_mut(index)
-            .ok_or(OError::NonExistingIndex("individual".to_string(), index))
-    }
-
-    /// Get a population individual.
-    ///
-    /// return: `&Individual`
-    pub fn individual(&self, index: usize) -> Result<&Individual, OError> {
-        self.0
-            .get(index)
-            .ok_or(OError::NonExistingIndex("individual".to_string(), index))
+    /// return: `usize`
+    pub fn size(&self) -> usize {
+        self.0.len()
     }
 
     /// Get the population individuals.
@@ -394,20 +386,6 @@ impl Population {
     /// return: `&mut [Individual]`
     pub fn individuals_as_mut(&mut self) -> &mut [Individual] {
         self.0.as_mut()
-    }
-
-    /// Get the population size.
-    ///
-    /// return: `usize` The number of individuals.
-    pub fn size(&self) -> usize {
-        self.0.len()
-    }
-
-    /// Whether the population has no individuals.
-    ///
-    /// return: `bool`
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
     }
 
     /// Add new individuals to the population.
@@ -438,20 +416,43 @@ impl Population {
         }
         Self(population)
     }
+}
 
-    /// Get the numbers stored in a real variable in all individuals. This returns an error if the
-    /// variable does not exist or is not a real type.
+pub trait Individuals<'a> {
+    fn individual(&self, index: usize) -> Result<&Individual, OError>;
+    fn objective_values(&self, name: &str) -> Result<Vec<f64>, OError>;
+    fn to_real_vec(&self, name: &str) -> Result<Vec<f64>, OError>;
+}
+
+pub trait IndividualsMut<'a> {
+    fn individual_as_mut(&mut self, index: usize) -> Result<&mut Individual, OError>;
+}
+
+impl<'a> IndividualsMut<'a> for &'a mut [Individual] {
+    /// Get a population individual as mutable.
     ///
     /// # Arguments
     ///
-    /// * `name`: The variable name.
+    /// * `index`: The index of the individual.
     ///
-    /// returns: `Result<f64, OError>`
-    pub fn to_real_vec(&self, name: &str) -> Result<Vec<f64>, OError> {
-        self.individuals()
-            .iter()
-            .map(|i| i.get_real_value(name))
-            .collect()
+    /// return: `Result<&mut Individual, OError>`
+    fn individual_as_mut(&mut self, index: usize) -> Result<&mut Individual, OError> {
+        self.get_mut(index)
+            .ok_or(OError::NonExistingIndex("individual".to_string(), index))
+    }
+}
+
+impl<'a> Individuals<'a> for &'a mut [Individual] {
+    /// Get an individual from a vector.
+    ///
+    /// # Arguments
+    ///
+    /// * `index`: The index of the individual.
+    ///
+    /// return: `Result<&Individual, OError>`
+    fn individual(&self, index: usize) -> Result<&Individual, OError> {
+        self.get(index)
+            .ok_or(OError::NonExistingIndex("individual".to_string(), index))
     }
 
     /// Get the objective values for all individuals. This returns an error if the objective name
@@ -462,11 +463,20 @@ impl Population {
     /// * `name`: The objective name.
     ///
     /// returns: `Result<f64, OError>`
-    pub fn objective_values(&self, name: &str) -> Result<Vec<f64>, OError> {
-        self.individuals()
-            .iter()
-            .map(|i| i.get_objective_value(name))
-            .collect()
+    fn objective_values(&self, name: &str) -> Result<Vec<f64>, OError> {
+        self.iter().map(|i| i.get_objective_value(name)).collect()
+    }
+
+    /// Get the numbers stored in a real variable in all individuals. This returns an error if the
+    /// variable does not exist or is not a real type.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The variable name.
+    ///
+    /// returns: `Result<f64, OError>`
+    fn to_real_vec(&self, name: &str) -> Result<Vec<f64>, OError> {
+        self.iter().map(|i| i.get_real_value(name)).collect()
     }
 }
 

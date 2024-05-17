@@ -47,8 +47,6 @@ pub fn vector_min(v: &[f64]) -> Result<f64, OError> {
 /// * `v`: The vector.
 ///
 /// returns: `Result<f64, OError>`
-///
-/// # Examples
 pub fn vector_max(v: &[f64]) -> Result<f64, OError> {
     Ok(*v
         .iter()
@@ -58,6 +56,13 @@ pub fn vector_max(v: &[f64]) -> Result<f64, OError> {
         ))?)
 }
 
+/// Returns the indices that would sort an array.
+///
+/// # Arguments
+///
+/// * `data`: The vector to sort.
+///
+/// returns: `Vec<usize>`. The vector with the indices.
 pub fn argsort(data: &[f64]) -> Vec<usize> {
     let mut indices = (0..data.len()).collect::<Vec<_>>();
     indices.sort_by(|a, b| data[*a].total_cmp(&data[*b]));
