@@ -30,6 +30,36 @@ pub trait Crossover {
     ) -> Result<CrossoverChildren, OError>;
 }
 
+/// Input arguments for [`SimulatedBinaryCrossover`].
+#[derive(Clone)]
+pub struct SimulatedBinaryCrossoverArgs {
+    /// The distribution index for crossover (this is the eta_c in the paper). This directly
+    /// control the spread of children. If a large value is selected, the resulting children will
+    /// have a higher probability of being close to their parents; a small value generates distant
+    /// offsprings.
+    pub distribution_index: f64,
+    /// The probability that the parents participate in the crossover. If 1.0, the parents always
+    /// participate in the crossover. If the probability is lower, then the children are the exact
+    /// clones of their parents (i.e. all the variable values do not change).
+    pub crossover_probability: f64,
+    /// The probability that a variable belonging to both parents is used in the crossover. The
+    /// paper uses 0.5, meaning that  each variable in a solution has a 50% chance of changing its
+    /// value.
+    pub variable_probability: f64,
+}
+
+impl Default for SimulatedBinaryCrossoverArgs {
+    /// Default parameters for the Simulated Binary Crossover (SBX) with a distribution index of
+    /// 15, crossover probability of 1 and variable probability of 0.5.
+    fn default() -> Self {
+        Self {
+            distribution_index: 15.0,
+            crossover_probability: 1.0,
+            variable_probability: 0.5,
+        }
+    }
+}
+
 /// Simulated Binary Crossover (SBX) operator for bounded real variables.
 ///
 /// Implemented based on:
@@ -52,12 +82,11 @@ pub trait Crossover {
 /// use std::error::Error;
 /// use optirustic::core::{BoundedNumber, Individual, Problem, VariableType, VariableValue,
 /// Objective, Constraint, ObjectiveDirection, RelationalOperator, EvaluationResult, Evaluator};
-/// use optirustic::operators::{Crossover, SimulatedBinaryCrossover};
+/// use optirustic::operators::{Crossover, SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs};
 /// use std::sync::Arc;
 ///
 /// fn main() -> Result<(), Box<dyn Error>> {
-/// // create a new one-variable problem
-///     use optirustic::core::{Individual, Objective};
+///     // create a new one-variable problem
 ///     let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
 ///     let variables = vec![VariableType::Real(BoundedNumber::new("var1", 0.0, 1000.0)?)];
 ///     let constraints = vec![Constraint::new("c1", RelationalOperator::EqualTo, 1.0)];
@@ -82,7 +111,12 @@ pub trait Crossover {
 ///     b.update_variable("var1", VariableValue::Real(0.8))?;
 ///
 ///     // crossover
-///     let sbx = SimulatedBinaryCrossover::new(1.0, 1.0, 0.5)?;
+///     let parameters = SimulatedBinaryCrossoverArgs {
+///         distribution_index: 1.0,
+///         crossover_probability:1.0,
+///         variable_probability:0.5
+///     };
+///     let sbx = SimulatedBinaryCrossover::new(parameters)?;
 ///     let out = sbx.generate_offsprings(&a, &b)?;
 ///     println!("{} - {}", out.child1, out.child2);
 ///     Ok(())
@@ -98,73 +132,48 @@ pub struct SimulatedBinaryCrossover {
     variable_probability: f64,
 }
 
-impl Default for SimulatedBinaryCrossover {
-    /// Default parameters for the Simulated Binary Crossover (SBX) with a distribution index of
-    /// 15, crossover probability of 1 and variable probability of 0.5.
-    fn default() -> Self {
-        Self {
-            distribution_index: 15.0,
-            crossover_probability: 1.0,
-            variable_probability: 0.5,
-        }
-    }
-}
-
 impl SimulatedBinaryCrossover {
     /// Initialise the Simulated Binary Crossover (SBX) operator for bounded real variables.
     ///
     /// # Arguments
     ///
-    /// * `distribution_index`: The distribution index for crossover (this is the eta_c in the
-    /// paper). This directly control the spread of children. If a large value is selected, the
-    /// resulting children will have a higher probability of being close to their parents; a small
-    /// value generates distant offsprings.
-    /// * `variable_probability`: The probability that a variable belonging to both parents is used
-    /// in the crossover. The paper uses 0.5, meaning that  each variable in a solution has a 50%
-    /// chance of changing its value.
-    /// * `crossover_probability`: The probability that the parents participate in the crossover.
-    /// If 1.0, the parents always participate in the crossover. If the probability is lower, then
-    /// the children are the exact clones of their parents (i.e. all the variable values do not
-    /// change).
+    /// * `args.`: The operator input parameters. See [`SimulatedBinaryCrossoverArgs`] for a detail
+    /// explanation of the parameters.
     ///
     /// returns: `Result<SBX, OError>`
-    pub fn new(
-        distribution_index: f64,
-        crossover_probability: f64,
-        variable_probability: f64,
-    ) -> Result<Self, OError> {
-        if distribution_index < 0.0 {
+    pub fn new(args: SimulatedBinaryCrossoverArgs) -> Result<Self, OError> {
+        if args.distribution_index < 0.0 {
             return Err(OError::CrossoverOperator(
                 "SBX".to_string(),
                 format!(
                     "The distribution index {} must be a positive number",
-                    distribution_index
+                    args.distribution_index
                 ),
             ));
         }
-        if !(0.0..=1.0).contains(&crossover_probability) {
+        if !(0.0..=1.0).contains(&args.crossover_probability) {
             return Err(OError::CrossoverOperator(
                 "SBX".to_string(),
                 format!(
                     "The crossover probability {} must be a number between 0 and 1",
-                    crossover_probability
+                    args.crossover_probability
                 ),
             ));
         }
-        if !(0.0..=1.0).contains(&variable_probability) {
+        if !(0.0..=1.0).contains(&args.variable_probability) {
             return Err(OError::CrossoverOperator(
                 "SBX".to_string(),
                 format!(
                     "The variable probability {} must be a number between 0 and 1",
-                    variable_probability
+                    args.variable_probability
                 ),
             ));
         }
 
         Ok(Self {
-            distribution_index,
-            variable_probability,
-            crossover_probability,
+            distribution_index: args.distribution_index,
+            variable_probability: args.variable_probability,
+            crossover_probability: args.crossover_probability,
         })
     }
 
@@ -265,13 +274,28 @@ impl Crossover for SimulatedBinaryCrossover {
 
 #[cfg(test)]
 mod test {
-    use crate::operators::SimulatedBinaryCrossover;
+    use crate::operators::{SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs};
 
     #[test]
     /// Check that the input arguments to SBX operator are valid.
     fn test_new_panic() {
-        assert!(SimulatedBinaryCrossover::new(-2.0, 1.0, 0.5).is_err());
-        assert!(SimulatedBinaryCrossover::new(1.0, 2.0, 0.5).is_err());
-        assert!(SimulatedBinaryCrossover::new(1.0, 1.0, -0.5).is_err());
+        assert!(SimulatedBinaryCrossover::new(SimulatedBinaryCrossoverArgs {
+            distribution_index: -2.0,
+            crossover_probability: 1.0,
+            variable_probability: 0.5,
+        })
+        .is_err());
+        assert!(SimulatedBinaryCrossover::new(SimulatedBinaryCrossoverArgs {
+            distribution_index: 1.0,
+            crossover_probability: 2.0,
+            variable_probability: 0.5,
+        })
+        .is_err());
+        assert!(SimulatedBinaryCrossover::new(SimulatedBinaryCrossoverArgs {
+            distribution_index: 1.0,
+            crossover_probability: 1.0,
+            variable_probability: -0.5,
+        })
+        .is_err());
     }
 }

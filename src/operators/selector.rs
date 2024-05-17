@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use rand::prelude::SliceRandom;
 use rand::thread_rng;
 
-use crate::core::{Individual, OError, Population};
+use crate::core::{Individual, OError};
 use crate::operators::{BinaryComparisonOperator, PreferredSolution};
 
 /// A trait implementing methods to choose individuals from a population for reproduction.
@@ -12,18 +12,18 @@ pub trait Selector {
     ///
     /// # Arguments
     ///
-    /// * `population`: The population.
+    /// * `individuals`: The individuals.
     /// * `number_of_winners`: The number of winners to select.
     ///
     /// returns: `Result<Vec<Individual>, OError>`
     fn select(
         &self,
-        population: &Population,
+        individuals: &[Individual],
         number_of_winners: usize,
     ) -> Result<Vec<Individual>, OError> {
         let mut winners: Vec<Individual> = Vec::new();
         for _ in 0..number_of_winners {
-            winners.push(self.select_fit_individual(population)?);
+            winners.push(self.select_fit_individual(individuals)?);
         }
         Ok(winners)
     }
@@ -32,10 +32,10 @@ pub trait Selector {
     ///
     /// # Arguments
     ///
-    /// * `population`: The list of individuals.
+    /// * `individuals`: The list of individuals.
     ///
     /// returns: `Result<Individual, OError>`
-    fn select_fit_individual(&self, population: &Population) -> Result<Individual, OError>;
+    fn select_fit_individual(&self, individuals: &[Individual]) -> Result<Individual, OError>;
 }
 
 /// Tournament selection method between multiple competitors for choosing individuals from a
@@ -71,25 +71,24 @@ impl<Operator: BinaryComparisonOperator> Selector for TournamentSelector<Operato
     ///
     /// # Arguments
     ///
-    /// * `population`:The population with the solutions.
+    /// * `individuals`:The individuals with the solutions.
     ///
     /// returns: `Result<Individual, OError>`
-    fn select_fit_individual(&self, population: &Population) -> Result<Individual, OError> {
+    fn select_fit_individual(&self, individuals: &[Individual]) -> Result<Individual, OError> {
         // let population = population.lock().unwrap();
-        if population.is_empty() {
+        if individuals.is_empty() {
             return Err(OError::SelectorOperator(
                 "BinaryComparisonOperator".to_string(),
                 "The population is empty and no individual can be selected".to_string(),
             ));
         }
-        if population.size() < self.number_of_competitors {
+        if individuals.len() < self.number_of_competitors {
             return Err(OError::SelectorOperator(
                 "BinaryComparisonOperator".to_string(),
-                format!("The population size ({}) is smaller than the number of competitors needed in the tournament ({})", population.size(), self.number_of_competitors))
+                format!("The population size ({}) is smaller than the number of competitors needed in the tournament ({})", individuals.len(), self.number_of_competitors))
             );
         }
 
-        let individuals = population.individuals();
         let mut rng = thread_rng();
         let mut winner = individuals.choose(&mut rng).unwrap();
 

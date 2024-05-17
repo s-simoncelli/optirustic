@@ -14,44 +14,17 @@ pub trait Mutation {
     fn mutate_offsprings(&self, individual: &Individual) -> Result<Individual, OError>;
 }
 
-/// The Polynomial mutation (PM) operator.
-///
-/// Adapted from [Deb & Deb (2014)](https://dl.acm.org/doi/10.1504/IJAISC.2014.059280), full
-/// text available at <https://www.egr.msu.edu/~kdeb/papers/k2012016.pdf>
-pub struct PolynomialMutation {
-    /// The user-defined parameter to control the mutation.
-    index_parameter: f64,
+/// Input arguments for [`PolynomialMutation`].
+#[derive(Clone)]
+pub struct PolynomialMutationArgs {
+    /// A user-defined parameter to control the mutation. This is eta_m in the paper, and it is
+    /// suggested its value to be in the [20, 100] range.
+    pub index_parameter: f64,
     /// The probability of mutating a parent variable.
-    variable_probability: f64,
+    pub variable_probability: f64,
 }
 
-impl PolynomialMutation {
-    /// Initialise the Polynomial mutation (PM) operator. This returns an error if the probability
-    /// is outside the [0, 1] range.
-    ///
-    /// # Arguments
-    ///
-    /// * `index_parameter`: A user-defined parameter to control the mutation. This is eta_m in the
-    /// paper, and it is suggested its value to be in the [20, 100] range.
-    /// * `variable_probability`: The probability of mutating a parent variable.
-    ///
-    /// returns: `Result<PolynomialMutation, OError>`
-    pub fn new(index_parameter: f64, variable_probability: f64) -> Result<Self, OError> {
-        if !(0.0..=1.0).contains(&variable_probability) {
-            return Err(OError::MutationOperator(
-                "PolynomialMutation".to_string(),
-                format!(
-                    "The variable probability {} must be a number between 0 and 1",
-                    variable_probability
-                ),
-            ));
-        }
-        Ok(Self {
-            index_parameter,
-            variable_probability,
-        })
-    }
-
+impl PolynomialMutationArgs {
     /// Initialise the Polynomial mutation (PM) operator with the default parameters. With a
     /// distribution index or index parameter of 20 and variable probability equal 1 divided by
     /// the number of real variables in the problem (i.e. each variable will have the same
@@ -73,6 +46,44 @@ impl PolynomialMutation {
             index_parameter: 20.0,
             variable_probability,
         }
+    }
+}
+
+/// The Polynomial mutation (PM) operator.
+///
+/// Adapted from [Deb & Deb (2014)](https://dl.acm.org/doi/10.1504/IJAISC.2014.059280), full
+/// text available at <https://www.egr.msu.edu/~kdeb/papers/k2012016.pdf>
+pub struct PolynomialMutation {
+    /// The user-defined parameter to control the mutation.
+    index_parameter: f64,
+    /// The probability of mutating a parent variable.
+    variable_probability: f64,
+}
+
+impl PolynomialMutation {
+    /// Initialise the Polynomial mutation (PM) operator. This returns an error if the probability
+    /// is outside the [0, 1] range.
+    ///
+    /// # Arguments
+    ///
+    /// * `index_parameter`:
+    /// * `variable_probability`: The probability of mutating a parent variable.
+    ///
+    /// returns: `Result<PolynomialMutation, OError>`
+    pub fn new(args: PolynomialMutationArgs) -> Result<Self, OError> {
+        if !(0.0..=1.0).contains(&args.variable_probability) {
+            return Err(OError::MutationOperator(
+                "PolynomialMutation".to_string(),
+                format!(
+                    "The variable probability {} must be a number between 0 and 1",
+                    args.variable_probability
+                ),
+            ));
+        }
+        Ok(Self {
+            index_parameter: args.index_parameter,
+            variable_probability: args.variable_probability,
+        })
     }
 }
 
