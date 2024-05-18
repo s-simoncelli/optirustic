@@ -34,4 +34,8 @@ pub enum OError {
     SurvivalOperator(String, String),
     #[error("An error occurred when evaluating a solution: {0}")]
     Evaluation(String),
+    #[error("An error occurred when initialising {0}: {1}")]
+    AlgorithmInit(String, String),
+    #[error("An error occurred when running {0}: {1}")]
+    AlgorithmRun(String, String),
 }

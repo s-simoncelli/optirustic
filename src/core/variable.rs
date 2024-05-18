@@ -200,15 +200,15 @@ pub enum VariableType {
 }
 
 impl VariableType {
-    /// Get the initial value to set for a variable type.
+    /// Generate a new random variable value based on its type.
     ///
-    /// return: `VariableValue`.
-    pub(crate) fn initial_value(&self) -> VariableValue {
-        match self {
-            VariableType::Real(t) => VariableValue::Real(t.min_value),
-            VariableType::Integer(t) => VariableValue::Integer(t.min_value),
-            VariableType::Boolean(_) => VariableValue::Boolean(false),
-            VariableType::Choice(_) => VariableValue::Choice("NA".to_string()),
+    /// returns: `VariableValue`
+    pub fn generate_random_value(&self) -> VariableValue {
+        match &self {
+            VariableType::Real(v) => VariableValue::Real(v.generate()),
+            VariableType::Integer(v) => VariableValue::Integer(v.generate()),
+            VariableType::Boolean(v) => VariableValue::Boolean(v.generate()),
+            VariableType::Choice(v) => VariableValue::Choice(v.generate()),
         }
     }
 
@@ -271,29 +271,6 @@ pub enum VariableValue {
 }
 
 impl VariableValue {
-    /// Generate a new random variable value. This return an error if the variable name does not
-    /// exist in the problem.
-    ///
-    /// # Arguments
-    ///
-    /// * `name`: The name of the variable in the problem.
-    /// * `problem`: The problem being solved.
-    ///
-    /// returns: `VariableValue`
-    pub fn generate_random_value(
-        &self,
-        name: &str,
-        problem: &Problem,
-    ) -> Result<VariableValue, OError> {
-        let value = match problem.get_variable(name)? {
-            VariableType::Real(v) => VariableValue::Real(v.generate()),
-            VariableType::Integer(v) => VariableValue::Integer(v.generate()),
-            VariableType::Boolean(v) => VariableValue::Boolean(v.generate()),
-            VariableType::Choice(v) => VariableValue::Choice(v.generate()),
-        };
-        Ok(value)
-    }
-
     /// Check if the variable value matches the variable type set on the problem. This return an
     /// error if the variable name does not exist in the problem.
     ///

@@ -96,7 +96,7 @@ impl Individual {
     pub fn new(problem: Arc<Problem>) -> Self {
         let mut variable_values: HashMap<String, VariableValue> = HashMap::new();
         for (variable_name, var_type) in problem.variables() {
-            variable_values.insert(variable_name, var_type.initial_value());
+            variable_values.insert(variable_name, var_type.generate_random_value());
         }
 
         let mut objective_values: HashMap<String, f64> = HashMap::new();
@@ -241,6 +241,13 @@ impl Individual {
         true
     }
 
+    /// Ge all the variables.
+    ///
+    /// returns: `HashMap<String, VariableValue>`
+    pub fn variables(&self) -> HashMap<String, VariableValue> {
+        self.variable_values.clone()
+    }
+
     /// Ge the variable value by name. This return an error if the variable name does not exist.
     ///
     /// # Arguments
@@ -363,8 +370,21 @@ pub struct Population(pub Vec<Individual>);
 
 impl Population {
     /// Initialise a population with no individuals.
+    ///
+    /// returns: `Self`
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Initialise a population with some individuals.
+    ///
+    /// # Arguments
+    ///
+    /// * `individual`: The vector of individuals to add.
+    ///
+    /// returns: `Self`
+    pub fn new_with(individuals: Vec<Individual>) -> Self {
+        Self(individuals)
     }
 
     /// Get the population size.

@@ -168,20 +168,22 @@ impl BinaryComparisonOperator for CrowdedComparison {
                     None => {
                         return Err(OError::ComparisonOperator(
                             "CrowdedComparison".to_string(),
-                            "The crowding distance on the first individual does not exist"
-                                .to_string(),
+                            format!(
+                                "The crowding distance on the first individual {:?} does not exist",
+                                first_solution.variables()
+                            ),
                         ))
                     }
                     Some(r) => r.as_real()?,
                 };
                 let d2 = match second_solution.get_data("crowding_distance") {
-                    None => {
-                        return Err(OError::ComparisonOperator(
-                            "CrowdedComparison".to_string(),
-                            "The crowding distance on the second individual does not exist"
-                                .to_string(),
-                        ))
-                    }
+                    None => return Err(OError::ComparisonOperator(
+                        "CrowdedComparison".to_string(),
+                        format!(
+                            "The crowding distance on the second individual {:?} does not exist",
+                            second_solution.variables()
+                        ),
+                    )),
                     Some(r) => r.as_real()?,
                 };
 
