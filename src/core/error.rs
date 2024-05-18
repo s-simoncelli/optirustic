@@ -38,4 +38,6 @@ pub enum OError {
     AlgorithmInit(String, String),
     #[error("An error occurred when running {0}: {1}")]
     AlgorithmRun(String, String),
+    #[error("An error occurred when exporting the algorithm data: {0}")]
+    AlgorithmExport(String),
 }
