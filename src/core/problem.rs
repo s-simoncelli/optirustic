@@ -8,10 +8,14 @@ use serde::Serialize;
 use crate::core::{Constraint, Individual, Objective, ObjectiveDirection, OError, VariableType};
 
 /// The struct containing the results of the evaluation function. This is the output of
-/// [`Evaluator::evaluate`], the user-defined function should produce.
+/// [`Evaluator::evaluate`], the user-defined function should produce. When the algorithm generates
+/// a new population with new variables, its constraints and objectives must be evaluated to proceed
+/// with the next evolution.
 #[derive(Debug)]
 pub struct EvaluationResult {
+    /// The list of evaluated constraints.
     pub constraints: HashMap<String, f64>,
+    /// The list of evaluated objectives.
     pub objectives: HashMap<String, f64>,
 }
 
@@ -32,13 +36,29 @@ pub trait Evaluator: Sync + Send + Debug {
     ///
     /// ## Example
     /// ```
-    /// // access new variables to evaluate for the new individuals
+    /// use std::collections::HashMap;
     /// use std::error::Error;
-    /// use optirustic::core::{EvaluationResult, Individual};
-    /// fn evaluate(&self, individual: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
-    ///     todo!()
+    /// use optirustic::core::{EvaluationResult, Individual, Evaluator};
     ///
-    /// }
+    /// // solve a SCH problem with two objectives to minimise: x^2 and (x-2)^2. The problem has
+    /// // one variables named "x" and two objectives named "x^2" and "(x-2)^2".
+    /// #[derive(Debug)]
+    ///     struct UserEvaluator;
+    ///     impl Evaluator for UserEvaluator {
+    ///         fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+    ///             // access new variable to evaluate the objectives
+    ///             let x = i.get_variable_value("x")?.as_real()?;
+    ///             // assess the objectives
+    ///             let mut objectives = HashMap::new();
+    ///             objectives.insert("x^2".to_string(), x.powi(2));
+    ///             objectives.insert("(x-2)^2".to_string(), (x - 2.0).powi(2));
+    ///
+    ///             Ok(EvaluationResult {
+    ///                 constraints: HashMap::new(),
+    ///                 objectives,
+    ///             })
+    ///         }
+    ///     }
     /// ```
     fn evaluate(&self, individual: &Individual) -> Result<EvaluationResult, Box<dyn Error>>;
 }

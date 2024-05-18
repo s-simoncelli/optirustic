@@ -12,6 +12,7 @@ thiserror = "1.0.60"
 csv = "1.3.0" # TODO remove me
 rayon = "1.10.0"
 env_logger = "0.11.3"
+chrono = { version = "0.4.38", features = ["serde"] }
 
 [dev-dependencies]
 float-cmp = "0.9.0"

@@ -436,6 +436,13 @@ impl Population {
         }
         Self(population)
     }
+
+    /// Serialise the individuals for export.
+    ///
+    /// return: `Vec<IndividualExport>`
+    pub fn serialise(&self) -> Vec<IndividualExport> {
+        self.0.iter().map(|i| i.serialise()).collect()
+    }
 }
 
 pub trait Individuals<'a> {
