@@ -179,6 +179,9 @@ impl Individual {
                 name.to_string(),
             ));
         }
+        if value.is_nan() {
+            return Err(OError::NaN("objective".to_string(), name.to_string()));
+        }
         if let Some(x) = self.objective_values.get_mut(name) {
             *x = value;
         }
@@ -199,6 +202,9 @@ impl Individual {
                 "constrain".to_string(),
                 name.to_string(),
             ));
+        }
+        if value.is_nan() {
+            return Err(OError::NaN("constraint".to_string(), name.to_string()));
         }
         if let Some(x) = self.constraint_values.get_mut(name) {
             *x = value;

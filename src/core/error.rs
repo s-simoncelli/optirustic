@@ -40,4 +40,6 @@ pub enum OError {
     AlgorithmRun(String, String),
     #[error("An error occurred when exporting the algorithm data: {0}")]
     AlgorithmExport(String),
+    #[error("NaN detected when adding {0} {1}. This may be an error in the user-defined evaluation function")]
+    NaN(String, String),
 }
