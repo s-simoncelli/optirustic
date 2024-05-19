@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::core::{OError, Problem, VariableValue};
 
@@ -61,7 +61,7 @@ pub struct Individual {
     data: HashMap<String, VariableValue>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct IndividualExport {
     /// The value of the constraints.
     constraint_values: HashMap<String, f64>,

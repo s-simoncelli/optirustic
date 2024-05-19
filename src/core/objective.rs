@@ -1,9 +1,9 @@
 use std::fmt::{Display, Formatter};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Whether the objective should be minimised or maximised. Default is minimise.
-#[derive(Default, Clone, Debug, PartialOrd, PartialEq, Serialize)]
+#[derive(Default, Clone, Debug, PartialOrd, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ObjectiveDirection {
     #[default]
@@ -31,7 +31,7 @@ impl Display for ObjectiveDirection {
 ///  let o = Objective::new("Reduce cost", ObjectiveDirection::Minimise);
 ///  println!("{}", o);
 /// ```
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Objective {
     /// The objective name.
     name: String,

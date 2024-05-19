@@ -3,32 +3,40 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 
-use chrono::{DateTime, Local, Utc};
 use log::{debug, info};
 use rayon::prelude::*;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-use crate::algorithms::stopping_condition::StoppingConditionType;
-use crate::algorithms::StoppingCondition;
+use crate::algorithms::{StoppingCondition, StoppingConditionType};
 use crate::core::{Individual, IndividualExport, Population, Problem, ProblemExport};
 use crate::core::error::OError;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Debug)]
+/// The data with the elapsed time.
 pub struct Elapsed {
-    hours: i64,
-    minutes: i64,
-    seconds: i64,
+    hours: u64,
+    minutes: u64,
+    seconds: u64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Debug)]
 /// The struct used to export the algorithm data to JSON file.
+pub struct AlgorithmSerialisedExport {
+    pub problem: ProblemExport,
+    pub individuals: Vec<IndividualExport>,
+    pub generation: usize,
+    pub algorithm: String,
+    pub took: Elapsed,
+}
+
+#[derive(Debug)]
+/// The struct used to export the algorithm data.
 pub struct AlgorithmExport {
-    problem: ProblemExport,
-    individuals: Vec<IndividualExport>,
-    generation: usize,
-    started_at: DateTime<Local>,
-    algorithm: String,
-    took: Elapsed,
+    pub problem: Arc<Problem>,
+    pub individuals: Vec<Individual>,
+    pub generation: usize,
+    pub algorithm: String,
+    pub took: Elapsed,
 }
 
 /// The trait to use to implement an algorithm.
@@ -55,8 +63,8 @@ pub trait Algorithm {
 
     /// Get the time when the algorithm started.
     ///
-    /// return: `DateTime<Local>`.
-    fn start_time(&self) -> DateTime<Local>;
+    /// return: `Instant`.
+    fn start_time(&self) -> Instant;
 
     /// Return the stopping condition.
     ///
@@ -75,12 +83,12 @@ pub trait Algorithm {
 
     /// Get the elapsed hours, minutes and seconds since the start of the algorithm.
     ///
-    /// return: `[i64; 3]`.
-    fn elapsed(&self) -> [i64; 3] {
-        let duration = Local::now() - self.start_time();
-        let seconds = duration.num_seconds() % 60;
-        let minutes = (duration.num_seconds() / 60) % 60;
-        let hours = (duration.num_seconds() / 60) / 60;
+    /// return: `[u64; 3]`.
+    fn elapsed(&self) -> [u64; 3] {
+        let duration = self.start_time().elapsed();
+        let seconds = duration.as_secs() % 60;
+        let minutes = (duration.as_secs() / 60) % 60;
+        let hours = (duration.as_secs() / 60) / 60;
         [hours, minutes, seconds]
     }
 
@@ -88,10 +96,7 @@ pub trait Algorithm {
     ///
     /// return: `String`.
     fn elapsed_as_string(&self) -> String {
-        let duration = Local::now() - self.start_time();
-        let seconds = duration.num_seconds() % 60;
-        let minutes = (duration.num_seconds() / 60) % 60;
-        let hours = (duration.num_seconds() / 60) / 60;
+        let [hours, minutes, seconds] = self.elapsed();
         format!(
             "{:0>2} hours, {:0>2} minutes and {:0>2} seconds",
             hours, minutes, seconds
@@ -164,8 +169,10 @@ pub trait Algorithm {
         for name in problem.objective_names() {
             i.update_objective(&name, results.objectives[&name])?;
         }
-        for name in problem.constraint_names() {
-            i.update_constraint(&name, results.constraints[&name])?;
+        if let Some(constraints) = results.constraints {
+            for name in problem.constraint_names() {
+                i.update_constraint(&name, constraints[&name])?;
+            }
         }
         i.set_evaluated();
         Ok(())
@@ -182,9 +189,9 @@ pub trait Algorithm {
             info!("Generation #{}", self.generation());
             self.evolve()?;
             info!(
-                "Evolved generation #{} - Elapsed Time: {:?}",
+                "Evolved generation #{} - Elapsed Time: {}",
                 self.generation(),
-                Local::now() - self.start_time()
+                self.elapsed_as_string()
             );
 
             let cond = self.stopping_condition();
@@ -202,6 +209,24 @@ pub trait Algorithm {
         Ok(())
     }
 
+    /// Get the results of the run.
+    ///
+    /// return: `AlgorithmExport`.
+    fn get_results(&self) -> AlgorithmExport {
+        let [hours, minutes, seconds] = self.elapsed();
+        AlgorithmExport {
+            problem: self.problem(),
+            individuals: self.population().0,
+            generation: self.generation(),
+            algorithm: self.name(),
+            took: Elapsed {
+                hours,
+                minutes,
+                seconds,
+            },
+        }
+    }
+
     /// Save the algorithm data (individuals' objective, variables and constraints, the problem,
     /// ...) to a JSON file.
     ///
@@ -211,17 +236,16 @@ pub trait Algorithm {
     ///
     /// return `Result<(), OError>`
     fn save_to_json(&self, destination: &PathBuf) -> Result<(), OError> {
-        let elapsed = self.elapsed();
-        let export = AlgorithmExport {
+        let [hours, minutes, seconds] = self.elapsed();
+        let export = AlgorithmSerialisedExport {
             problem: self.problem().serialise(),
             individuals: self.population().serialise(),
             generation: self.generation(),
-            started_at: self.start_time(),
             algorithm: self.name(),
             took: Elapsed {
-                hours: elapsed[0],
-                minutes: elapsed[1],
-                seconds: elapsed[2],
+                hours,
+                minutes,
+                seconds,
             },
         };
         let data = serde_json::to_string_pretty(&export)

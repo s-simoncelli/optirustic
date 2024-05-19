@@ -1,9 +1,9 @@
 use std::fmt::{Display, Formatter};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Operator used to check a bounded constraint
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RelationalOperator {
     /// Value must equal the constraint value
     EqualTo,
@@ -35,7 +35,7 @@ pub enum RelationalOperator {
 ///   assert_eq!(c.is_met(10.1), true);
 ///   assert_eq!(c.is_met(3.11), false);
 /// ```
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Constraint {
     /// The constraint name.
     name: String,

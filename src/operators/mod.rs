@@ -7,4 +7,3 @@ pub mod comparison;
 pub mod crossover;
 pub mod mutation;
 pub mod selector;
-mod survival;

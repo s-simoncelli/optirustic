@@ -5,7 +5,7 @@ use std::sync::Arc;
 use rand::distributions::uniform::SampleUniform;
 use rand::prelude::{IteratorRandom, SliceRandom};
 use rand::Rng;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::core::{Individual, OError, Problem};
 
@@ -21,7 +21,7 @@ pub trait BoundedNumberTrait: SampleUniform + PartialOrd + Display + Clone {}
 impl<T: SampleUniform + PartialOrd + Display + Clone> BoundedNumberTrait for T {}
 
 /// A number between a lower and upper bound.
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BoundedNumber<N: BoundedNumberTrait> {
     /// The variable name
     name: String,
@@ -101,7 +101,7 @@ impl<N: BoundedNumberTrait> Display for BoundedNumber<N> {
 }
 
 /// A boolean variable.
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Boolean {
     /// The variable name.
     name: String,
@@ -141,7 +141,7 @@ impl Variable<bool> for Boolean {
 }
 
 /// A variable choice.
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Choice {
     /// The variable name.
     name: String,
@@ -186,7 +186,7 @@ impl Variable<String> for Choice {
 }
 
 /// The types of variables to set on a problem.
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum VariableType {
     /// A continuous bounded variable (f64)
@@ -257,7 +257,7 @@ pub trait VariableValueGenerator {
 }
 
 /// The value of a variable to set on an individual.
-#[derive(Clone, PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum VariableValue {
     /// The value for a floating-point number. This is a f64.

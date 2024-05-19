@@ -3,7 +3,7 @@ use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 
 use log::info;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::core::{Constraint, Individual, Objective, ObjectiveDirection, OError, VariableType};
 
@@ -13,8 +13,8 @@ use crate::core::{Constraint, Individual, Objective, ObjectiveDirection, OError,
 /// with the next evolution.
 #[derive(Debug)]
 pub struct EvaluationResult {
-    /// The list of evaluated constraints.
-    pub constraints: HashMap<String, f64>,
+    /// The list of evaluated constraints. This is optional for unconstrained problems.
+    pub constraints: Option<HashMap<String, f64>>,
     /// The list of evaluated objectives.
     pub objectives: HashMap<String, f64>,
 }
@@ -54,7 +54,7 @@ pub trait Evaluator: Sync + Send + Debug {
     ///             objectives.insert("(x-2)^2".to_string(), (x - 2.0).powi(2));
     ///
     ///             Ok(EvaluationResult {
-    ///                 constraints: HashMap::new(),
+    ///                 constraints: None,
     ///                 objectives,
     ///             })
     ///         }
@@ -63,7 +63,7 @@ pub trait Evaluator: Sync + Send + Debug {
     fn evaluate(&self, individual: &Individual) -> Result<EvaluationResult, Box<dyn Error>>;
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ProblemExport {
     /// The problem objectives.
     objectives: HashMap<String, Objective>,
@@ -337,6 +337,130 @@ impl Problem {
             number_of_constraints: self.number_of_constraints(),
             number_of_variables: self.number_of_variables(),
         }
+    }
+}
+
+pub mod builtin_problems {
+    use std::collections::HashMap;
+    use std::error::Error;
+
+    use crate::core::{
+        BoundedNumber, EvaluationResult, Evaluator, Individual, Objective, ObjectiveDirection,
+        OError, Problem, VariableType,
+    };
+
+    /// The Schaffer’s study (SCH) problem.
+    pub fn sch() -> Result<Problem, OError> {
+        let objectives = vec![
+            Objective::new("x^2", ObjectiveDirection::Minimise),
+            Objective::new("(x-2)^2", ObjectiveDirection::Minimise),
+        ];
+        let variables = vec![VariableType::Real(BoundedNumber::new(
+            "x", -1000.0, 1000.0,
+        )?)];
+
+        #[derive(Debug)]
+        struct UserEvaluator;
+        impl Evaluator for UserEvaluator {
+            fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+                let x = i.get_variable_value("x")?.as_real()?;
+                let mut objectives = HashMap::new();
+                objectives.insert("x^2".to_string(), x.powi(2));
+                objectives.insert("(x-2)^2".to_string(), (x - 2.0).powi(2));
+                Ok(EvaluationResult {
+                    constraints: None,
+                    objectives,
+                })
+            }
+        }
+
+        let e = Box::new(UserEvaluator);
+        Problem::new(objectives, variables, None, e)
+    }
+
+    /// The Fonseca and Fleming’s study (FON) problem.
+    pub fn fon() -> Result<Problem, OError> {
+        let objectives = vec![
+            Objective::new("f1", ObjectiveDirection::Minimise),
+            Objective::new("f2", ObjectiveDirection::Minimise),
+        ];
+        let variables = vec![
+            VariableType::Real(BoundedNumber::new("x1", -4.0, 4.0)?),
+            VariableType::Real(BoundedNumber::new("x2", -4.0, 4.0)?),
+            VariableType::Real(BoundedNumber::new("x3", -4.0, 4.0)?),
+        ];
+
+        #[derive(Debug)]
+        struct UserEvaluator;
+        impl Evaluator for UserEvaluator {
+            fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+                let mut x: Vec<f64> = Vec::new();
+                for var_name in ["x1", "x2", "x3"] {
+                    x.push(i.get_variable_value(var_name)?.as_real()?);
+                }
+                let mut objectives = HashMap::new();
+
+                let mut exp_arg1 = 0.0;
+                let mut exp_arg2 = 0.0;
+                for x_val in x {
+                    exp_arg1 += (x_val - 1.0 / 3.0_f64.sqrt()).powi(2);
+                    exp_arg2 += (x_val + 1.0 / 3.0_f64.sqrt()).powi(2);
+                }
+                objectives.insert("f1".to_string(), 1.0 - f64::exp(-exp_arg1));
+                objectives.insert("f2".to_string(), 1.0 - f64::exp(-exp_arg2));
+                Ok(EvaluationResult {
+                    constraints: None,
+                    objectives,
+                })
+            }
+        }
+
+        let e = Box::new(UserEvaluator);
+        Problem::new(objectives, variables, None, e)
+    }
+
+    /// Problem from Zitzler et al. (2000) with 30 variables.
+    pub fn ztd1() -> Result<Problem, OError> {
+        let n: usize = 30;
+        let objectives = vec![
+            Objective::new("f1", ObjectiveDirection::Minimise),
+            Objective::new("f2", ObjectiveDirection::Minimise),
+        ];
+        let mut variables: Vec<VariableType> = Vec::new();
+        for i in 0..=n {
+            variables.push(VariableType::Real(BoundedNumber::new(
+                format!("x{i}").as_str(),
+                -1.0,
+                1.0,
+            )?));
+        }
+
+        #[derive(Debug)]
+        struct UserEvaluator {
+            /// The number of variables with n > 1
+            n: usize,
+        }
+        impl Evaluator for UserEvaluator {
+            fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+                let x1 = i.get_variable_value("x1")?.as_real()?;
+
+                let a = (2..=self.n)
+                    .map(|xi| i.get_variable_value(format!("x{xi}").as_str())?.as_real())
+                    .sum::<Result<f64, _>>()?;
+                let g = 1.0 + 9.0 * a / (self.n as f64 - 1.0);
+
+                let mut objectives = HashMap::new();
+                objectives.insert("f1".to_string(), x1);
+                objectives.insert("f2".to_string(), g * (1.0 - f64::sqrt(x1 / g)));
+                Ok(EvaluationResult {
+                    constraints: None,
+                    objectives,
+                })
+            }
+        }
+
+        let e = Box::new(UserEvaluator { n: 30 });
+        Problem::new(objectives, variables, None, e)
     }
 }
 
