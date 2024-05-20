@@ -1,19 +1,20 @@
+use std::fmt::{Display, Formatter};
 use std::ops::Rem;
 use std::sync::Arc;
+use std::time::Instant;
 
-use chrono::{DateTime, Local};
 use log::{debug, info};
 
-use crate::algorithms::{Algorithm, StoppingConditionType};
-use crate::core::{Individual, Individuals, OError, Population, Problem, VariableValue};
-use crate::core::individual::IndividualsMut;
+use crate::algorithms::{Algorithm, ExportHistory, StoppingConditionType};
+use crate::core::{
+    Individual, Individuals, IndividualsMut, OError, Population, Problem, VariableValue,
+};
 use crate::core::utils::{argsort, vector_max, vector_min};
 use crate::operators::{
-    BinaryComparisonOperator, Crossover, Mutation, ParetoConstrainedDominance, PolynomialMutation,
-    PolynomialMutationArgs, PreferredSolution, Selector, SimulatedBinaryCrossover,
-    SimulatedBinaryCrossoverArgs, TournamentSelector,
+    BinaryComparisonOperator, Crossover, CrowdedComparison, Mutation, ParetoConstrainedDominance,
+    PolynomialMutation, PolynomialMutationArgs, PreferredSolution, Selector,
+    SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
 };
-use crate::operators::comparison::CrowdedComparison;
 
 /// Input arguments for the NSGA2 algorithm.
 pub struct NSGA2Arg {
@@ -37,6 +38,10 @@ pub struct NSGA2Arg {
     /// using threads. If the evaluation function takes a long time to run and return the updated
     /// values, it is advisable to set this to `true`. This defaults to `true`.
     pub parallel: Option<bool>,
+    /// The options to configure the individual's history export. When provided, the algorithm will
+    /// save objectives, constraints and solutions to a file each time the generation increases by
+    /// a given step. This is useful to track convergence and inspect an algorithm evolution.
+    pub export_history: Option<ExportHistory>,
 }
 
 /// The Non-dominated Sorting Genetic Algorithm (NSGA2).
@@ -67,9 +72,17 @@ pub struct NSGA2 {
     /// The stopping condition.
     stopping_condition: StoppingConditionType,
     /// The time when the algorithm started.
-    start_time: DateTime<Local>,
+    start_time: Instant,
+    /// The configuration struct to export the algorithm history.
+    export_history: Option<ExportHistory>,
     /// Whether the evaluation should run using threads
     parallel: bool,
+}
+
+impl Display for NSGA2 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.name().as_str())
+    }
 }
 
 impl NSGA2 {
@@ -143,8 +156,9 @@ impl NSGA2 {
             mutation_operator,
             generation: 0,
             stopping_condition: args.stopping_condition,
-            start_time: Local::now(),
+            start_time: Instant::now(),
             parallel: args.parallel.unwrap_or(true),
+            export_history: args.export_history,
         })
     }
 
@@ -168,7 +182,7 @@ impl NSGA2 {
     /// returns: `Result<NonDominatedSortResults, OError>`.
     pub fn fast_non_dominated_sort(
         individuals: &mut [Individual],
-    ) -> Result<crate::algorithms::utils::NonDominatedSortResults, OError> {
+    ) -> Result<NonDominatedSortResults, OError> {
         if individuals.len() < 2 {
             return Err(OError::SurvivalOperator(
                 "fast non-dominated sort".to_string(),
@@ -262,7 +276,7 @@ impl NSGA2 {
             fronts.push(sub_front);
         }
 
-        Ok(crate::algorithms::utils::NonDominatedSortResults {
+        Ok(NonDominatedSortResults {
             fronts,
             front_indexes: all_fronts,
             domination_counter: e_domination_counter,
@@ -474,20 +488,24 @@ impl Algorithm for NSGA2 {
         "NSGA2".to_string()
     }
 
-    fn start_time(&self) -> DateTime<Local> {
-        self.start_time
+    fn start_time(&self) -> &Instant {
+        &self.start_time
     }
 
-    fn stopping_condition(&self) -> StoppingConditionType {
-        self.stopping_condition.clone()
+    fn stopping_condition(&self) -> &StoppingConditionType {
+        &self.stopping_condition
     }
 
-    fn population(&self) -> Population {
-        self.population.clone()
+    fn population(&self) -> &Population {
+        &self.population
     }
 
     fn problem(&self) -> Arc<Problem> {
         self.problem.clone()
+    }
+
+    fn export_history(&self) -> Option<&ExportHistory> {
+        return self.export_history.as_ref();
     }
 }
 
@@ -497,7 +515,7 @@ pub struct NonDominatedSortResults {
     /// the primary non-dominated front with solutions of rank 1); each child vector contains
     /// the individuals belonging to that front.
     pub fronts: Vec<Vec<Individual>>,
-    /// This is [`crate::algorithms::utils::NonDominatedSortResults::fronts`], but the individuals are given as indexes
+    /// This is [`NonDominatedSortResults::fronts`], but the individuals are given as indexes
     /// instead of references. Each index refers to the vector of individuals passed to
     /// [`fast_non_dominated_sort`].
     pub front_indexes: Vec<Vec<usize>>,
@@ -512,12 +530,15 @@ mod test {
 
     use float_cmp::assert_approx_eq;
 
-    use crate::algorithms::NSGA2;
+    use crate::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
     use crate::core::{
         BoundedNumber, Individual, Individuals, Objective, ObjectiveDirection, Problem,
         VariableType, VariableValue,
     };
-    use crate::core::utils::dummy_evaluator;
+    use crate::core::problem::builtin_problems::{sch, ztd1, ztd2};
+    use crate::core::utils::{check_value_in_range, dummy_evaluator};
+
+    const BOUND_TOL: f64 = 1.0 / 100.0;
 
     /// Create the individuals for a `N`-objective problem, where `N` is the number of items in
     /// the arrays of `objective_values`.
@@ -868,6 +889,147 @@ mod test {
                 VariableValue::Real(value).as_real().unwrap(),
                 epsilon = 0.001
             );
+        }
+    }
+
+    #[test]
+    /// Test problem 1 from Deb et al. (2002). Optional solution x in [0; 2]
+    fn test_sch_problem() {
+        let problem = sch().unwrap();
+        let args = NSGA2Arg {
+            number_of_individuals: 10,
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
+            problem,
+            crossover_operator_options: None,
+            mutation_operator_options: None,
+            parallel: Some(false),
+            export_history: None,
+        };
+        let mut algo = NSGA2::new(args).unwrap();
+        algo.run().unwrap();
+        let results = algo.get_results();
+
+        let bounds = 0.0 - BOUND_TOL..2.0 + BOUND_TOL;
+        let invalid_x = check_value_in_range(&results.get_real_variables("x").unwrap(), &bounds);
+        if !invalid_x.is_empty() {
+            panic!("Some variables are outside the bounds: {:?}", invalid_x);
+        }
+    }
+
+    #[test]
+    /// Test the ZTD1 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
+    /// x2 to x30 = 0.
+    fn test_ztd1_problem() {
+        let problem = ztd1(30).unwrap();
+        let args = NSGA2Arg {
+            number_of_individuals: 10,
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
+            problem,
+            crossover_operator_options: None,
+            mutation_operator_options: None,
+            parallel: Some(false),
+            export_history: None,
+        };
+        let mut algo = NSGA2::new(args).unwrap();
+        algo.run().unwrap();
+        let results = algo.get_results();
+
+        let x_bounds = 0.0 - BOUND_TOL..1.0 + BOUND_TOL;
+        let invalid_x1 =
+            check_value_in_range(&results.get_real_variables("x1").unwrap(), &x_bounds);
+        if !invalid_x1.is_empty() {
+            panic!("Some X1 variables are outside the bounds: {:?}", invalid_x1);
+        }
+
+        for xi in 2..=30 {
+            let var_name = format!("x{xi}");
+            let var_values = results.get_real_variables(&var_name).unwrap();
+            let invalid_x = check_value_in_range(&var_values, &x_bounds);
+            if !invalid_x.is_empty() {
+                panic!(
+                    "Found {} {} solutions ({:?}) outside the bounds {:?}",
+                    invalid_x.len(),
+                    var_name,
+                    invalid_x,
+                    x_bounds
+                );
+            }
+        }
+        // let x_other_bounds = 0.0 - TOL..0.0 + TOL;
+        // for xi in 2..=30 {
+        //     let var_values = results
+        //         .get_real_variables(format!("x{xi}").as_str())
+        //         .unwrap();
+        //     let (x_other_outside_bounds, breached_range, b_type) =
+        //         check_exact_value(&var_values, &x_bounds, &x_other_bounds, 5);
+        //     if !x_other_outside_bounds.is_empty() {
+        //         panic!(
+        //             "Found {} X2 to X30 solutions ({:?}) outside the {} bounds {:?}",
+        //             x_other_outside_bounds.len(),
+        //             x_other_outside_bounds,
+        //             b_type,
+        //             breached_range
+        //         );
+        //     }
+        // }
+    }
+
+    #[test]
+    /// Test the ZTD2 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
+    /// x2 to x30 = 0.
+    fn test_ztd2_problem() {
+        let problem = ztd2(30).unwrap();
+        let args = NSGA2Arg {
+            number_of_individuals: 10,
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
+            problem,
+            crossover_operator_options: None,
+            mutation_operator_options: None,
+            parallel: Some(false),
+            export_history: None,
+        };
+        let mut algo = NSGA2::new(args).unwrap();
+        algo.run().unwrap();
+        let results = algo.get_results();
+
+        let x_bounds = 0.0 - BOUND_TOL..1.0 + BOUND_TOL;
+        let invalid_x1 =
+            check_value_in_range(&results.get_real_variables("x1").unwrap(), &x_bounds);
+        if !invalid_x1.is_empty() {
+            panic!(
+                "Found {} X1 variables outside the bounds {:?}",
+                invalid_x1.len(),
+                invalid_x1
+            );
+        }
+
+        // let x_other_bounds = 0.0 - TOL..0.0 + TOL;
+        for xi in 2..=30 {
+            let var_name = format!("x{xi}");
+            let var_values = results.get_real_variables(&var_name).unwrap();
+            let invalid_x = check_value_in_range(&var_values, &x_bounds);
+            if !invalid_x.is_empty() {
+                panic!(
+                    "Found {} {} solutions ({:?}) outside the bounds {:?}",
+                    invalid_x.len(),
+                    var_name,
+                    invalid_x,
+                    x_bounds
+                );
+            }
+
+            // let (x_other_outside_bounds, breached_range, b_type) =
+            //     check_exact_value(&var_values, &x_bounds, &x_other_bounds, 3);
+            // if !x_other_outside_bounds.is_empty() {
+            //     panic!(
+            //         "Found {} {} solutions ({:?}) outside the {} bounds {:?}",
+            //         x_other_outside_bounds.len(),
+            //         var_name,
+            //         x_other_outside_bounds,
+            //         b_type,
+            //         breached_range
+            //     );
+            // }
         }
     }
 }

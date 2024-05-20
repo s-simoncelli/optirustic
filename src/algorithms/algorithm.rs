@@ -48,6 +48,23 @@ pub struct AlgorithmExport {
     pub took: Elapsed,
 }
 
+impl AlgorithmExport {
+    /// Get the numbers stored in a real variable in all individuals. This returns an error if the
+    /// variable does not exist or is not a real type.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The variable name.
+    ///
+    /// returns: `Result<f64, OError>`
+    pub fn get_real_variables(&self, name: &str) -> Result<Vec<f64>, OError> {
+        self.individuals
+            .iter()
+            .map(|i| i.get_real_value(name))
+            .collect()
+    }
+}
+
 /// A struct with the options to configure the individual's history export. Export may be enabled in
 /// an algorithm to save objectives, constraints and solutions to a file each time the generation
 /// counter in [`Algorithm::generation`] increases by a certain step provided in `generation_step`.

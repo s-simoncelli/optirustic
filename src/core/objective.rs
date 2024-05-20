@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 
 /// Whether the objective should be minimised or maximised. Default is minimise.
 #[derive(Default, Clone, Debug, PartialOrd, PartialEq, Serialize, Deserialize)]
-#[serde(untagged)]
 pub enum ObjectiveDirection {
     #[default]
     /// Minimise an objective.
