@@ -1,6 +1,6 @@
 pub use constraint::{Constraint, RelationalOperator};
 pub use error::OError;
-pub use individual::{Individual, IndividualExport, Individuals, Population};
+pub use individual::{Individual, IndividualExport, Individuals, IndividualsMut, Population};
 pub use objective::{Objective, ObjectiveDirection};
 pub use problem::{EvaluationResult, Evaluator, Problem, ProblemExport};
 pub use variable::{Boolean, BoundedNumber, Choice, Variable, VariableType, VariableValue};

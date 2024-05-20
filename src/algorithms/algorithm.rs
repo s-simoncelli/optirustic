@@ -33,8 +33,8 @@ pub struct AlgorithmSerialisedExport {
     pub took: Elapsed,
 }
 
-#[derive(Debug)]
 /// The struct used to export the algorithm data.
+#[derive(Debug)]
 pub struct AlgorithmExport {
     /// The problem.
     pub problem: Arc<Problem>,
@@ -46,6 +46,44 @@ pub struct AlgorithmExport {
     pub algorithm: String,
     /// The time the algorithm took to reach the current generation.
     pub took: Elapsed,
+}
+
+/// A struct with the options to configure the individual's history export. Export may be enabled in
+/// an algorithm to save objectives, constraints and solutions to a file each time the generation
+/// counter in [`Algorithm::generation`] increases by a certain step provided in `generation_step`.
+/// Exporting history may be useful to track convergence and inspect an algorithm evolution.
+pub struct ExportHistory {
+    /// Export the algorithm data each time the generation counter in [`Algorithm::generation`]
+    /// increases by the provided step.
+    generation_step: usize,
+    /// Serialise the algorithm history and export the results to a JSON file in the given folder.
+    destination: PathBuf,
+}
+
+impl ExportHistory {
+    /// Initialise the export history configuration. This returns an error if the destination folder
+    /// does not exists.
+    ///
+    /// # Arguments
+    ///
+    /// * `generation_step`: export the algorithm data each time the generation counter in a genetic
+    //  algorithm increases by the provided step.
+    /// * `destination`: serialise the algorithm history and export the results to a JSON file in
+    /// the given folder.
+    ///
+    /// returns: `Result<ExportHistory, OError>`
+    pub fn new(generation_step: usize, destination: &PathBuf) -> Result<Self, OError> {
+        if !destination.exists() {
+            return Err(OError::Generic(format!(
+                "The destination folder '{:?}' does not exist",
+                destination
+            )));
+        }
+        Ok(Self {
+            generation_step,
+            destination: destination.to_owned(),
+        })
+    }
 }
 
 impl Display for AlgorithmExport {
@@ -82,23 +120,28 @@ pub trait Algorithm: Display {
 
     /// Get the time when the algorithm started.
     ///
-    /// return: `Instant`.
-    fn start_time(&self) -> Instant;
+    /// return: `&Instant`.
+    fn start_time(&self) -> &Instant;
 
     /// Return the stopping condition.
     ///
-    /// return: `StoppingConditionType`.
-    fn stopping_condition(&self) -> StoppingConditionType;
+    /// return: `&StoppingConditionType`.
+    fn stopping_condition(&self) -> &StoppingConditionType;
 
     /// Return the evolved population.
     ///
-    /// return: `Population`.
-    fn population(&self) -> Population;
+    /// return: `&Population`.
+    fn population(&self) -> &Population;
 
     /// Return the problem.
     ///
     /// return: `Arc<Problem>`.
     fn problem(&self) -> Arc<Problem>;
+
+    /// Return the history export configuration, if provided by the algorithm.
+    ///
+    /// return: `Option<&ExportHistory>`.
+    fn export_history(&self) -> Option<&ExportHistory>;
 
     /// Get the elapsed hours, minutes and seconds since the start of the algorithm.
     ///
@@ -221,8 +264,10 @@ pub trait Algorithm: Display {
     fn run(&mut self) -> Result<(), OError> {
         info!("Starting {}", self.name());
         self.initialise()?;
+        let mut history_gen_step: usize = 0;
 
         loop {
+            // Evolve population
             info!("Generation #{}", self.generation());
             self.evolve()?;
             info!(
@@ -231,6 +276,17 @@ pub trait Algorithm: Display {
                 self.elapsed_as_string()
             );
 
+            // Export history
+            if let Some(export) = self.export_history() {
+                if history_gen_step >= export.generation_step {
+                    self.save_to_json(&export.destination)?;
+                    history_gen_step = 0;
+                } else {
+                    history_gen_step += 1;
+                }
+            }
+
+            // Termination
             let cond = self.stopping_condition();
             let terminate = match &cond {
                 StoppingConditionType::MaxDuration(t) => t.is_met(Instant::now().elapsed()),
@@ -253,7 +309,7 @@ pub trait Algorithm: Display {
         let [hours, minutes, seconds] = self.elapsed();
         AlgorithmExport {
             problem: self.problem(),
-            individuals: self.population().0,
+            individuals: self.population().0.clone(),
             generation: self.generation(),
             algorithm: self.name(),
             took: Elapsed {

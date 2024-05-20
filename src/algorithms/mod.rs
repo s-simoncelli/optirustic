@@ -1,4 +1,4 @@
-pub use algorithm::Algorithm;
+pub use algorithm::{Algorithm, AlgorithmExport, AlgorithmSerialisedExport, ExportHistory};
 pub use nsga2::{NSGA2, NSGA2Arg};
 pub use stopping_condition::{
     MaxDuration, MaxGeneration, StoppingCondition, StoppingConditionType,
