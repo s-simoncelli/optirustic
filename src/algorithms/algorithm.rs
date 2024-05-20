@@ -1,4 +1,5 @@
-use std::fs;
+use std::{fmt, fs};
+use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
@@ -14,8 +15,11 @@ use crate::core::error::OError;
 #[derive(Serialize, Deserialize, Debug)]
 /// The data with the elapsed time.
 pub struct Elapsed {
+    /// Elapsed hours.
     hours: u64,
+    /// Elapsed minutes.
     minutes: u64,
+    /// Elapsed seconds.
     seconds: u64,
 }
 
@@ -32,15 +36,30 @@ pub struct AlgorithmSerialisedExport {
 #[derive(Debug)]
 /// The struct used to export the algorithm data.
 pub struct AlgorithmExport {
+    /// The problem.
     pub problem: Arc<Problem>,
+    /// The individuals with the solutions, constraint and objective values at the current generation.
     pub individuals: Vec<Individual>,
+    /// The generation number.
     pub generation: usize,
+    /// The algorithm name used to evolve the individuals.
     pub algorithm: String,
+    /// The time the algorithm took to reach the current generation.
     pub took: Elapsed,
 }
 
+impl Display for AlgorithmExport {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{} at {} generations, took {} hours, {} minutes and {} seconds",
+            self.algorithm, self.generation, self.took.hours, self.took.minutes, self.took.seconds
+        )
+    }
+}
+
 /// The trait to use to implement an algorithm.
-pub trait Algorithm {
+pub trait Algorithm: Display {
     /// Initialise the algorithm.
     ///
     /// return: `Result<(), OError>`
@@ -83,7 +102,7 @@ pub trait Algorithm {
 
     /// Get the elapsed hours, minutes and seconds since the start of the algorithm.
     ///
-    /// return: `[u64; 3]`.
+    /// return: `[u64; 3]`. An array with the number of elapsed hours, minutes and seconds.
     fn elapsed(&self) -> [u64; 3] {
         let duration = self.start_time().elapsed();
         let seconds = duration.as_secs() % 60;
@@ -167,10 +186,28 @@ pub trait Algorithm {
         // update the objectives and constraints for the individual
         debug!("Updating individual #{idx} objectives and constraints");
         for name in problem.objective_names() {
-            i.update_objective(&name, results.objectives[&name])?;
+            if !results.objectives.contains_key(&name) {
+                return Err(OError::Evaluation(format!(
+                    "The evaluation function did non return the value for the objective named '{}'",
+                    name
+                )));
+            };
+            let v = results.objectives[&name];
+            let sign = match problem.is_objective_minimised(&name)? {
+                true => 1.0,
+                false => -1.0,
+            };
+            i.update_objective(&name, sign * v)?;
         }
         if let Some(constraints) = results.constraints {
             for name in problem.constraint_names() {
+                if !constraints.contains_key(&name) {
+                    return Err(OError::Evaluation(format!(
+                        "The evaluation function did non return the value for the constraints named '{}'",
+                        name
+                    )));
+                };
+
                 i.update_constraint(&name, constraints[&name])?;
             }
         }
