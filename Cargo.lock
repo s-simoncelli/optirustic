@@ -314,6 +314,7 @@ dependencies = [
  "float-cmp",
  "log",
  "rand",
+ "rand_chacha",
  "rayon",
  "serde",
  "serde_json",

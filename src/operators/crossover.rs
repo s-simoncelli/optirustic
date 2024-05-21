@@ -1,5 +1,5 @@
+use rand::{Rng, RngCore};
 use rand::prelude::SliceRandom;
-use rand::Rng;
 
 use crate::core::{Individual, OError, VariableType, VariableValue};
 
@@ -21,12 +21,14 @@ pub trait Crossover {
     ///
     /// * `parent1`: The first parent to use for mating.
     /// * `parent2`: The second parent to use for mating.
+    /// * `rng`: The random number generator.
     ///
     /// returns: `Result<CrossoverChildren, OError>`.
     fn generate_offsprings(
         &self,
         parent1: &Individual,
         parent2: &Individual,
+        rng: &mut dyn RngCore,
     ) -> Result<CrossoverChildren, OError>;
 }
 
@@ -84,13 +86,17 @@ impl Default for SimulatedBinaryCrossoverArgs {
 /// Objective, Constraint, ObjectiveDirection, RelationalOperator, EvaluationResult, Evaluator};
 /// use optirustic::operators::{Crossover, SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs};
 /// use std::sync::Arc;
+/// use rand_chacha::ChaCha8Rng;
+/// use rand::SeedableRng;
 ///
 /// fn main() -> Result<(), Box<dyn Error>> {
 ///     // create a new one-variable problem
 ///     let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
+///
+///
 ///     let variables = vec![VariableType::Real(BoundedNumber::new("var1", 0.0, 1000.0)?)];
 ///     let constraints = vec![Constraint::new("c1", RelationalOperator::EqualTo, 1.0)];
-///
+///     
 ///     // dummy evaluator function
 ///     #[derive(Debug)]
 ///     struct UserEvaluator;
@@ -117,7 +123,8 @@ impl Default for SimulatedBinaryCrossoverArgs {
 ///         variable_probability:0.5
 ///     };
 ///     let sbx = SimulatedBinaryCrossover::new(parameters)?;
-///     let out = sbx.generate_offsprings(&a, &b)?;
+///     let mut rng = ChaCha8Rng::from_seed(Default::default());
+///     let out = sbx.generate_offsprings(&a, &b, &mut rng)?;
 ///     println!("{} - {}", out.child1, out.child2);
 ///     Ok(())
 /// }
@@ -202,10 +209,10 @@ impl Crossover for SimulatedBinaryCrossover {
         &self,
         parent1: &Individual,
         parent2: &Individual,
+        rng: &mut dyn RngCore,
     ) -> Result<CrossoverChildren, OError> {
         let mut child1 = parent1.clone_variables();
         let mut child2 = parent2.clone_variables();
-        let mut rng = rand::thread_rng();
         let problem = parent1.problem();
 
         // return error if variable is not Real
@@ -257,7 +264,7 @@ impl Crossover for SimulatedBinaryCrossover {
                     new_v2 = f64::min(f64::max(new_v2, y_lower), y_upper);
 
                     // randomly swap the values
-                    if matches!([0, 1].choose(&mut rng).unwrap(), 0) {
+                    if matches!([0, 1].choose(rng).unwrap(), 0) {
                         (new_v1, new_v2) = (new_v2, new_v1);
                     }
 

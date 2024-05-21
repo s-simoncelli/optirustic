@@ -1,7 +1,25 @@
 use std::error::Error;
 use std::ops::Range;
 
+use rand::{RngCore, SeedableRng};
+use rand_chacha::ChaCha8Rng;
+
 use crate::core::{EvaluationResult, Evaluator, Individual, OError};
+
+/// Get the random number generator. If no seed is provided, this randomly generated.
+///
+/// # Arguments
+///
+/// * `seed`: The optional seed number.
+///
+/// returns: `Box<dyn RngCore>`
+pub(crate) fn get_rng(seed: Option<u64>) -> Box<dyn RngCore> {
+    let rng = match seed {
+        None => ChaCha8Rng::from_seed(Default::default()),
+        Some(s) => ChaCha8Rng::seed_from_u64(s),
+    };
+    Box::new(rng)
+}
 
 /// Return a dummy evaluator. This is only used in tests.
 ///
@@ -107,6 +125,9 @@ pub(crate) fn check_exact_value(
     loose_range: &Range<f64>,
     max_outside_strict_range: usize,
 ) -> (Vec<f64>, Range<f64>, String) {
+    if strict_range == loose_range {
+        panic!("Bounds are identical");
+    }
     let v_outside = check_value_in_range(vector, strict_range);
 
     if v_outside.len() > max_outside_strict_range {
