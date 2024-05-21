@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{Rng, RngCore};
 
 use crate::core::{Individual, OError, Problem, VariableType, VariableValue};
 
@@ -9,9 +9,14 @@ pub trait Mutation {
     /// # Arguments
     ///
     /// * `individual`: The individual to mutate.
+    /// * `rng`: The random number generator.
     ///
     /// returns: `Result<Individual, OError>`. The mutated individual.
-    fn mutate_offsprings(&self, individual: &Individual) -> Result<Individual, OError>;
+    fn mutate_offsprings(
+        &self,
+        individual: &Individual,
+        rng: &mut dyn RngCore,
+    ) -> Result<Individual, OError>;
 }
 
 /// Input arguments for [`PolynomialMutation`].
@@ -88,10 +93,13 @@ impl PolynomialMutation {
 }
 
 impl Mutation for PolynomialMutation {
-    fn mutate_offsprings(&self, individual: &Individual) -> Result<Individual, OError> {
+    fn mutate_offsprings(
+        &self,
+        individual: &Individual,
+        rng: &mut dyn RngCore,
+    ) -> Result<Individual, OError> {
         let mut mutated_individual = individual.clone_variables();
         let problem = individual.problem();
-        let mut rng = rand::thread_rng();
 
         // return error if variable is not Real
         if !problem.variables().iter().all(|(_, v)| v.is_real()) {
