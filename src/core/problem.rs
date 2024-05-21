@@ -343,6 +343,7 @@ impl Problem {
 pub mod builtin_problems {
     use std::collections::HashMap;
     use std::error::Error;
+    use std::f64::consts::PI;
 
     use crate::core::{
         BoundedNumber, EvaluationResult, Evaluator, Individual, Objective, ObjectiveDirection,
@@ -430,7 +431,7 @@ pub mod builtin_problems {
             Objective::new("f2", ObjectiveDirection::Minimise),
         ];
         let mut variables: Vec<VariableType> = Vec::new();
-        for i in 0..=n {
+        for i in 1..=n {
             variables.push(VariableType::Real(BoundedNumber::new(
                 format!("x{i}").as_str(),
                 0.0,
@@ -462,7 +463,7 @@ pub mod builtin_problems {
             }
         }
 
-        let e = Box::new(UserEvaluator { n: 30 });
+        let e = Box::new(UserEvaluator { n });
         Problem::new(objectives, variables, None, e)
     }
 
@@ -477,7 +478,7 @@ pub mod builtin_problems {
             Objective::new("f2", ObjectiveDirection::Minimise),
         ];
         let mut variables: Vec<VariableType> = Vec::new();
-        for i in 0..=n {
+        for i in 1..=n {
             variables.push(VariableType::Real(BoundedNumber::new(
                 format!("x{i}").as_str(),
                 0.0,
@@ -509,7 +510,158 @@ pub mod builtin_problems {
             }
         }
 
-        let e = Box::new(UserEvaluator { n: 30 });
+        let e = Box::new(UserEvaluator { n });
+        Problem::new(objectives, variables, None, e)
+    }
+
+    /// Problem #3 from Zitzler et al. (2000)
+    ///
+    /// # Arguments:
+    ///
+    /// * `n`: The number of variables.
+    pub fn ztd3(n: usize) -> Result<Problem, OError> {
+        let objectives = vec![
+            Objective::new("f1", ObjectiveDirection::Minimise),
+            Objective::new("f2", ObjectiveDirection::Minimise),
+        ];
+        let mut variables: Vec<VariableType> = Vec::new();
+        for i in 1..=n {
+            variables.push(VariableType::Real(BoundedNumber::new(
+                format!("x{i}").as_str(),
+                0.0,
+                1.0,
+            )?));
+        }
+
+        #[derive(Debug)]
+        struct UserEvaluator {
+            /// The number of variables with n > 1
+            n: usize,
+        }
+        impl Evaluator for UserEvaluator {
+            fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+                let x1 = i.get_variable_value("x1")?.as_real()?;
+
+                let a = (2..=self.n)
+                    .map(|xi| i.get_variable_value(format!("x{xi}").as_str())?.as_real())
+                    .sum::<Result<f64, _>>()?;
+                let g = 1.0 + 9.0 * a / (self.n as f64 - 1.0);
+
+                let mut objectives = HashMap::new();
+                objectives.insert("f1".to_string(), x1);
+                objectives.insert(
+                    "f2".to_string(),
+                    g * (1.0 - (x1 / g).powi(2) - x1 / g * f64::sin(10.0 * PI * x1)),
+                );
+                Ok(EvaluationResult {
+                    constraints: None,
+                    objectives,
+                })
+            }
+        }
+
+        let e = Box::new(UserEvaluator { n });
+        Problem::new(objectives, variables, None, e)
+    }
+
+    /// Problem #4 from Zitzler et al. (2000)
+    ///
+    /// # Arguments:
+    ///
+    /// * `n`: The number of variables.
+    pub fn ztd4(n: usize) -> Result<Problem, OError> {
+        let objectives = vec![
+            Objective::new("f1", ObjectiveDirection::Minimise),
+            Objective::new("f2", ObjectiveDirection::Minimise),
+        ];
+        let mut variables: Vec<VariableType> = Vec::new();
+        variables.push(VariableType::Real(BoundedNumber::new("x1", 0.0, 1.0)?));
+
+        for i in 2..=n {
+            variables.push(VariableType::Real(BoundedNumber::new(
+                format!("x{i}").as_str(),
+                -5.0,
+                5.0,
+            )?));
+        }
+
+        #[derive(Debug)]
+        struct UserEvaluator {
+            /// The number of variables with n > 1
+            n: usize,
+        }
+        impl Evaluator for UserEvaluator {
+            fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+                let x1 = i.get_variable_value("x1")?.as_real()?;
+
+                let a = (2..=self.n)
+                    .map(|xi| {
+                        let xi = i.get_variable_value(format!("x{xi}").as_str())?.as_real()?;
+                        Ok::<f64, OError>(xi.powi(2) - 10.0 * f64::cos(4.0 * PI * xi))
+                    })
+                    .sum::<Result<f64, _>>()?;
+                let g = 1.0 + 10.0 * (self.n as f64 - 1.0) + a;
+
+                let mut objectives = HashMap::new();
+                objectives.insert("f1".to_string(), x1);
+                objectives.insert("f2".to_string(), g * (1.0 - (x1 / g).sqrt()));
+                Ok(EvaluationResult {
+                    constraints: None,
+                    objectives,
+                })
+            }
+        }
+
+        let e = Box::new(UserEvaluator { n });
+        Problem::new(objectives, variables, None, e)
+    }
+
+    /// Problem #6 from Zitzler et al. (2000)
+    ///
+    /// # Arguments:
+    ///
+    /// * `n`: The number of variables.
+    pub fn ztd6(n: usize) -> Result<Problem, OError> {
+        let objectives = vec![
+            Objective::new("f1", ObjectiveDirection::Minimise),
+            Objective::new("f2", ObjectiveDirection::Minimise),
+        ];
+        let mut variables: Vec<VariableType> = Vec::new();
+        for i in 1..=n {
+            variables.push(VariableType::Real(BoundedNumber::new(
+                format!("x{i}").as_str(),
+                0.0,
+                1.0,
+            )?));
+        }
+
+        #[derive(Debug)]
+        struct UserEvaluator {
+            /// The number of variables with n > 1
+            n: usize,
+        }
+        impl Evaluator for UserEvaluator {
+            fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+                let x1 = i.get_variable_value("x1")?.as_real()?;
+
+                let a = (2..=self.n)
+                    .map(|xi| i.get_variable_value(format!("x{xi}").as_str())?.as_real())
+                    .sum::<Result<f64, _>>()?
+                    / (self.n as f64 - 1.0);
+                let g = 1.0 + 9.0 * f64::powf(a, 0.25);
+
+                let mut objectives = HashMap::new();
+                let f1 = 1.0 - f64::exp(-4.0 * x1) * f64::powi(f64::sin(6.0 * PI * x1), 6);
+                objectives.insert("f1".to_string(), f1);
+                objectives.insert("f2".to_string(), g * (1.0 - (f1 / g).powi(2)));
+                Ok(EvaluationResult {
+                    constraints: None,
+                    objectives,
+                })
+            }
+        }
+
+        let e = Box::new(UserEvaluator { n });
         Problem::new(objectives, variables, None, e)
     }
 }

@@ -543,21 +543,17 @@ pub struct NonDominatedSortResults {
 }
 
 #[cfg(test)]
-mod test {
+mod test_sorting {
     use std::sync::Arc;
 
     use float_cmp::assert_approx_eq;
 
-    use crate::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
+    use crate::algorithms::NSGA2;
     use crate::core::{
         BoundedNumber, Individual, Individuals, Objective, ObjectiveDirection, Problem,
         VariableType, VariableValue,
     };
-    use crate::core::problem::builtin_problems::{sch, ztd1, ztd2};
-    use crate::core::utils::{check_exact_value, check_value_in_range, dummy_evaluator};
-
-    const BOUND_TOL: f64 = 1.0 / 1000.0;
-    const LOOSE_BOUND_TOL: f64 = 0.1;
+    use crate::core::utils::dummy_evaluator;
 
     /// Create the individuals for a `N`-objective problem, where `N` is the number of items in
     /// the arrays of `objective_values`.
@@ -910,7 +906,15 @@ mod test {
             );
         }
     }
+}
+#[cfg(test)]
+mod test_problems {
+    use crate::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
+    use crate::core::problem::builtin_problems::{sch, ztd1, ztd2, ztd3, ztd4};
+    use crate::core::utils::{check_exact_value, check_value_in_range};
 
+    const BOUND_TOL: f64 = 1.0 / 1000.0;
+    const LOOSE_BOUND_TOL: f64 = 0.1;
     #[test]
     /// Test problem 1 from Deb et al. (2002). Optional solution x in [0; 2]
     fn test_sch_problem() {
@@ -941,9 +945,10 @@ mod test {
     /// Test the ZTD1 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd1_problem() {
-        let problem = ztd1(30).unwrap();
+        let number_of_individuals: usize = 30;
+        let problem = ztd1(number_of_individuals).unwrap();
         let args = NSGA2Arg {
-            number_of_individuals: 10,
+            number_of_individuals,
             stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
             problem,
             crossover_operator_options: None,
@@ -963,8 +968,9 @@ mod test {
             panic!("Some X1 variables are outside the bounds: {:?}", invalid_x1);
         }
 
-        let x_other_bounds = 0.0 - LOOSE_BOUND_TOL..0.0 + LOOSE_BOUND_TOL;
-        for xi in 2..=30 {
+        let x_bounds = -BOUND_TOL..BOUND_TOL;
+        let x_other_bounds = -LOOSE_BOUND_TOL..LOOSE_BOUND_TOL;
+        for xi in 2..=number_of_individuals {
             let var_values = results
                 .get_real_variables(format!("x{xi}").as_str())
                 .unwrap();
@@ -986,9 +992,10 @@ mod test {
     /// Test the ZTD2 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd2_problem() {
-        let problem = ztd2(30).unwrap();
+        let number_of_individuals: usize = 30;
+        let problem = ztd2(number_of_individuals).unwrap();
         let args = NSGA2Arg {
-            number_of_individuals: 10,
+            number_of_individuals,
             stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
             problem,
             crossover_operator_options: None,
@@ -1012,8 +1019,168 @@ mod test {
             );
         }
 
-        let x_other_bounds = 0.0 - LOOSE_BOUND_TOL..0.0 + LOOSE_BOUND_TOL;
-        for xi in 2..=30 {
+        let x_bounds = -BOUND_TOL..BOUND_TOL;
+        let x_other_bounds = -LOOSE_BOUND_TOL..LOOSE_BOUND_TOL;
+        for xi in 2..=number_of_individuals {
+            let var_name = format!("x{xi}");
+            let var_values = results.get_real_variables(&var_name).unwrap();
+
+            let (x_other_outside_bounds, breached_range, b_type) =
+                check_exact_value(&var_values, &x_bounds, &x_other_bounds, 3);
+            if !x_other_outside_bounds.is_empty() {
+                panic!(
+                    "Found {} {} solutions ({:?}) outside the {} bounds {:?}",
+                    x_other_outside_bounds.len(),
+                    var_name,
+                    x_other_outside_bounds,
+                    b_type,
+                    breached_range
+                );
+            }
+        }
+    }
+
+    #[test]
+    /// Test the ZTD3 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
+    /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
+    fn test_ztd3_problem() {
+        let number_of_individuals: usize = 30;
+        let problem = ztd3(number_of_individuals).unwrap();
+        let args = NSGA2Arg {
+            number_of_individuals,
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
+            problem,
+            crossover_operator_options: None,
+            mutation_operator_options: None,
+            parallel: Some(false),
+            export_history: None,
+            seed: Some(1),
+        };
+        let mut algo = NSGA2::new(args).unwrap();
+        algo.run().unwrap();
+        let results = algo.get_results();
+
+        let x_bounds = 0.0 - BOUND_TOL..1.0 + BOUND_TOL;
+        let invalid_x1 =
+            check_value_in_range(&results.get_real_variables("x1").unwrap(), &x_bounds);
+        if !invalid_x1.is_empty() {
+            panic!(
+                "Found {} X1 variables outside the bounds {:?}",
+                invalid_x1.len(),
+                invalid_x1
+            );
+        }
+
+        let x_bounds = -BOUND_TOL..BOUND_TOL;
+        let x_other_bounds = -LOOSE_BOUND_TOL..LOOSE_BOUND_TOL;
+        for xi in 2..=number_of_individuals {
+            let var_name = format!("x{xi}");
+            let var_values = results.get_real_variables(&var_name).unwrap();
+
+            let (x_other_outside_bounds, breached_range, b_type) =
+                check_exact_value(&var_values, &x_bounds, &x_other_bounds, 3);
+            if !x_other_outside_bounds.is_empty() {
+                panic!(
+                    "Found {} {} solutions ({:?}) outside the {} bounds {:?}",
+                    x_other_outside_bounds.len(),
+                    var_name,
+                    x_other_outside_bounds,
+                    b_type,
+                    breached_range
+                );
+            }
+        }
+    }
+
+    #[test]
+    /// Test the ZTD4 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
+    /// x2 to x10 = 0. The exact solutions are tested using a strict and loose bounds.
+    fn test_ztd4_problem() {
+        let number_of_individuals: usize = 10;
+        let problem = ztd4(number_of_individuals).unwrap();
+        let args = NSGA2Arg {
+            number_of_individuals,
+            // this may take longer to converge
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(3000)),
+            problem,
+            crossover_operator_options: None,
+            mutation_operator_options: None,
+            parallel: Some(false),
+            export_history: None,
+            seed: Some(1),
+        };
+        let mut algo = NSGA2::new(args).unwrap();
+        algo.run().unwrap();
+        let results = algo.get_results();
+
+        let x_bounds = 0.0 - BOUND_TOL..1.0 + BOUND_TOL;
+        let invalid_x1 =
+            check_value_in_range(&results.get_real_variables("x1").unwrap(), &x_bounds);
+        if !invalid_x1.is_empty() {
+            panic!(
+                "Found {} X1 variables outside the bounds {:?}",
+                invalid_x1.len(),
+                invalid_x1
+            );
+        }
+
+        // relax strict bounds O(2). The final solution is still acceptable.
+        let x_bounds = -BOUND_TOL * 10.0..BOUND_TOL * 10.0;
+        let x_other_bounds = -LOOSE_BOUND_TOL..LOOSE_BOUND_TOL;
+        for xi in 2..=number_of_individuals {
+            let var_name = format!("x{xi}");
+            let var_values = results.get_real_variables(&var_name).unwrap();
+
+            let (x_other_outside_bounds, breached_range, b_type) =
+                check_exact_value(&var_values, &x_bounds, &x_other_bounds, 3);
+            if !x_other_outside_bounds.is_empty() {
+                panic!(
+                    "Found {} {} solutions ({:?}) outside the {} bounds {:?}",
+                    x_other_outside_bounds.len(),
+                    var_name,
+                    x_other_outside_bounds,
+                    b_type,
+                    breached_range
+                );
+            }
+        }
+    }
+
+    #[test]
+    /// Test the ZTD6 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
+    /// x2 to x10 = 0. The exact solutions are tested using a strict and loose bounds.
+    fn test_ztd6_problem() {
+        let number_of_individuals: usize = 10;
+        let problem = ztd4(number_of_individuals).unwrap();
+        let args = NSGA2Arg {
+            number_of_individuals,
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
+            problem,
+            crossover_operator_options: None,
+            mutation_operator_options: None,
+            parallel: Some(false),
+            export_history: None,
+            seed: Some(1),
+        };
+        let mut algo = NSGA2::new(args).unwrap();
+        algo.run().unwrap();
+        let results = algo.get_results();
+
+        let x_bounds = 0.0 - BOUND_TOL..1.0 + BOUND_TOL;
+        let invalid_x1 =
+            check_value_in_range(&results.get_real_variables("x1").unwrap(), &x_bounds);
+        if !invalid_x1.is_empty() {
+            panic!(
+                "Found {} X1 variables outside the bounds {:?}",
+                invalid_x1.len(),
+                invalid_x1
+            );
+        }
+
+        // relax strict bounds O(2). The final solution is still acceptable.
+        let x_bounds = -BOUND_TOL * 10.0..BOUND_TOL * 10.0;
+        let x_other_bounds = -LOOSE_BOUND_TOL..LOOSE_BOUND_TOL;
+        for xi in 2..=number_of_individuals {
             let var_name = format!("x{xi}");
             let var_values = results.get_real_variables(&var_name).unwrap();
 
