@@ -4,12 +4,13 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use log::{debug, info};
+use rand::RngCore;
 
 use crate::algorithms::{Algorithm, ExportHistory, StoppingConditionType};
 use crate::core::{
     Individual, Individuals, IndividualsMut, OError, Population, Problem, VariableValue,
 };
-use crate::core::utils::{argsort, vector_max, vector_min};
+use crate::core::utils::{argsort, get_rng, vector_max, vector_min};
 use crate::operators::{
     BinaryComparisonOperator, Crossover, CrowdedComparison, Mutation, ParetoConstrainedDominance,
     PolynomialMutation, PolynomialMutationArgs, PreferredSolution, Selector,
@@ -42,6 +43,12 @@ pub struct NSGA2Arg {
     /// save objectives, constraints and solutions to a file each time the generation increases by
     /// a given step. This is useful to track convergence and inspect an algorithm evolution.
     pub export_history: Option<ExportHistory>,
+    /// The seed used in the random number generator (RNG). You can specify a seed in case you want
+    /// to try to reproduce results. NSGA2 is a stochastic algorithm that relies on a RNG at
+    /// different steps (when population is initially generated, during selection, crossover and
+    /// mutation) and, as such, may lead to slightly different solutions. The seed is randomly
+    /// picked if this is `None`.
+    pub seed: Option<u64>,
 }
 
 /// The Non-dominated Sorting Genetic Algorithm (NSGA2).
@@ -77,6 +84,8 @@ pub struct NSGA2 {
     export_history: Option<ExportHistory>,
     /// Whether the evaluation should run using threads
     parallel: bool,
+    /// The seed to use.
+    rng: Box<dyn RngCore>,
 }
 
 impl Display for NSGA2 {
@@ -159,6 +168,7 @@ impl NSGA2 {
             start_time: Instant::now(),
             parallel: args.parallel.unwrap_or(true),
             export_history: args.export_history,
+            rng: get_rng(args.seed),
         })
     }
 
@@ -396,18 +406,26 @@ impl Algorithm for NSGA2 {
         debug!("Generating new population (selection+mutation)");
         let mut offsprings: Vec<Individual> = Vec::new();
         for _ in 0..self.number_of_individuals / 2 {
-            let parents = self
-                .selector_operator
-                .select(self.population.individuals(), 2)?;
+            let parents =
+                self.selector_operator
+                    .select(self.population.individuals(), 2, &mut self.rng)?;
 
             // generate the 2 children with crossover
-            let children = self
-                .crossover_operator
-                .generate_offsprings(&parents[0], &parents[1])?;
+            let children = self.crossover_operator.generate_offsprings(
+                &parents[0],
+                &parents[1],
+                &mut self.rng,
+            )?;
 
             // mutate them
-            offsprings.push(self.mutation_operator.mutate_offsprings(&children.child1)?);
-            offsprings.push(self.mutation_operator.mutate_offsprings(&children.child2)?);
+            offsprings.push(
+                self.mutation_operator
+                    .mutate_offsprings(&children.child1, &mut self.rng)?,
+            );
+            offsprings.push(
+                self.mutation_operator
+                    .mutate_offsprings(&children.child2, &mut self.rng)?,
+            );
         }
         debug!("Combining parents and offsprings in new population");
         self.population.add_new_individuals(offsprings);
@@ -536,9 +554,10 @@ mod test {
         VariableType, VariableValue,
     };
     use crate::core::problem::builtin_problems::{sch, ztd1, ztd2};
-    use crate::core::utils::{check_value_in_range, dummy_evaluator};
+    use crate::core::utils::{check_exact_value, check_value_in_range, dummy_evaluator};
 
-    const BOUND_TOL: f64 = 1.0 / 100.0;
+    const BOUND_TOL: f64 = 1.0 / 1000.0;
+    const LOOSE_BOUND_TOL: f64 = 0.1;
 
     /// Create the individuals for a `N`-objective problem, where `N` is the number of items in
     /// the arrays of `objective_values`.
@@ -904,12 +923,14 @@ mod test {
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            seed: Some(10),
         };
         let mut algo = NSGA2::new(args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
-        let bounds = 0.0 - BOUND_TOL..2.0 + BOUND_TOL;
+        // increase tolerance
+        let bounds = -0.1..2.1;
         let invalid_x = check_value_in_range(&results.get_real_variables("x").unwrap(), &bounds);
         if !invalid_x.is_empty() {
             panic!("Some variables are outside the bounds: {:?}", invalid_x);
@@ -918,7 +939,7 @@ mod test {
 
     #[test]
     /// Test the ZTD1 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
-    /// x2 to x30 = 0.
+    /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd1_problem() {
         let problem = ztd1(30).unwrap();
         let args = NSGA2Arg {
@@ -929,6 +950,7 @@ mod test {
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            seed: Some(1),
         };
         let mut algo = NSGA2::new(args).unwrap();
         algo.run().unwrap();
@@ -941,42 +963,28 @@ mod test {
             panic!("Some X1 variables are outside the bounds: {:?}", invalid_x1);
         }
 
+        let x_other_bounds = 0.0 - LOOSE_BOUND_TOL..0.0 + LOOSE_BOUND_TOL;
         for xi in 2..=30 {
-            let var_name = format!("x{xi}");
-            let var_values = results.get_real_variables(&var_name).unwrap();
-            let invalid_x = check_value_in_range(&var_values, &x_bounds);
-            if !invalid_x.is_empty() {
+            let var_values = results
+                .get_real_variables(format!("x{xi}").as_str())
+                .unwrap();
+            let (x_other_outside_bounds, breached_range, b_type) =
+                check_exact_value(&var_values, &x_bounds, &x_other_bounds, 5);
+            if !x_other_outside_bounds.is_empty() {
                 panic!(
-                    "Found {} {} solutions ({:?}) outside the bounds {:?}",
-                    invalid_x.len(),
-                    var_name,
-                    invalid_x,
-                    x_bounds
+                    "Found {} X2 to X30 solutions ({:?}) outside the {} bounds {:?}",
+                    x_other_outside_bounds.len(),
+                    x_other_outside_bounds,
+                    b_type,
+                    breached_range
                 );
             }
         }
-        // let x_other_bounds = 0.0 - TOL..0.0 + TOL;
-        // for xi in 2..=30 {
-        //     let var_values = results
-        //         .get_real_variables(format!("x{xi}").as_str())
-        //         .unwrap();
-        //     let (x_other_outside_bounds, breached_range, b_type) =
-        //         check_exact_value(&var_values, &x_bounds, &x_other_bounds, 5);
-        //     if !x_other_outside_bounds.is_empty() {
-        //         panic!(
-        //             "Found {} X2 to X30 solutions ({:?}) outside the {} bounds {:?}",
-        //             x_other_outside_bounds.len(),
-        //             x_other_outside_bounds,
-        //             b_type,
-        //             breached_range
-        //         );
-        //     }
-        // }
     }
 
     #[test]
     /// Test the ZTD2 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
-    /// x2 to x30 = 0.
+    /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd2_problem() {
         let problem = ztd2(30).unwrap();
         let args = NSGA2Arg {
@@ -987,6 +995,7 @@ mod test {
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            seed: Some(1),
         };
         let mut algo = NSGA2::new(args).unwrap();
         algo.run().unwrap();
@@ -1003,33 +1012,23 @@ mod test {
             );
         }
 
-        // let x_other_bounds = 0.0 - TOL..0.0 + TOL;
+        let x_other_bounds = 0.0 - LOOSE_BOUND_TOL..0.0 + LOOSE_BOUND_TOL;
         for xi in 2..=30 {
             let var_name = format!("x{xi}");
             let var_values = results.get_real_variables(&var_name).unwrap();
-            let invalid_x = check_value_in_range(&var_values, &x_bounds);
-            if !invalid_x.is_empty() {
+
+            let (x_other_outside_bounds, breached_range, b_type) =
+                check_exact_value(&var_values, &x_bounds, &x_other_bounds, 3);
+            if !x_other_outside_bounds.is_empty() {
                 panic!(
-                    "Found {} {} solutions ({:?}) outside the bounds {:?}",
-                    invalid_x.len(),
+                    "Found {} {} solutions ({:?}) outside the {} bounds {:?}",
+                    x_other_outside_bounds.len(),
                     var_name,
-                    invalid_x,
-                    x_bounds
+                    x_other_outside_bounds,
+                    b_type,
+                    breached_range
                 );
             }
-
-            // let (x_other_outside_bounds, breached_range, b_type) =
-            //     check_exact_value(&var_values, &x_bounds, &x_other_bounds, 3);
-            // if !x_other_outside_bounds.is_empty() {
-            //     panic!(
-            //         "Found {} {} solutions ({:?}) outside the {} bounds {:?}",
-            //         x_other_outside_bounds.len(),
-            //         var_name,
-            //         x_other_outside_bounds,
-            //         b_type,
-            //         breached_range
-            //     );
-            // }
         }
     }
 }
