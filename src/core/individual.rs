@@ -293,8 +293,8 @@ impl Individual {
     ///
     /// * `name`: The variable name.
     ///
-    /// returns: `Result<u64, OError>`
-    pub fn get_integer_value(&self, name: &str) -> Result<u64, OError> {
+    /// returns: `Result<i64, OError>`
+    pub fn get_integer_value(&self, name: &str) -> Result<i64, OError> {
         self.get_variable_value(name)?
             .as_integer()
             .map_err(|_| OError::WrongTypeVariableWithName(name.to_string(), "integer".to_string()))
