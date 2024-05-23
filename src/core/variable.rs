@@ -191,8 +191,8 @@ impl Variable<String> for Choice {
 pub enum VariableType {
     /// A continuous bounded variable (f64)
     Real(BoundedNumber<f64>),
-    /// A discrete bounded variable (u64)
-    Integer(BoundedNumber<u64>),
+    /// A discrete bounded variable (i64)
+    Integer(BoundedNumber<i64>),
     /// A boolean variable
     Boolean(Boolean),
     /// A variable representing a choice (as string)
@@ -262,8 +262,8 @@ pub trait VariableValueGenerator {
 pub enum VariableValue {
     /// The value for a floating-point number. This is a f64.
     Real(f64),
-    /// The value for an integer number. This is an u64.
-    Integer(u64),
+    /// The value for an integer number. This is an i64.
+    Integer(i64),
     /// The value for a boolean variable.
     Boolean(bool),
     /// The value for a choice variable.
@@ -306,7 +306,7 @@ impl VariableValue {
     /// not an integer.
     ///
     /// returns: `Result<f64, OError>`
-    pub fn as_integer(&self) -> Result<u64, OError> {
+    pub fn as_integer(&self) -> Result<i64, OError> {
         if let VariableValue::Integer(v) = self {
             Ok(*v)
         } else {
