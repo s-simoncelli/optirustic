@@ -53,7 +53,7 @@ pub struct SimulatedBinaryCrossoverArgs {
 
 impl Default for SimulatedBinaryCrossoverArgs {
     /// Default parameters for the Simulated Binary Crossover (SBX) with a distribution index of
-    /// 15, crossover probability of 1 and variable probability of 0.5.
+    /// 15, crossover probability of `1` and variable probability of `0.5`.
     fn default() -> Self {
         Self {
             distribution_index: 15.0,
@@ -75,17 +75,19 @@ impl Default for SimulatedBinaryCrossoverArgs {
 /// > the C implementation available at <https://gist.github.com/Tiagoperes/1779d5f1c89bae0cfdb87b1960bba36d>
 /// to account for bounded variables.
 ///
-/// Since the original method does not provide support for integer variable,s this has been added by
+/// See: <https://doi.org/10.1145/1276958.1277190>,
+/// full text available at <https://content.wolfram.com/sites/13/2018/02/09-2-2.pdf>. An alternative
+/// shorter description of the algorithm is available in [Deb et al. (2007)](https://www.researchgate.net/publication/220742263_Self-adaptive_simulated_binary_crossover_for_real-parameter_optimization).
+///
+/// # Integer support
+/// Since the original method does not provide support for integer variables, this has been added by
 /// using the approach proposed in:
 /// > Deep, Kusum & Singh, Krishna & Kansal, M. & Mohan, Chander. (2009). A real coded genetic
 /// > algorithm for solving integer and mixed integer optimization problems. Applied Mathematics
 /// > and Computation. 212. 505-518. 10.1016/j.amc.2009.02.044.
 ///
-/// See the truncation procedure in section 2.4 in the [full text](https://www.researchgate.net/publication/220557819_A_real_coded_genetic_algorithm_for_solving_integer_and_mixed_integer_optimization_problems)
-///
-/// See: <https://doi.org/10.1145/1276958.1277190>,
-/// full text available at <https://content.wolfram.com/sites/13/2018/02/09-2-2.pdf>. An alternative
-/// shorter description of the algorithm is available in [Deb et al. (2007)](https://www.researchgate.net/publication/220742263_Self-adaptive_simulated_binary_crossover_for_real-parameter_optimization).
+/// See the truncation procedure in section 2.4 in the [full text](https://www.researchgate.net/publication/220557819_A_real_coded_genetic_algorithm_for_solving_integer_and_mixed_integer_optimization_problems),
+/// where a probability of `0.5` is applied to ensure randomness in the integer crossover.
 ///
 /// # Example
 ///
@@ -101,8 +103,6 @@ impl Default for SimulatedBinaryCrossoverArgs {
 /// fn main() -> Result<(), Box<dyn Error>> {
 ///     // create a new one-variable problem
 ///     let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
-///
-///
 ///     let variables = vec![VariableType::Real(BoundedNumber::new("var1", 0.0, 1000.0)?)];
 ///     let constraints = vec![Constraint::new("c1", RelationalOperator::EqualTo, 1.0)];
 ///     

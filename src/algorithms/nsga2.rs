@@ -25,10 +25,10 @@ pub struct NSGA2Arg {
     pub number_of_individuals: usize,
     /// The options of the Simulated Binary Crossover (SBX) operator. This operator is used to
     /// generate new children by recombining the variables of parent solutions. This defaults to
-    /// [`crate::operators::SimulatedBinaryCrossoverArgs::default()`].
+    /// [`SimulatedBinaryCrossoverArgs::default()`].
     pub crossover_operator_options: Option<SimulatedBinaryCrossoverArgs>,
     /// The options to Polynomial Mutation (PM) operator used to mutate the variables of an
-    /// individual. This defaults to [`crate::operators::SimulatedBinaryCrossoverArgs::default()`],
+    /// individual. This defaults to [`SimulatedBinaryCrossoverArgs::default()`],
     /// with a distribution index or index parameter of `20` and variable probability equal `1`
     /// divided by the number of real variables in the problem (i.e., each variable will have the
     /// same probability of being mutated).
@@ -425,11 +425,11 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
             // mutate them
             offsprings.push(
                 self.mutation_operator
-                    .mutate_offsprings(&children.child1, &mut self.rng)?,
+                    .mutate_offspring(&children.child1, &mut self.rng)?,
             );
             offsprings.push(
                 self.mutation_operator
-                    .mutate_offsprings(&children.child2, &mut self.rng)?,
+                    .mutate_offspring(&children.child2, &mut self.rng)?,
             );
         }
         debug!("Combining parents and offsprings in new population");
