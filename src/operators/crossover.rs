@@ -1,5 +1,6 @@
 use rand::{Rng, RngCore};
 use rand::prelude::SliceRandom;
+use serde::Serialize;
 
 use crate::core::{Individual, OError, VariableType, VariableValue};
 
@@ -33,7 +34,7 @@ pub trait Crossover {
 }
 
 /// Input arguments for [`SimulatedBinaryCrossover`].
-#[derive(Clone)]
+#[derive(Serialize, Clone)]
 pub struct SimulatedBinaryCrossoverArgs {
     /// The distribution index for crossover (this is the eta_c in the paper). This directly
     /// control the spread of children. If a large value is selected, the resulting children will

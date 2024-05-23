@@ -25,7 +25,8 @@ pub struct Elapsed {
 
 #[derive(Serialize, Deserialize, Debug)]
 /// The struct used to export the algorithm data to JSON file.
-pub struct AlgorithmSerialisedExport {
+pub struct AlgorithmSerialisedExport<T: Serialize> {
+    pub options: T,
     pub problem: ProblemExport,
     pub individuals: Vec<IndividualExport>,
     pub generation: usize,
@@ -69,6 +70,7 @@ impl AlgorithmExport {
 /// an algorithm to save objectives, constraints and solutions to a file each time the generation
 /// counter in [`Algorithm::generation`] increases by a certain step provided in `generation_step`.
 /// Exporting history may be useful to track convergence and inspect an algorithm evolution.
+#[derive(Serialize, Clone)]
 pub struct ExportHistory {
     /// Export the algorithm data each time the generation counter in [`Algorithm::generation`]
     /// increases by the provided step.
@@ -114,7 +116,7 @@ impl Display for AlgorithmExport {
 }
 
 /// The trait to use to implement an algorithm.
-pub trait Algorithm: Display {
+pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
     /// Initialise the algorithm.
     ///
     /// return: `Result<(), OError>`
@@ -281,8 +283,8 @@ pub trait Algorithm: Display {
     fn run(&mut self) -> Result<(), OError> {
         info!("Starting {}", self.name());
         self.initialise()?;
-        let mut history_gen_step: usize = 0;
 
+        let mut history_gen_step: usize = 0;
         loop {
             // Evolve population
             info!("Generation #{}", self.generation());
@@ -337,6 +339,8 @@ pub trait Algorithm: Display {
         }
     }
 
+    fn algorithm_options(&self) -> &AlgorithmOptions;
+
     /// Save the algorithm data (individuals' objective, variables and constraints, the problem,
     /// ...) to a JSON file.
     ///
@@ -348,6 +352,7 @@ pub trait Algorithm: Display {
     fn save_to_json(&self, destination: &PathBuf) -> Result<(), OError> {
         let [hours, minutes, seconds] = self.elapsed();
         let export = AlgorithmSerialisedExport {
+            options: self.algorithm_options(),
             problem: self.problem().serialise(),
             individuals: self.population().serialise(),
             generation: self.generation(),

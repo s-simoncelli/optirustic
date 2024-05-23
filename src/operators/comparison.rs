@@ -117,8 +117,8 @@ impl BinaryComparisonOperator for ParetoConstrainedDominance {
 /// or when  $rank_i =rank_j$
 ///    ${distance}_i > {distance}_j$
 /// where `rank_x` is the rank from the fast non-dominated sort algorithm (see
-/// [`crate::core::fast_non_dominated_sort`]) and `{distance}_x` is the crowding distance using
-/// neighboring solutions (see [`crate::core::set_crowding_distance`]).
+/// [`crate::algorithms::NSGA2::fast_non_dominated_sort`]) and `{distance}_x` is the crowding distance using
+/// neighboring solutions (see [`crate::algorithms::NSGA2::set_crowding_distance`]).
 ///
 /// Implemented based on:
 /// > K. Deb, A. Pratap, S. Agarwal and T. Meyarivan, "A fast and elitist multi-objective genetic
@@ -177,13 +177,15 @@ impl BinaryComparisonOperator for CrowdedComparison {
                     Some(r) => r.as_real()?,
                 };
                 let d2 = match second_solution.get_data("crowding_distance") {
-                    None => return Err(OError::ComparisonOperator(
-                        "CrowdedComparison".to_string(),
-                        format!(
+                    None => {
+                        return Err(OError::ComparisonOperator(
+                            "CrowdedComparison".to_string(),
+                            format!(
                             "The crowding distance on the second individual {:?} does not exist",
                             second_solution.variables()
                         ),
-                    )),
+                        ))
+                    }
                     Some(r) => r.as_real()?,
                 };
 

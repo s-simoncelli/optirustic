@@ -5,6 +5,7 @@ use std::time::Instant;
 
 use log::{debug, info};
 use rand::RngCore;
+use serde::Serialize;
 
 use crate::algorithms::{Algorithm, ExportHistory, StoppingConditionType};
 use crate::core::{
@@ -18,20 +19,19 @@ use crate::operators::{
 };
 
 /// Input arguments for the NSGA2 algorithm.
+#[derive(Serialize, Clone)]
 pub struct NSGA2Arg {
-    /// The number of individuals to use in the population. This must be a multiple of 2.
+    /// The number of individuals to use in the population. This must be a multiple of `2`.
     pub number_of_individuals: usize,
-    /// The problem being solved.
-    pub problem: Problem,
     /// The options of the Simulated Binary Crossover (SBX) operator. This operator is used to
     /// generate new children by recombining the variables of parent solutions. This defaults to
-    /// `SimulatedBinaryCrossoverArgs::default()`.
+    /// [`crate::operators::SimulatedBinaryCrossoverArgs::default()`].
     pub crossover_operator_options: Option<SimulatedBinaryCrossoverArgs>,
     /// The options to Polynomial Mutation (PM) operator used to mutate the variables of an
-    /// individual. This defaults to `SimulatedBinaryCrossoverArgs::default()`, with a distribution
-    /// index or index parameter of 20 and variable probability equal 1 divided by the number of
-    /// real variables in the problem (i.e., each variable will have the same probability of being
-    /// mutated).
+    /// individual. This defaults to [`crate::operators::SimulatedBinaryCrossoverArgs::default()`],
+    /// with a distribution index or index parameter of `20` and variable probability equal `1`
+    /// divided by the number of real variables in the problem (i.e., each variable will have the
+    /// same probability of being mutated).
     pub mutation_operator_options: Option<PolynomialMutationArgs>,
     /// The condition to use when to terminate the algorithm.
     pub stopping_condition: StoppingConditionType,
@@ -86,6 +86,8 @@ pub struct NSGA2 {
     parallel: bool,
     /// The seed to use.
     rng: Box<dyn RngCore>,
+    /// The algorithm options
+    args: NSGA2Arg,
 }
 
 impl Display for NSGA2 {
@@ -99,11 +101,12 @@ impl NSGA2 {
     ///
     /// # Arguments
     ///
-    /// * `args`: The [`NSGA2Arg`] input arguments.
+    /// * `problem`: The problem being solved.
+    /// * `args`: The [`NSGA2Arg`] arguments to customise the algorithm behaviour.
     ///
     /// returns: `NSGA2`.
-    pub fn new(args: NSGA2Arg) -> Result<Self, OError> {
-        if args.number_of_individuals < 3 {
+    pub fn new(problem: Problem, options: NSGA2Arg) -> Result<Self, OError> {
+        if options.number_of_individuals < 3 {
             return Err(OError::AlgorithmInit(
                 "NSGA2".to_string(),
                 "The population size must have at least 3 individuals".to_string(),
@@ -111,64 +114,66 @@ impl NSGA2 {
         }
         // force the population size as multiple of 2 so that the new number of generated offsprings
         // matches `number_of_individuals`
-        if args.number_of_individuals.rem(2) != 0 {
+        if options.number_of_individuals.rem(2) != 0 {
             return Err(OError::AlgorithmInit(
                 "NSGA2".to_string(),
                 "The population size must be a multiple of 2".to_string(),
             ));
         }
 
-        let problem = Arc::new(args.problem);
+        let nsga2_args = options.clone();
+        let problem = Arc::new(problem);
         info!("Created initial random population");
-        let population = Population::init(problem.clone(), args.number_of_individuals);
+        let population = Population::init(problem.clone(), options.number_of_individuals);
 
-        let mutation_options = match args.mutation_operator_options {
+        let mutation_options = match options.mutation_operator_options {
             Some(o) => o,
             None => PolynomialMutationArgs::default(problem.clone().as_ref()),
         };
         let mutation_operator = PolynomialMutation::new(mutation_options.clone())?;
 
-        let crossover_options = args.crossover_operator_options.unwrap_or_default();
+        let crossover_options = options.crossover_operator_options.unwrap_or_default();
         let crossover_operator = SimulatedBinaryCrossover::new(crossover_options.clone())?;
 
         // log options
-        let mut options: String = "Algorithm options are:\n".to_owned();
-        options.push_str(
+        let mut log_opts: String = "Algorithm options are:\n".to_owned();
+        log_opts.push_str(
             format!("\t* Number of variables {:>13}\n\t* Number of objectives {:>12}\n\t* Number of constraints {:>11}\n",
                     problem.number_of_variables(),
                     problem.number_of_objectives(),
                     problem.number_of_constraints()
             ).as_str()
         );
-        options.push_str(
+        log_opts.push_str(
             format!(
                 "\t* Crossover distribution index {:>5}\n\t* Crossover probability {:>11}\n\t* Crossover var probability {:>9}\n",
                 crossover_options.distribution_index, crossover_options.crossover_probability, crossover_options.variable_probability,
             )
             .as_str(),
         );
-        options.push_str(
+        log_opts.push_str(
             format!(
                 "\t* Mutation index parameter {:>9}\n\t* Mutation var probability {:>10}",
                 mutation_options.index_parameter, crossover_options.variable_probability,
             )
             .as_str(),
         );
-        info!("{}", options);
+        info!("{}", log_opts);
 
         Ok(Self {
-            number_of_individuals: args.number_of_individuals,
+            number_of_individuals: options.number_of_individuals,
             problem,
             population,
             selector_operator: TournamentSelector::<CrowdedComparison>::new(2),
             crossover_operator,
             mutation_operator,
             generation: 0,
-            stopping_condition: args.stopping_condition,
+            stopping_condition: options.stopping_condition,
             start_time: Instant::now(),
-            parallel: args.parallel.unwrap_or(true),
-            export_history: args.export_history,
-            rng: get_rng(args.seed),
+            parallel: options.parallel.unwrap_or(true),
+            export_history: options.export_history,
+            rng: get_rng(options.seed),
+            args: nsga2_args,
         })
     }
 
@@ -375,7 +380,7 @@ impl NSGA2 {
 }
 
 /// Implementation of Section IIIC of the paper.
-impl Algorithm for NSGA2 {
+impl Algorithm<NSGA2Arg> for NSGA2 {
     /// This assesses the initial random population and sets the individual's ranks and crowding
     /// distance needed in [`self.evolve`].
     ///
@@ -523,7 +528,11 @@ impl Algorithm for NSGA2 {
     }
 
     fn export_history(&self) -> Option<&ExportHistory> {
-        return self.export_history.as_ref();
+        self.export_history.as_ref()
+    }
+
+    fn algorithm_options(&self) -> &NSGA2Arg {
+        &self.args
     }
 }
 
@@ -535,7 +544,7 @@ pub struct NonDominatedSortResults {
     pub fronts: Vec<Vec<Individual>>,
     /// This is [`NonDominatedSortResults::fronts`], but the individuals are given as indexes
     /// instead of references. Each index refers to the vector of individuals passed to
-    /// [`fast_non_dominated_sort`].
+    /// [`NSGA2::fast_non_dominated_sort`].
     pub front_indexes: Vec<Vec<usize>>,
     /// Number of individuals that dominates a solution at a given vector index. When the counter
     /// is 0, the solution is non-dominated. This is `n_p` in the paper.
@@ -922,14 +931,13 @@ mod test_problems {
         let args = NSGA2Arg {
             number_of_individuals: 10,
             stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
-            problem,
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
             seed: Some(10),
         };
-        let mut algo = NSGA2::new(args).unwrap();
+        let mut algo = NSGA2::new(problem, args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -950,14 +958,13 @@ mod test_problems {
         let args = NSGA2Arg {
             number_of_individuals,
             stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
-            problem,
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
             seed: Some(1),
         };
-        let mut algo = NSGA2::new(args).unwrap();
+        let mut algo = NSGA2::new(problem, args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -997,14 +1004,13 @@ mod test_problems {
         let args = NSGA2Arg {
             number_of_individuals,
             stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
-            problem,
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
             seed: Some(1),
         };
-        let mut algo = NSGA2::new(args).unwrap();
+        let mut algo = NSGA2::new(problem, args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -1049,14 +1055,13 @@ mod test_problems {
         let args = NSGA2Arg {
             number_of_individuals,
             stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
-            problem,
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
             seed: Some(1),
         };
-        let mut algo = NSGA2::new(args).unwrap();
+        let mut algo = NSGA2::new(problem, args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -1102,14 +1107,13 @@ mod test_problems {
             number_of_individuals,
             // this may take longer to converge
             stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(3000)),
-            problem,
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
             seed: Some(1),
         };
-        let mut algo = NSGA2::new(args).unwrap();
+        let mut algo = NSGA2::new(problem, args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -1155,14 +1159,13 @@ mod test_problems {
         let args = NSGA2Arg {
             number_of_individuals,
             stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
-            problem,
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
             seed: Some(1),
         };
-        let mut algo = NSGA2::new(args).unwrap();
+        let mut algo = NSGA2::new(problem, args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
