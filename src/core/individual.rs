@@ -451,17 +451,61 @@ impl Population {
     }
 }
 
-pub trait Individuals<'a> {
+pub trait Individuals {
     fn individual(&self, index: usize) -> Result<&Individual, OError>;
     fn objective_values(&self, name: &str) -> Result<Vec<f64>, OError>;
     fn to_real_vec(&self, name: &str) -> Result<Vec<f64>, OError>;
 }
 
-pub trait IndividualsMut<'a> {
+pub trait IndividualsMut {
     fn individual_as_mut(&mut self, index: usize) -> Result<&mut Individual, OError>;
 }
 
-impl<'a> IndividualsMut<'a> for &'a mut [Individual] {
+macro_rules! impl_individuals {
+    ( $($type:ty),* $(,)? ) => {
+        $(
+            impl Individuals for $type {
+                /// Get an individual from a vector.
+                ///
+                /// # Arguments
+                ///
+                /// * `index`: The index of the individual.
+                ///
+                /// return: `Result<&Individual, OError>`
+                fn individual(&self, index: usize) -> Result<&Individual, OError> {
+                    self.get(index)
+                        .ok_or(OError::NonExistingIndex("individual".to_string(), index))
+                }
+
+                /// Get the objective values for all individuals. This returns an error if the objective name
+                /// does not exist.
+                ///
+                /// # Arguments
+                ///
+                /// * `name`: The objective name.
+                ///
+                /// returns: `Result<f64, OError>`
+                fn objective_values(&self, name: &str) -> Result<Vec<f64>, OError> {
+                    self.iter().map(|i| i.get_objective_value(name)).collect()
+                }
+
+                /// Get the numbers stored in a real variable in all individuals. This returns an error if the
+                /// variable does not exist or is not a real type.
+                ///
+                /// # Arguments
+                ///
+                /// * `name`: The variable name.
+                ///
+                /// returns: `Result<f64, OError>`
+                fn to_real_vec(&self, name: &str) -> Result<Vec<f64>, OError> {
+                    self.iter().map(|i| i.get_real_value(name)).collect()
+                }
+            }
+        )*
+    };
+}
+
+impl IndividualsMut for &mut [Individual] {
     /// Get a population individual as mutable.
     ///
     /// # Arguments
@@ -475,43 +519,8 @@ impl<'a> IndividualsMut<'a> for &'a mut [Individual] {
     }
 }
 
-impl<'a> Individuals<'a> for &'a mut [Individual] {
-    /// Get an individual from a vector.
-    ///
-    /// # Arguments
-    ///
-    /// * `index`: The index of the individual.
-    ///
-    /// return: `Result<&Individual, OError>`
-    fn individual(&self, index: usize) -> Result<&Individual, OError> {
-        self.get(index)
-            .ok_or(OError::NonExistingIndex("individual".to_string(), index))
-    }
-
-    /// Get the objective values for all individuals. This returns an error if the objective name
-    /// does not exist.
-    ///
-    /// # Arguments
-    ///
-    /// * `name`: The objective name.
-    ///
-    /// returns: `Result<f64, OError>`
-    fn objective_values(&self, name: &str) -> Result<Vec<f64>, OError> {
-        self.iter().map(|i| i.get_objective_value(name)).collect()
-    }
-
-    /// Get the numbers stored in a real variable in all individuals. This returns an error if the
-    /// variable does not exist or is not a real type.
-    ///
-    /// # Arguments
-    ///
-    /// * `name`: The variable name.
-    ///
-    /// returns: `Result<f64, OError>`
-    fn to_real_vec(&self, name: &str) -> Result<Vec<f64>, OError> {
-        self.iter().map(|i| i.get_real_value(name)).collect()
-    }
-}
+impl_individuals!(&[Individual]);
+impl_individuals!(&mut [Individual]);
 
 #[cfg(test)]
 mod test {
