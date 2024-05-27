@@ -254,12 +254,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
                     name
                 )));
             };
-            let v = results.objectives[&name];
-            let sign = match problem.is_objective_minimised(&name)? {
-                true => 1.0,
-                false => -1.0,
-            };
-            i.update_objective(&name, sign * v)?;
+            i.update_objective(&name, results.objectives[&name])?;
         }
         if let Some(constraints) = results.constraints {
             for name in problem.constraint_names() {

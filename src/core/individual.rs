@@ -182,8 +182,14 @@ impl Individual {
         if value.is_nan() {
             return Err(OError::NaN("objective".to_string(), name.to_string()));
         }
+
+        // invert the sign for maximisation problems
+        let sign = match self.problem.is_objective_minimised(name)? {
+            true => 1.0,
+            false => -1.0,
+        };
         if let Some(x) = self.objective_values.get_mut(name) {
-            *x = value;
+            *x = sign * value;
         }
         Ok(())
     }
@@ -231,13 +237,12 @@ impl Individual {
     /// return: `bool`
     pub fn is_feasible(&self) -> bool {
         for (name, constraint_value) in self.constraint_values.iter() {
-            if !self.problem.constraints().contains_key(name) {
+            if !self.problem.constraint_names().contains(name) {
                 continue;
             }
             if !self
                 .problem
-                .constraints()
-                .get(name)
+                .get_constraint(name)
                 .unwrap()
                 .is_met(*constraint_value)
             {
@@ -360,9 +365,22 @@ impl Individual {
     ///
     /// return: `IndividualExport`
     pub fn serialise(&self) -> IndividualExport {
+        // invert maximised objective for user
+        let mut objective_values = self.objective_values.clone();
+        for name in self.problem.objective_names() {
+            match self.problem.is_objective_minimised(&name) {
+                Ok(is_minimised) => {
+                    if !is_minimised {
+                        *objective_values.get_mut(&name).unwrap() *= -1.0;
+                    }
+                }
+                Err(_) => continue,
+            }
+        }
+
         IndividualExport {
             constraint_values: self.constraint_values.clone(),
-            objective_values: self.objective_values.clone(),
+            objective_values,
             constraint_violation: self.constraint_violation(),
             variable_values: self.variable_values.clone(),
             is_feasible: self.is_feasible(),
@@ -519,8 +537,10 @@ impl IndividualsMut for &mut [Individual] {
     }
 }
 
+// Implement methods for individuals for different types
 impl_individuals!(&[Individual]);
 impl_individuals!(&mut [Individual]);
+impl_individuals!(Vec<Individual>);
 
 #[cfg(test)]
 mod test {
