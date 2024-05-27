@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 
-use log::info;
 use serde::{Deserialize, Serialize};
 
 use crate::core::{Constraint, Individual, Objective, ObjectiveDirection, OError, VariableType};
@@ -130,11 +129,11 @@ pub struct ProblemExport {
 #[derive(Debug)]
 pub struct Problem {
     /// The problem objectives.
-    objectives: HashMap<String, Objective>,
+    objectives: Vec<Objective>,
     /// The problem constraints.
-    constraints: HashMap<String, Constraint>,
+    constraints: Vec<Constraint>,
     /// The problem variable types.
-    variables: HashMap<String, VariableType>,
+    variables: Vec<VariableType>,
     /// The trait with the function to use to evaluate the objective and constraint values of
     /// new offsprings.
     evaluator: Box<dyn Evaluator>,
@@ -178,47 +177,12 @@ impl Problem {
         if variable_types.is_empty() {
             return Err(OError::NoVariables);
         }
-
-        let mut p_objectives: HashMap<String, Objective> = HashMap::new();
-        for objective in objectives.into_iter() {
-            let name = objective.name();
-            if p_objectives.contains_key(&name) {
-                return Err(OError::DuplicatedName("objective".to_string(), name));
-            }
-            info!("Adding objective '{}' - {}", name, objective);
-            p_objectives.insert(name, objective);
-        }
-
-        let mut p_variables: HashMap<String, VariableType> = HashMap::new();
-        for var_type in variable_types.into_iter() {
-            let name = var_type.name().to_string();
-            if p_variables.contains_key(&name) {
-                return Err(OError::DuplicatedName("variable".to_string(), name));
-            }
-            info!("Adding variable type '{}' - {}", name, var_type);
-            p_variables.insert(name, var_type);
-        }
-
-        let p_constraints = match constraints {
-            None => HashMap::<String, Constraint>::new(),
-            Some(c) => {
-                let mut p_constraints: HashMap<String, Constraint> = HashMap::new();
-                for constraint in c.into_iter() {
-                    let name = constraint.name().to_string();
-                    if p_constraints.contains_key(&name) {
-                        return Err(OError::DuplicatedName("constraint".to_string(), name));
-                    }
-                    info!("Adding constraint '{}' - {}", name, constraint);
-                    p_constraints.insert(name, constraint);
-                }
-                p_constraints
-            }
-        };
+        let constraints = constraints.unwrap_or_default();
 
         Ok(Self {
-            variables: p_variables,
-            objectives: p_objectives,
-            constraints: p_constraints,
+            variables: variable_types,
+            objectives,
+            constraints,
             evaluator,
         })
     }
@@ -233,13 +197,13 @@ impl Problem {
     ///
     /// returns: `Result<bool, OError>`
     pub fn is_objective_minimised(&self, name: &str) -> Result<bool, OError> {
-        if !self.objectives.contains_key(name) {
-            return Err(OError::NonExistingName(
+        match self.objectives.iter().position(|o| o.name() == name) {
+            None => Err(OError::NonExistingName(
                 "objective".to_string(),
                 name.to_string(),
-            ));
+            )),
+            Some(p) => Ok(self.objectives[p].direction() == ObjectiveDirection::Minimise),
         }
-        Ok(self.objectives[name].direction() == ObjectiveDirection::Minimise)
     }
 
     /// Get the total number of objectives of the problem.
@@ -267,28 +231,31 @@ impl Problem {
     ///
     /// return `Vec<String>`
     pub fn variable_names(&self) -> Vec<String> {
-        self.variables.keys().cloned().collect()
+        self.variables.iter().map(|o| o.name()).collect()
     }
 
     /// Get the name of the objectives set on the problem.
     ///
     /// return `Vec<String>`
     pub fn objective_names(&self) -> Vec<String> {
-        self.objectives.keys().cloned().collect()
+        self.objectives.iter().map(|o| o.name()).collect()
     }
 
     /// Get the name of the constraints set on the problem.
     ///
     /// return `Vec<String>`
     pub fn constraint_names(&self) -> Vec<String> {
-        self.constraints.keys().cloned().collect()
+        self.constraints.iter().map(|o| o.name()).collect()
     }
 
     /// Get the map of variables.
     ///
-    /// return `HashMap<String, VariableType>`
-    pub fn variables(&self) -> HashMap<String, VariableType> {
-        self.variables.clone()
+    /// return `Vec<(String, VariableType)>`
+    pub fn variables(&self) -> Vec<(String, VariableType)> {
+        self.variables
+            .iter()
+            .map(|o| (o.name().clone(), o.clone()))
+            .collect()
     }
 
     /// Get a variable type by name. This returns an error if the variable does not exist.
@@ -299,20 +266,50 @@ impl Problem {
     ///
     /// return `Result<VariableType, OError>`
     pub fn get_variable(&self, name: &str) -> Result<VariableType, OError> {
-        if !self.variable_names().contains(&name.to_string()) {
-            return Err(OError::NonExistingName(
+        match self.variables.iter().position(|o| o.name() == name) {
+            None => Err(OError::NonExistingName(
                 "variable".to_string(),
                 name.to_string(),
-            ));
+            )),
+            Some(p) => Ok(self.variables[p].clone()),
         }
-        Ok(self.variables[name].clone())
+    }
+
+    /// Get a constraint by name. This returns an error if the constraint does not exist.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The name of the constraint to fetch.
+    ///
+    /// return `Result<Constraint, OError>`
+    pub fn get_constraint(&self, name: &str) -> Result<Constraint, OError> {
+        match self.constraints.iter().position(|o| o.name() == name) {
+            None => Err(OError::NonExistingName(
+                "variable".to_string(),
+                name.to_string(),
+            )),
+            Some(p) => Ok(self.constraints[p].clone()),
+        }
+    }
+
+    /// Get the list of objectives.
+    ///
+    /// return `Vec<(String, Objective)>`
+    pub fn objectives(&self) -> Vec<(String, Objective)> {
+        self.objectives
+            .iter()
+            .map(|o| (o.name().clone(), o.clone()))
+            .collect()
     }
 
     /// Get the list of constraints.
     ///
-    /// return `HashMap<String, Constraint>`
-    pub fn constraints(&self) -> HashMap<String, Constraint> {
-        self.constraints.clone()
+    /// return `Vec<(String, Constraint)>`
+    pub fn constraints(&self) -> Vec<(String, Constraint)> {
+        self.constraints
+            .iter()
+            .map(|o| (o.name().clone(), o.clone()))
+            .collect()
     }
 
     /// The function used to evaluate the constraint and objective values for a new offsprings.
@@ -326,10 +323,26 @@ impl Problem {
     ///
     /// return: `ProblemExport`
     pub fn serialise(&self) -> ProblemExport {
+        let objectives: HashMap<String, Objective> = self
+            .objectives()
+            .iter()
+            .map(|(name, obj)| (name.clone(), obj.clone()))
+            .collect();
+        let constraints: HashMap<String, Constraint> = self
+            .constraints()
+            .iter()
+            .map(|(name, c)| (name.clone(), c.clone()))
+            .collect();
+        let variables: HashMap<String, VariableType> = self
+            .variables()
+            .iter()
+            .map(|(name, var)| (name.clone(), var.clone()))
+            .collect();
+
         ProblemExport {
-            objectives: self.objectives.clone(),
-            constraints: self.constraints.clone(),
-            variables: self.variables.clone(),
+            objectives,
+            constraints,
+            variables,
             constraint_names: self.constraint_names().clone(),
             variable_names: self.variable_names(),
             objective_names: self.objective_names().clone(),
