@@ -84,21 +84,18 @@ impl BinaryComparisonOperator for ParetoConstrainedDominance {
         // check pareto dominance using all the objectives (step 2)
         let mut relation = PreferredSolution::MutuallyPreferred;
         for objective_name in problem.objective_names() {
-            let mut obj_sol1 = first_solution.get_objective_value(objective_name.as_str())?;
-            let mut obj_sol2 = second_solution.get_objective_value(objective_name.as_str())?;
+            let obj_sol1 = first_solution.get_objective_value(objective_name.as_str())?;
+            let obj_sol2 = second_solution.get_objective_value(objective_name.as_str())?;
 
-            // invert objective value for maximisation problems
-            if !problem.is_objective_minimised(objective_name.as_str())? {
-                obj_sol1 = -obj_sol1;
-                obj_sol2 = -obj_sol2;
-            }
             if obj_sol1 < obj_sol2 {
+                // previous objective favours 2nd solution
                 if relation == PreferredSolution::Second {
                     // mutually dominated
                     return Ok(PreferredSolution::MutuallyPreferred);
                 }
                 relation = PreferredSolution::First;
             } else if obj_sol1 > obj_sol2 {
+                // previous objective favours 1st solution
                 if relation == PreferredSolution::First {
                     // mutually dominated
                     return Ok(PreferredSolution::MutuallyPreferred);
@@ -117,7 +114,7 @@ impl BinaryComparisonOperator for ParetoConstrainedDominance {
 /// or when  $rank_i =rank_j$
 ///    ${distance}_i > {distance}_j$
 /// where `rank_x` is the rank from the fast non-dominated sort algorithm (see
-/// [`crate::algorithms::NSGA2::fast_non_dominated_sort`]) and `{distance}_x` is the crowding distance using
+/// [`crate::algorithms::fast_non_dominated_sort`]) and `{distance}_x` is the crowding distance using
 /// neighboring solutions (see [`crate::algorithms::NSGA2::set_crowding_distance`]).
 ///
 /// Implemented based on:
@@ -261,7 +258,7 @@ mod test_pareto_constrained_dominance {
         let mut solution1 = Individual::new(problem.clone());
         let mut solution2 = Individual::new(problem.clone());
 
-        // Sol 2 dominates with largets objective
+        // Sol 2 dominates with larger objective
         solution1.update_objective("obj1", 5.0).unwrap();
         solution2.update_objective("obj1", 15.0).unwrap();
         assert_eq!(
