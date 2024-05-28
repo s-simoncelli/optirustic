@@ -22,11 +22,11 @@ pub enum OError {
     WrongTypeVariableWithName(String, String),
     #[error("The min value ({0}) must be strictly smaller than the max value ({1}).")]
     TooLargeLowerBound(String, String),
-    #[error("An error occurred  in the comparison operator '{0}': {1}")]
+    #[error("An error occurred in the comparison operator '{0}': {1}")]
     ComparisonOperator(String, String),
-    #[error("An error occurred  in the selector operator '{0}': {1}")]
+    #[error("An error occurred in the selector operator '{0}': {1}")]
     SelectorOperator(String, String),
-    #[error("An error occurred  in the crossover operator '{0}': {1}")]
+    #[error("An error occurred in the crossover operator '{0}': {1}")]
     CrossoverOperator(String, String),
     #[error("An error occurred in the mutation operator '{0}': {1}")]
     MutationOperator(String, String),
@@ -34,12 +34,14 @@ pub enum OError {
     SurvivalOperator(String, String),
     #[error("An error occurred when evaluating a solution: {0}")]
     Evaluation(String),
+    #[error("An error occurred in the calculation of the '{0}' metric: {1}")]
+    Metric(String, String),
     #[error("An error occurred when initialising {0}: {1}")]
     AlgorithmInit(String, String),
     #[error("An error occurred when running {0}: {1}")]
     AlgorithmRun(String, String),
     #[error("An error occurred when exporting the algorithm data: {0}")]
     AlgorithmExport(String),
-    #[error("NaN detected when adding {0} {1}. This may be an error in the user-defined evaluation function")]
+    #[error("NaN detected when adding {0} '{1}'. This may be an error in the user-defined evaluation function")]
     NaN(String, String),
 }

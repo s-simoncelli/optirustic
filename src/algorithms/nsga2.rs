@@ -426,7 +426,7 @@ mod test_sorting {
     fn test_crowding_distance_not_enough_points() {
         let objectives = vec![[0.0, 0.0], [50.0, 50.0]];
         let mut individuals = individuals_from_obj_values_dummy(
-            objectives,
+            &objectives,
             [ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
         );
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
@@ -443,7 +443,7 @@ mod test_sorting {
     fn test_crowding_distance_min_max_range() {
         let objectives = vec![[10.0, 20.0], [10.0, 20.0], [10.0, 20.0], [10.0, 20.0]];
         let mut individuals = individuals_from_obj_values_dummy(
-            objectives,
+            &objectives,
             [ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
         );
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
@@ -465,7 +465,7 @@ mod test_sorting {
         ];
         for objectives in scenarios {
             let mut individuals = individuals_from_obj_values_dummy(
-                objectives,
+                &objectives,
                 [ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
             );
             NSGA2::set_crowding_distance(&mut individuals).unwrap();
@@ -506,7 +506,7 @@ mod test_sorting {
     fn test_crowding_distance_3_obj() {
         let objectives = vec![[0.0, 0.0, 0.0], [-1.0, 1.0, 2.0], [2.0, -2.0, -2.0]];
         let mut individuals = individuals_from_obj_values_dummy(
-            objectives,
+            &objectives,
             [
                 ObjectiveDirection::Minimise,
                 ObjectiveDirection::Minimise,
@@ -554,7 +554,7 @@ mod test_sorting {
             [400.0, -400.0],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
-            objectives,
+            &objectives,
             [ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
         );
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
@@ -609,7 +609,7 @@ mod test_sorting {
             [11.1, 1.1],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
-            objectives,
+            &objectives,
             [ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
         );
         NSGA2::set_crowding_distance(&mut individuals).unwrap();

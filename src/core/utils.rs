@@ -1,10 +1,17 @@
 use std::error::Error;
+#[cfg(test)]
 use std::ops::Range;
+#[cfg(test)]
+use std::sync::Arc;
 
 use rand::{RngCore, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
+#[cfg(test)]
+use crate::core::{BoundedNumber, Objective, ObjectiveDirection, Problem, VariableType};
 use crate::core::{EvaluationResult, Evaluator, Individual, OError};
+#[cfg(test)]
+use crate::core::problem::builtin_problems::ztd1;
 
 /// Get the random number generator. If no seed is provided, this randomly generated.
 ///
@@ -136,4 +143,67 @@ pub(crate) fn check_exact_value(
         let v_loose_outside = check_value_in_range(&v_outside, loose_range);
         (v_loose_outside, loose_range.clone(), "loose".to_string())
     }
+}
+
+/// Create the individuals for a `N`-objective dummy problem, where `N` is the number of items in
+/// the arrays of `objective_values`.
+///
+/// # Arguments
+///
+/// * `objective_values`: The objective values to set on the individuals. A number of
+/// individuals equal to the number of rows in this vector will be created.
+/// * `objective_direction`: The direction of each objective.
+///
+/// returns: `Vec<Individual>`
+#[cfg(test)]
+pub(crate) fn individuals_from_obj_values_dummy<const N: usize>(
+    objective_values: &Vec<[f64; N]>,
+    objective_direction: [ObjectiveDirection; N],
+) -> Vec<Individual> {
+    let mut objectives = Vec::new();
+    for (i, direction) in objective_direction.iter().enumerate() {
+        objectives.push(Objective::new(
+            format!("obj{i}").as_str(),
+            direction.clone(),
+        ));
+    }
+    let variables = vec![VariableType::Real(
+        BoundedNumber::new("X", 0.0, 2.0).unwrap(),
+    )];
+    let problem = Arc::new(Problem::new(objectives, variables, None, dummy_evaluator()).unwrap());
+
+    // create the individuals
+    let mut individuals: Vec<Individual> = Vec::new();
+    for data in objective_values {
+        let mut individual = Individual::new(problem.clone());
+        for (oi, obj_value) in data.into_iter().enumerate() {
+            individual
+                .update_objective(format!("obj{oi}").as_str(), *obj_value)
+                .unwrap();
+        }
+        individuals.push(individual);
+    }
+
+    individuals
+}
+
+/// Build the vectors with the individuals and assign the objective values for a ZTD1 problem
+///
+/// # Arguments
+///
+/// * `obj_values`: The objective to use. The size of this vector corresponds to the population
+///  size and the size of the nested vector to the number of problem objectives.
+///
+/// returns: `Vec<Individual>`
+#[cfg(test)]
+pub(crate) fn individuals_from_obj_values_ztd1(obj_values: &[Vec<f64>]) -> Vec<Individual> {
+    let problem = Arc::new(ztd1(obj_values.len()).unwrap());
+    let mut individuals = vec![];
+    for value in obj_values {
+        let mut i = Individual::new(problem.clone());
+        i.update_objective("f1", value[0]).unwrap();
+        i.update_objective("f2", value[1]).unwrap();
+        individuals.push(i);
+    }
+    individuals
 }
