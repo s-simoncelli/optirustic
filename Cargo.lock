@@ -286,8 +286,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
-name = "hv-fonseca-et-al-2006"
-version = "0.1.0"
+name = "hv-fonseca-et-al-2006-sys"
+version = "2.0.0-rc.2"
 dependencies = [
  "bindgen",
  "cc",
@@ -439,7 +439,7 @@ dependencies = [
  "chrono",
  "env_logger",
  "float-cmp",
- "hv-fonseca-et-al-2006",
+ "hv-fonseca-et-al-2006-sys",
  "log",
  "ordered-float",
  "rand",

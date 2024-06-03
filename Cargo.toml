@@ -1,4 +1,4 @@
 [workspace]
 resolver = "2"
-members = ["optirustic-core", "hv-fonseca-et-al-2006"]
-default-members = ["optirustic-core", "hv-fonseca-et-al-2006"]
+members = ["optirustic-core", "hv-fonseca-et-al-2006-sys"]
+default-members = ["optirustic-core", "hv-fonseca-et-al-2006-sys"]
