@@ -344,13 +344,16 @@ impl Individual {
     /// receives the objective value and its name.
     ///
     /// returns: `Result<Vec<f64>, OError>`
-    pub fn transform_objective_values<F: Fn(f64, String) -> f64>(&self, transform: F) -> Vec<f64> {
+    pub fn transform_objective_values<F: Fn(f64, String) -> Result<f64, String>>(
+        &self,
+        transform: F,
+    ) -> Result<Vec<f64>, OError> {
         self.problem
             .objective_names()
             .iter()
             .map(|obj_name| {
-                let val = self.get_objective_value(obj_name).unwrap();
-                transform(val, obj_name.clone())
+                let val = self.get_objective_value(obj_name)?;
+                Ok(transform(val, obj_name.clone()).map_err(|e| OError::Generic(e.to_string())))
             })
             .collect()
     }
