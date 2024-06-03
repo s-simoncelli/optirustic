@@ -5,7 +5,7 @@
 include!("bindings.rs");
 
 /// Calculate the hyper-volume using the algorithm proposed by [Fonseca et al. (2006)](http://dx.doi.org/10.1109/CEC.2006.1688440)
-/// for a problerm with `d` objectives and `n` individuals. The function calls version 4 of the
+/// for a problem with `d` objectives and `n` individuals. The function calls version 4 of the
 /// algorithm, therefore its complexity is O(`n^(d-2)*log n`).
 ///
 /// **IMPLEMENTATION NOTES**:
@@ -26,13 +26,13 @@ include!("bindings.rs");
 /// # Examples
 ///
 /// ```
-/// use hv_fonseca_et_al_2006::calculate_hv;
-/// let data = [[1.0, 1.0, 1.0], [2.0, 2.0, 2.0]];
-/// let ref_point = [3.0, 3.0, 3.0];
+/// use hv_fonseca_et_al_2006_sys::calculate_hv;
+/// let data = [vec![1.0, 1.0, 1.0], vec![2.0, 2.0, 2.0]];
+/// let ref_point = vec![3.0, 3.0, 3.0];
 /// let hv = calculate_hv(&data, &ref_point);
 /// assert_eq!(hv, 8.0);
 /// ```
-pub fn calculate_hv<const D: usize>(data: &[[f64; D]], ref_point: &[f64; D]) -> f64 {
+pub fn calculate_hv(data: &[Vec<f64>], ref_point: &[f64]) -> f64 {
     let total_objectives = data.first().unwrap().len();
     let total_individuals = data.len();
     let mut flatten_data = data.iter().flatten().cloned().collect::<Vec<f64>>();
@@ -54,8 +54,8 @@ mod tests {
 
     #[test]
     fn test_hv3d() {
-        let data = [[1.0, 1.0, 1.0], [2.0, 2.0, 2.0]];
-        let ref_point = [3.0, 3.0, 3.0];
+        let data = [vec![1.0, 1.0, 1.0], vec![2.0, 2.0, 2.0]];
+        let ref_point = vec![3.0, 3.0, 3.0];
         let hv = calculate_hv(&data, &ref_point);
         assert_eq!(hv, 8.0);
     }

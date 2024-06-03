@@ -327,11 +327,11 @@ impl Individual {
     /// equal the number of problem objectives.
     ///
     /// returns: `Result<Vec<f64>, OError>`
-    pub fn get_objective_values(&self) -> Vec<f64> {
+    pub fn get_objective_values(&self) -> Result<Vec<f64>, OError> {
         self.problem
             .objective_names()
             .iter()
-            .map(|obj_name| self.get_objective_value(obj_name).unwrap())
+            .map(|obj_name| self.get_objective_value(obj_name))
             .collect()
     }
 
@@ -344,7 +344,7 @@ impl Individual {
     /// receives the objective value and its name.
     ///
     /// returns: `Result<Vec<f64>, OError>`
-    pub fn transform_objective_values<F: Fn(f64, String) -> Result<f64, String>>(
+    pub fn transform_objective_values<F: Fn(f64, String) -> Result<f64, OError>>(
         &self,
         transform: F,
     ) -> Result<Vec<f64>, OError> {
@@ -353,7 +353,7 @@ impl Individual {
             .iter()
             .map(|obj_name| {
                 let val = self.get_objective_value(obj_name)?;
-                Ok(transform(val, obj_name.clone()).map_err(|e| OError::Generic(e.to_string())))
+                transform(val, obj_name.clone())
             })
             .collect()
     }
