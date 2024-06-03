@@ -11,7 +11,7 @@ use crate::algorithms::{Algorithm, ExportHistory, fast_non_dominated_sort, Stopp
 use crate::core::{
     Individual, Individuals, IndividualsMut, OError, Population, Problem, VariableValue,
 };
-use crate::core::utils::{argsort, get_rng, vector_max, vector_min};
+use crate::core::utils::{argsort, get_rng, Sort, vector_max, vector_min};
 use crate::operators::{
     Crossover, CrowdedComparison, Mutation, PolynomialMutation, PolynomialMutationArgs, Selector,
     SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
@@ -225,7 +225,7 @@ impl NSGA2 {
             }
 
             // sort objectives and get indexes to map individuals to sorted objectives
-            let sorted_idx = argsort(&obj_values);
+            let sorted_idx = argsort(&obj_values, Sort::Ascending);
             obj_values.sort_by(|a, b| a.total_cmp(b));
 
             // assign infinite distance to the boundary points
@@ -427,7 +427,7 @@ mod test_sorting {
         let objectives = vec![[0.0, 0.0], [50.0, 50.0]];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
-            [ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
         );
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
         for i in individuals {
@@ -444,7 +444,7 @@ mod test_sorting {
         let objectives = vec![[10.0, 20.0], [10.0, 20.0], [10.0, 20.0], [10.0, 20.0]];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
-            [ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
         );
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
         for i in individuals {
@@ -466,7 +466,7 @@ mod test_sorting {
         for objectives in scenarios {
             let mut individuals = individuals_from_obj_values_dummy(
                 &objectives,
-                [ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+                &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
             );
             NSGA2::set_crowding_distance(&mut individuals).unwrap();
 
@@ -507,7 +507,7 @@ mod test_sorting {
         let objectives = vec![[0.0, 0.0, 0.0], [-1.0, 1.0, 2.0], [2.0, -2.0, -2.0]];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
-            [
+            &[
                 ObjectiveDirection::Minimise,
                 ObjectiveDirection::Minimise,
                 ObjectiveDirection::Minimise,
@@ -555,7 +555,7 @@ mod test_sorting {
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
-            [ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
         );
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
 
@@ -610,7 +610,7 @@ mod test_sorting {
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
-            [ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
         );
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
 

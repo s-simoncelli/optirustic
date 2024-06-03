@@ -1,9 +1,8 @@
-use log::debug;
-
 use crate::core::{Individual, OError, VariableValue};
 use crate::operators::{BinaryComparisonOperator, ParetoConstrainedDominance, PreferredSolution};
 
 /// Outputs of the non-dominated sort algorithm.
+#[derive(Debug)]
 pub struct NonDominatedSortResults {
     /// A vector containing sub-vectors. Each child vector represents a front (with the first being
     /// the primary non-dominated front with solutions of rank 1); each child vector contains
@@ -68,7 +67,6 @@ pub fn fast_non_dominated_sort(
 
     for pi in 0..individuals.len() {
         for qi in pi..individuals.len() {
-            debug!("Comparing pi={} / qi={}", pi, qi);
             match ParetoConstrainedDominance::compare(&individuals[pi], &individuals[qi])? {
                 PreferredSolution::First => {
                     // `p` dominates `q` - add `q` to the set of solutions dominated by `p`
@@ -86,7 +84,6 @@ pub fn fast_non_dominated_sort(
             }
         }
 
-        debug!("domination_counter = {:?}", domination_counter);
         // the solution `p` is non-dominated by any other and this solution belongs to the first
         // front whose items have rank 1
         if domination_counter[pi] == 0 {
@@ -182,7 +179,7 @@ mod test_sorting {
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
-            [ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
         );
         let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
 
@@ -243,7 +240,7 @@ mod test_sorting {
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
-            [ObjectiveDirection::Maximise, ObjectiveDirection::Minimise],
+            &[ObjectiveDirection::Maximise, ObjectiveDirection::Minimise],
         );
         let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
 
@@ -278,7 +275,7 @@ mod test_sorting {
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
-            [ObjectiveDirection::Minimise, ObjectiveDirection::Maximise],
+            &[ObjectiveDirection::Minimise, ObjectiveDirection::Maximise],
         );
         let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
 
@@ -311,7 +308,7 @@ mod test_sorting {
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
-            [
+            &[
                 ObjectiveDirection::Minimise,
                 ObjectiveDirection::Minimise,
                 ObjectiveDirection::Minimise,

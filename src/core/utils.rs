@@ -82,16 +82,30 @@ pub fn vector_max(v: &[f64]) -> Result<f64, OError> {
         ))?)
 }
 
-/// Returns the indices that would sort an array.
+/// Define the sort type
+#[derive(PartialEq)]
+pub enum Sort {
+    /// Sort values in ascending order
+    Ascending,
+    /// Sort values in descending order
+    Descending,
+}
+
+/// Returns the indices that would sort an array in ascending order.
 ///
 /// # Arguments
 ///
 /// * `data`: The vector to sort.
+/// * `sort_type`: Specify whether to sort in ascending or descending order.
 ///
 /// returns: `Vec<usize>`. The vector with the indices.
-pub fn argsort(data: &[f64]) -> Vec<usize> {
+pub fn argsort(data: &[f64], sort_type: Sort) -> Vec<usize> {
     let mut indices = (0..data.len()).collect::<Vec<_>>();
     indices.sort_by(|a, b| data[*a].total_cmp(&data[*b]));
+
+    if sort_type == Sort::Descending {
+        indices.reverse();
+    }
     indices
 }
 
@@ -150,15 +164,15 @@ pub(crate) fn check_exact_value(
 ///
 /// # Arguments
 ///
-/// * `objective_values`: The objective values to set on the individuals. A number of
-/// individuals equal to the number of rows in this vector will be created.
+/// * `objective_values`: The objective values to set on the individuals. A number of individuals
+/// equal to this vector size will be created.
 /// * `objective_direction`: The direction of each objective.
 ///
 /// returns: `Vec<Individual>`
 #[cfg(test)]
 pub(crate) fn individuals_from_obj_values_dummy<const N: usize>(
     objective_values: &Vec<[f64; N]>,
-    objective_direction: [ObjectiveDirection; N],
+    objective_direction: &[ObjectiveDirection; N],
 ) -> Vec<Individual> {
     let mut objectives = Vec::new();
     for (i, direction) in objective_direction.iter().enumerate() {
@@ -176,7 +190,7 @@ pub(crate) fn individuals_from_obj_values_dummy<const N: usize>(
     let mut individuals: Vec<Individual> = Vec::new();
     for data in objective_values {
         let mut individual = Individual::new(problem.clone());
-        for (oi, obj_value) in data.into_iter().enumerate() {
+        for (oi, obj_value) in data.iter().enumerate() {
             individual
                 .update_objective(format!("obj{oi}").as_str(), *obj_value)
                 .unwrap();
@@ -206,4 +220,17 @@ pub(crate) fn individuals_from_obj_values_ztd1(obj_values: &[Vec<f64>]) -> Vec<I
         individuals.push(i);
     }
     individuals
+}
+
+#[cfg(test)]
+mod test {
+    use crate::core::utils::{argsort, Sort};
+
+    #[test]
+    fn test_argsort() {
+        let vec = vec![99.0, 11.0, 456.2, 19.0, 0.5];
+
+        assert_eq!(argsort(&vec, Sort::Ascending), vec![4, 1, 3, 0, 2]);
+        assert_eq!(argsort(&vec, Sort::Descending), vec![2, 0, 3, 1, 4]);
+    }
 }
