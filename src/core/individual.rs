@@ -172,7 +172,7 @@ impl Individual {
     /// * `value`: The value to set.
     ///
     /// returns: `Result<(), OError>`
-    pub(crate) fn update_objective(&mut self, name: &str, value: f64) -> Result<(), OError> {
+    pub fn update_objective(&mut self, name: &str, value: f64) -> Result<(), OError> {
         if !self.objective_values.contains_key(name) {
             return Err(OError::NonExistingName(
                 "objective".to_string(),
@@ -321,6 +321,38 @@ impl Individual {
         }
 
         Ok(self.objective_values[name])
+    }
+
+    /// Ge the vector with the objective values for the individual. The size of the vector will
+    /// equal the number of problem objectives.
+    ///
+    /// returns: `Result<Vec<f64>, OError>`
+    pub fn get_objective_values(&self) -> Vec<f64> {
+        self.problem
+            .objective_names()
+            .iter()
+            .map(|obj_name| self.get_objective_value(obj_name).unwrap())
+            .collect()
+    }
+
+    /// Ge the vector with the objective values for the individual and transform their value using
+    /// a closure. The size of the vector will equal the number of problem objectives.
+    ///
+    /// # Arguments
+    ///
+    /// * `transform`: The function to apply to transform each objective value. This function
+    /// receives the objective value and its name.
+    ///
+    /// returns: `Result<Vec<f64>, OError>`
+    pub fn transform_objective_values<F: Fn(f64, String) -> f64>(&self, transform: F) -> Vec<f64> {
+        self.problem
+            .objective_names()
+            .iter()
+            .map(|obj_name| {
+                let val = self.get_objective_value(obj_name).unwrap();
+                transform(val, obj_name.clone())
+            })
+            .collect()
     }
 
     /// Check if the individual was evaluated.

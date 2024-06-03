@@ -2,15 +2,15 @@ use std::mem;
 
 use crate::algorithms::fast_non_dominated_sort;
 use crate::core::{Individual, Individuals, ObjectiveDirection, OError};
-use crate::core::utils::vector_max;
-use crate::metrics::hypervolume::check_args;
+use crate::metrics::hypervolume::{check_args, check_ref_point_coordinate};
 
-/// Calculate the hyper-volume for a two-objective problem.
+/// Calculate the hyper-volume for a two-objective problem by summing the areas rectangle of the
+/// rectangles between the Pareto front and the chosen `reference_point`.
 #[derive(Debug)]
 pub struct HyperVolume2D {
-    /// The objective to use. The size of this vector corresponds to the individual size in the
-    /// first pareto front and the size of the nested vector corresponds to the number of problem
-    /// objectives.
+    /// The objective to use. The size of this vector corresponds to th number of problem
+    /// objectives (2) and he size of the nested vector corresponds to the number of individuals in
+    /// the first Pareto front (of rank 1).
     objective_values: Vec<Vec<f64>>,
     /// The reference point.
     reference_point: Vec<f64>,
@@ -19,27 +19,27 @@ pub struct HyperVolume2D {
 impl HyperVolume2D {
     /// Calculate the hyper-volume for a two-objective problem. This approach excludes dominated and
     /// unfeasible individuals and then calculates the areas of the rectangles between the convex
-    /// Pareto front and the chosen `reference_point`. The reference point must dominate all
-    /// objectives.
+    /// Pareto front and the chosen `reference_point`.
     ///
     /// **IMPLEMENTATION NOTES**:
-    /// 1) For problems with at least one maximised objective, this implementation ensures that the
+    /// 1) The reference point must dominate the values of all objectives.
+    /// 2) For problems with at least one maximised objective, this implementation ensures that the
     /// Pareto front shape is strictly convex and has the same orientation of minimisation problems
     /// by inverting the sign of the objective values to maximise, and the reference point
     /// coordinates.
-    /// 2) Dominated and unfeasible solutions are excluded using the NSGA2 [`fast_non_dominated_sort`]
+    /// 3) Dominated and unfeasible solutions are excluded using the NSGA2 [`fast_non_dominated_sort`]
     /// algorithm in order to get the Pareto front (i.e. with non-dominated solutions) to use in
     /// the calculation.
-    /// 3) If `individuals` or the resulting Pareto front does not contain more than 2 points, a
+    /// 4) If `individuals` or the resulting Pareto front does not contain more than 2 points, a
     /// zero hyper-volume is returned.
     ///
     /// # Arguments
     ///
     /// * `individuals`: The individuals to use in the calculation. The algorithm will use the
     /// objective vales stored in each individual.
-    /// * `reference_point`: The reference or anti-optimal point to use in the calculation. If you
-    /// are not sure about the point to use, you could pick the worst value of each objective from
-    /// the individual's variable using [`crate::metrics::estimate_reference_point`].
+    /// * `reference_point`: The non-dominated reference or anti-optimal point to use in the
+    /// calculation. If you are not sure about the point to use, you could pick the worst value of
+    /// each objective from the individual's variable using [`crate::metrics::estimate_reference_point`].
     ///
     /// returns: `Result<HyperVolume2D, OError>`
     pub fn new(individuals: &mut [Individual], reference_point: &[f64]) -> Result<Self, OError> {
@@ -56,12 +56,13 @@ impl HyperVolume2D {
             ));
         }
 
-        // there must be at least two individuals to apply `fast_non_dominated_sort`
+        // there must be at least two individuals to apply `fast_non_dominated_sort.
         if individuals.len() < 2 {
-            return Ok(Self {
-                objective_values: vec![],
-                reference_point: reference_point.to_vec(),
-            });
+            return Err(OError::Metric(
+                metric_name,
+                "At least two individuals are needed to determine the non-dominated solutions"
+                    .to_string(),
+            ));
         }
 
         // get non-dominated front
@@ -79,35 +80,8 @@ impl HyperVolume2D {
             let objectives = individuals.objective_values(obj_name)?;
 
             // the reference point must dominate all objectives
-            let max_obj = vector_max(&objectives)?;
-
-            if (obj.direction() == ObjectiveDirection::Minimise)
-                & (reference_point[obj_idx] <= max_obj)
-            {
-                return Err(OError::Metric(
-                    metric_name,
-                    format!(
-                        "The coordinate #{} of the reference point ({}) must be strictly larger than the maximum value of objective '{}' ({}). The reference point must dominate all objectives.",
-                        obj_idx + 1,
-                        reference_point[obj_idx] ,
-                        obj_name,
-                        max_obj
-                    )
-                ));
-            } else if (obj.direction() == ObjectiveDirection::Maximise)
-                & (reference_point[obj_idx] >= max_obj)
-            {
-                return Err(OError::Metric(
-                    metric_name,
-                    format!(
-                        "The coordinate #{} of the reference point ({}) must be strictly smaller than the minimum value of objective '{}' ({}). The reference point must dominate all objectives.",
-                        obj_idx + 1,
-                        reference_point[obj_idx],
-                        obj_name,
-                        -max_obj
-                    )
-                ));
-            }
+            check_ref_point_coordinate(&objectives, obj, reference_point[obj_idx], obj_idx + 1)
+                .map_err(|e| OError::Metric(metric_name.clone(), e))?;
 
             objective_values.push(objectives);
         }
@@ -178,7 +152,7 @@ mod test {
         // Minimise both
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
-            [ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
         );
 
         // x too small
@@ -195,7 +169,7 @@ mod test {
         // Maximise obj 1 - x too large
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
-            [ObjectiveDirection::Maximise, ObjectiveDirection::Minimise],
+            &[ObjectiveDirection::Maximise, ObjectiveDirection::Minimise],
         );
         let ref_point = [6.0, 20.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
@@ -205,7 +179,7 @@ mod test {
         // Maximise obj 2 - y too large
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
-            [ObjectiveDirection::Minimise, ObjectiveDirection::Maximise],
+            &[ObjectiveDirection::Minimise, ObjectiveDirection::Maximise],
         );
         let ref_point = [20.0, 19.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
@@ -321,7 +295,7 @@ mod test {
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
-            [ObjectiveDirection::Maximise, ObjectiveDirection::Minimise],
+            &[ObjectiveDirection::Maximise, ObjectiveDirection::Minimise],
         );
 
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
@@ -342,7 +316,7 @@ mod test {
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
-            [ObjectiveDirection::Minimise, ObjectiveDirection::Maximise],
+            &[ObjectiveDirection::Minimise, ObjectiveDirection::Maximise],
         );
 
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
