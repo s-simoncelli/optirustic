@@ -117,11 +117,7 @@ mod test {
     /// Reference point must be strictly larger than any objective
     fn test_wrong_ref_point() {
         let objective_values = vec![[1.0, 2.0, 1.0], [2.0, 1.0, 1.0]];
-        let objective_direction = [
-            ObjectiveDirection::Minimise,
-            ObjectiveDirection::Minimise,
-            ObjectiveDirection::Minimise,
-        ];
+        let objective_direction = [ObjectiveDirection::Minimise; 3];
 
         let mut individuals =
             individuals_from_obj_values_dummy(&objective_values, &objective_direction);
@@ -137,11 +133,7 @@ mod test {
     /// Test avery simple front
     fn test_simple_front() {
         let objective_values = vec![[1.0, 1.0, 1.0], [2.0, 2.0, 2.0]];
-        let objective_direction = [
-            ObjectiveDirection::Minimise,
-            ObjectiveDirection::Minimise,
-            ObjectiveDirection::Minimise,
-        ];
+        let objective_direction = [ObjectiveDirection::Minimise; 3];
         let ref_point = [3.0, 3.0, 3.0];
 
         let mut individuals =
@@ -151,15 +143,39 @@ mod test {
     }
 
     #[test]
-    /// Test the `HyperVolumeFonseca2006` struct using Pagmo test data.
+    /// Test the `HyperVolumeFonseca2006` struct using Pagmo c_max_t100_d3_n128 test data.
     /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
     fn test_c_max_t100_d3_n128() {
         let all_test_data = parse_pagmo_test_data_file::<3>("c_max_t100_d3_n128").unwrap();
-        let objective_direction = [
-            ObjectiveDirection::Minimise,
-            ObjectiveDirection::Minimise,
-            ObjectiveDirection::Minimise,
-        ];
+        let objective_direction = [ObjectiveDirection::Minimise; 3];
+
+        for (ti, test_data) in all_test_data.iter().enumerate() {
+            let mut individuals = individuals_from_obj_values_dummy(
+                &test_data.objective_values,
+                &objective_direction,
+            );
+            let hv =
+                HyperVolumeFonseca2006::new(&mut individuals, &test_data.reference_point).unwrap();
+
+            let calculated = hv.compute();
+            let expected = test_data.hyper_volume;
+            if !approx_eq!(f64, calculated, expected, epsilon = 0.001) {
+                panic!(
+                    r#"assertion failed for test #{}: `(left approx_eq right)` left: `{:?}`, right: `{:?}`"#,
+                    ti + 1,
+                    calculated,
+                    expected,
+                )
+            }
+        }
+    }
+
+    #[test]
+    /// Test the `HyperVolumeFonseca2006` struct using Pagmo c_max_t1_d3_n2048 test data.
+    /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
+    fn test_c_max_t1_d3_n2048() {
+        let all_test_data = parse_pagmo_test_data_file::<3>("c_max_t1_d3_n2048").unwrap();
+        let objective_direction = [ObjectiveDirection::Minimise; 3];
 
         for (ti, test_data) in all_test_data.iter().enumerate() {
             let mut individuals = individuals_from_obj_values_dummy(

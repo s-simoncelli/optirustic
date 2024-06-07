@@ -163,8 +163,8 @@ impl Individual {
         Ok(())
     }
 
-    /// Update the objective for a solution. This returns an error if the name does not exist in
-    /// the problem.
+    /// Update the objective for a solution. The value is saved as negative if the objective being
+    /// updated is being maximised. This returns an error if the name does not exist in the problem.
     ///
     /// # Arguments
     ///
