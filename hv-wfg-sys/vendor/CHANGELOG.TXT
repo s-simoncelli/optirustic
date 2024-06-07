@@ -1,0 +1,6 @@
+1.02 
+* Accelerated domination checks 
+* Corrected base case error for opt <= 1 
+* Tided up code 
+1.01 
+* Updated README.TXT and wfg.c with correct copyright and attribution to Fonseca, Lopez-Ibanez and Paquete.
