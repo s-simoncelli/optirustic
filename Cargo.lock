@@ -294,6 +294,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hv-wfg-sys"
+version = "0.1.0"
+dependencies = [
+ "bindgen",
+ "cc",
+]
+
+[[package]]
 name = "iana-time-zone"
 version = "0.1.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -440,6 +448,7 @@ dependencies = [
  "env_logger",
  "float-cmp",
  "hv-fonseca-et-al-2006-sys",
+ "hv-wfg-sys",
  "log",
  "ordered-float",
  "rand",

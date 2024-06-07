@@ -1,6 +1,6 @@
 [package]
 name = "hv-fonseca-et-al-2006-sys"
-description = "A wrapper for "
+description = "A wrapper for the hyper-volume algorithm by Fonseca et al. (2006) "
 homepage = "https://lopez-ibanez.eu/hypervolume"
 authors = ["Stefano Simoncelli <netcelli@gmail.com>"]
 repository = "https://github.com/s-simoncelli/optirustic"

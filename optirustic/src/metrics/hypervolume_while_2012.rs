@@ -2,55 +2,48 @@ use std::mem;
 
 use log::{debug, warn};
 
-use hv_fonseca_et_al_2006_sys::calculate_hv;
+use hv_wfg_sys::calculate_hv;
 
 use crate::algorithms::fast_non_dominated_sort;
 use crate::core::{Individual, Individuals, OError};
 use crate::metrics::hypervolume::{check_args, check_ref_point_coordinate};
 
-/// Calculate the hyper-volume using the algorithm proposed by [Fonseca et al. (2006)](http://dx.doi.org/10.1109/CEC.2006.1688440)
+/// Calculate the hyper-volume using the WFG algorithm proposed by [While et al. (2012)](http://dx.doi.org/10.1109/TEVC.2010.2077298)
 /// for a problem with `d` objectives and `n` individuals. The function calls version 4 of the
 /// algorithm, therefore its complexity is O(`n^(d-2)*log n`).
 ///
 /// **IMPLEMENTATION NOTES**:
-/// 1) Points dominated by the reference point are removed from the calculation.
-/// 2) Dominated and unfeasible solutions are excluded using the NSGA2 [`fast_non_dominated_sort`]
+/// 1) Dominated and unfeasible solutions are excluded using the NSGA2 [`fast_non_dominated_sort`]
 /// algorithm in order to get the Pareto front. As assumed in the paper, non-dominated points do
 /// not contribute do the metric.
-/// 3) The coordinates of maximised objectives of the reference point are multiplied by -1 as the
+/// 2) The coordinates of maximised objectives of the reference point are multiplied by -1 as the
 /// algorithm assumes all objectives are maximised.
 #[derive(Debug)]
-pub struct HyperVolumeFonseca2006 {
+pub struct HyperVolumeWhile2012 {
     /// The individuals to use. The size of this vector corresponds to the individual size and the
     /// size of the nested vector corresponds to the number of problem objectives.
     individuals: Vec<Vec<f64>>,
     /// The reference point.
     reference_point: Vec<f64>,
+    /// The name of this metric
+    metric_name: String,
 }
 
-impl HyperVolumeFonseca2006 {
-    /// Calculate the hyper-volume using the algorithm proposed by [Fonseca et al. (2006)](http://dx.doi.org/10.1109/CEC.2006.1688440)
-    /// for a problem with `d` objectives and `n` individuals. The function calls version 4 of the
-    /// algorithm, therefore its complexity is O(`n^(d-2)*log n`).
+impl HyperVolumeWhile2012 {
+    /// Calculate the hyper-volume using the WFG algorithm proposed by [While et al. (2012)](http://dx.doi.org/10.1109/TEVC.2010.2077298)
+    /// for a problem with `d` objectives and `n` individuals.
     ///
     /// # Arguments
     ///
     /// * `individuals`: The list of individuals.
     /// * `reference_point`: The reference point.
     ///
-    /// returns: `Result<HyperVolumeFonseca2006, OError>`
+    /// returns: `Result<HyperVolumeWhile2012, OError>`
     pub fn new(individuals: &mut [Individual], reference_point: &[f64]) -> Result<Self, OError> {
-        let metric_name = "Hyper-volume Fonseca et al. (2006)".to_string();
+        let metric_name = "Hyper-volume While et al. (2012)".to_string();
         // check sizes
         check_args(individuals, reference_point)
             .map_err(|e| OError::Metric(metric_name.clone(), e))?;
-
-        if reference_point.len() != 3 {
-            return Err(OError::Metric(
-                metric_name,
-                "This can only be used on a 3-objective problem.".to_string(),
-            ));
-        }
 
         // the reference point must dominate all objectives
         let problem = individuals[0].problem();
@@ -93,14 +86,16 @@ impl HyperVolumeFonseca2006 {
         Ok(Self {
             individuals: objective_values,
             reference_point: ref_point,
+            metric_name,
         })
     }
 
     /// Calculate the hyper-volume.
     ///
-    /// return: `f64`
-    pub fn compute(&self) -> f64 {
-        calculate_hv(&self.individuals, &self.reference_point)
+    /// return: `Result<f64, OError>`
+    pub fn compute(&mut self) -> Result<f64, OError> {
+        calculate_hv(&mut self.individuals, &mut self.reference_point)
+            .map_err(|e| OError::Metric(self.metric_name.clone(), e.to_string()))
     }
 }
 
@@ -110,66 +105,25 @@ mod test {
 
     use crate::core::ObjectiveDirection;
     use crate::core::utils::individuals_from_obj_values_dummy;
-    use crate::metrics::HyperVolumeFonseca2006;
+    use crate::metrics::hypervolume_while_2012::HyperVolumeWhile2012;
     use crate::metrics::test_utils::parse_pagmo_test_data_file;
-
-    #[test]
-    /// Reference point must be strictly larger than any objective
-    fn test_wrong_ref_point() {
-        let objective_values = vec![[1.0, 2.0, 1.0], [2.0, 1.0, 1.0]];
-        let objective_direction = [
-            ObjectiveDirection::Minimise,
-            ObjectiveDirection::Minimise,
-            ObjectiveDirection::Minimise,
-        ];
-
-        let mut individuals =
-            individuals_from_obj_values_dummy(&objective_values, &objective_direction);
-        let ref_point = vec![2.0, 2.0, 2.0];
-        let hv = HyperVolumeFonseca2006::new(&mut individuals, &ref_point);
-        assert!(hv
-            .unwrap_err()
-            .to_string()
-            .contains("The coordinate (2) of the reference point #1 must be strictly larger"));
-    }
-
-    #[test]
-    /// Test avery simple front
-    fn test_simple_front() {
-        let objective_values = vec![[1.0, 1.0, 1.0], [2.0, 2.0, 2.0]];
-        let objective_direction = [
-            ObjectiveDirection::Minimise,
-            ObjectiveDirection::Minimise,
-            ObjectiveDirection::Minimise,
-        ];
-        let ref_point = [3.0, 3.0, 3.0];
-
-        let mut individuals =
-            individuals_from_obj_values_dummy(&objective_values, &objective_direction.clone());
-        let hv = HyperVolumeFonseca2006::new(&mut individuals, &ref_point).unwrap();
-        assert_eq!(hv.compute(), 8.0);
-    }
 
     #[test]
     /// Test the `HyperVolumeFonseca2006` struct using Pagmo test data.
     /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
-    fn test_c_max_t100_d3_n128() {
-        let all_test_data = parse_pagmo_test_data_file::<3>("c_max_t100_d3_n128").unwrap();
-        let objective_direction = [
-            ObjectiveDirection::Minimise,
-            ObjectiveDirection::Minimise,
-            ObjectiveDirection::Minimise,
-        ];
+    fn test_c_max_t1_d5_n1024() {
+        let all_test_data = parse_pagmo_test_data_file::<5>("c_max_t1_d5_n1024").unwrap();
+        let objective_direction = [ObjectiveDirection::Minimise; 5];
 
         for (ti, test_data) in all_test_data.iter().enumerate() {
             let mut individuals = individuals_from_obj_values_dummy(
                 &test_data.objective_values,
                 &objective_direction,
             );
-            let hv =
-                HyperVolumeFonseca2006::new(&mut individuals, &test_data.reference_point).unwrap();
+            let mut hv =
+                HyperVolumeWhile2012::new(&mut individuals, &test_data.reference_point).unwrap();
 
-            let calculated = hv.compute();
+            let calculated = hv.compute().unwrap();
             let expected = test_data.hyper_volume;
             if !approx_eq!(f64, calculated, expected, epsilon = 0.001) {
                 panic!(

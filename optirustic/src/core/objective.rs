@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
 
 /// Whether the objective should be minimised or maximised. Default is minimise.
-#[derive(Default, Clone, Debug, PartialOrd, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Clone, Copy, Debug, PartialOrd, PartialEq, Serialize, Deserialize)]
 pub enum ObjectiveDirection {
     #[default]
     /// Minimise an objective.
