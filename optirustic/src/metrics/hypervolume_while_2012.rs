@@ -9,8 +9,7 @@ use crate::core::{Individual, Individuals, OError};
 use crate::metrics::hypervolume::{check_args, check_ref_point_coordinate};
 
 /// Calculate the hyper-volume using the WFG algorithm proposed by [While et al. (2012)](http://dx.doi.org/10.1109/TEVC.2010.2077298)
-/// for a problem with `d` objectives and `n` individuals. The function calls version 4 of the
-/// algorithm, therefore its complexity is O(`n^(d-2)*log n`).
+/// for a problem with `d` objectives and `n` individuals.
 ///
 /// **IMPLEMENTATION NOTES**:
 /// 1) Dominated and unfeasible solutions are excluded using the NSGA2 [`fast_non_dominated_sort`]
