@@ -142,12 +142,16 @@ mod test {
         assert_eq!(hv.compute(), 8.0);
     }
 
-    #[test]
-    /// Test the `HyperVolumeFonseca2006` struct using Pagmo c_max_t100_d3_n128 test data.
-    /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
-    fn test_c_max_t100_d3_n128() {
-        let all_test_data = parse_pagmo_test_data_file::<3>("c_max_t100_d3_n128").unwrap();
-        let objective_direction = [ObjectiveDirection::Minimise; 3];
+    /// Run a test using a Pagmo file.
+    ///
+    /// # Arguments
+    ///
+    /// * `file`: The file name in the `test_data` folder.
+    ///
+    /// returns: ()
+    pub(crate) fn assert_test_file<const N: usize>(file: &str) {
+        let all_test_data = parse_pagmo_test_data_file::<N>(file).unwrap();
+        let objective_direction = [ObjectiveDirection::Minimise; N];
 
         for (ti, test_data) in all_test_data.iter().enumerate() {
             let mut individuals = individuals_from_obj_values_dummy(
@@ -169,32 +173,17 @@ mod test {
             }
         }
     }
+    #[test]
+    /// Test the `HyperVolumeFonseca2006` struct using Pagmo c_max_t100_d3_n128 test data.
+    /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
+    fn test_c_max_t100_d3_n128() {
+        assert_test_file::<3>("c_max_t100_d3_n128");
+    }
 
     #[test]
     /// Test the `HyperVolumeFonseca2006` struct using Pagmo c_max_t1_d3_n2048 test data.
     /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
     fn test_c_max_t1_d3_n2048() {
-        let all_test_data = parse_pagmo_test_data_file::<3>("c_max_t1_d3_n2048").unwrap();
-        let objective_direction = [ObjectiveDirection::Minimise; 3];
-
-        for (ti, test_data) in all_test_data.iter().enumerate() {
-            let mut individuals = individuals_from_obj_values_dummy(
-                &test_data.objective_values,
-                &objective_direction,
-            );
-            let hv =
-                HyperVolumeFonseca2006::new(&mut individuals, &test_data.reference_point).unwrap();
-
-            let calculated = hv.compute();
-            let expected = test_data.hyper_volume;
-            if !approx_eq!(f64, calculated, expected, epsilon = 0.001) {
-                panic!(
-                    r#"assertion failed for test #{}: `(left approx_eq right)` left: `{:?}`, right: `{:?}`"#,
-                    ti + 1,
-                    calculated,
-                    expected,
-                )
-            }
-        }
+        assert_test_file::<3>("c_max_t1_d3_n2048");
     }
 }
