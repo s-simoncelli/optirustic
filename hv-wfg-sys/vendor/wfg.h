@@ -5,9 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-int greater(const void *v1, const void *v2);
-
-
 ///A struct defining the objective values for an individual
 typedef struct {
     ///The list of objective values
@@ -24,8 +21,18 @@ typedef struct {
     point *points;
 } front;
 
+///A struct containing the front sets.
+typedef struct {
+    ///The vector of fronts.
+    front *sets;
+    ///The current recursion depth of `fs`.
+    int fr;
+    /// The maximum recursion depth of `fs` allocated so far (for `opt.value()` == `0`).
+    int fr_max;
+} front_set;
+
 double hv_2d(front, point);
-double hv(front, point);
+double hv(front_set *, front, point, int);
 
 ///Calculate the hyper-volume with the WFG algorithm
 double calculate_hypervolume(front, point);

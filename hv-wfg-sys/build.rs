@@ -8,6 +8,7 @@ fn main() {
         .expect("Cannot canonicalize path");
 
     println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=vendor/wfg.c");
 
     let bindings = bindgen::Builder::default()
         .header(lib_path.join("wfg.h").to_str().unwrap().to_string())
@@ -23,6 +24,8 @@ fn main() {
         .define("MAXIMISING", "false")
         .define("opt", "2")
         .define("DEBUG", "false")
+        // .flag("-Wall")
+        .warnings(false)
         .file(lib_path.join("wfg.c"))
         .compile("hv-wfg-sys");
 }

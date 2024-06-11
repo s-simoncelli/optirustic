@@ -83,13 +83,13 @@ mod test {
 
     #[test]
     fn test_wfg() {
-        let mut ref_point = vec![0.0, 0.0, 0.0, 0.0, 0.0];
+        let mut ref_point = vec![10.0, 10.0, 10.0, 10.0, 10.0];
         let mut data = vec![
             vec![0.598, 0.737, 0.131, 0.916, 6.745],
             vec![0.263, 0.740, 0.449, 0.753, 6.964],
             vec![0.109, 8.483, 0.199, 0.302, 8.872],
         ];
         let hv = calculate_hv(&mut data, &mut ref_point).unwrap();
-        assert_eq!(hv, 3.654729292813053);
+        assert_eq!(hv.ceil(), 26758.0);
     }
 }

@@ -7724,12 +7724,6 @@ extern "C" {
 extern "C" {
     pub fn flsll(arg1: ::std::os::raw::c_longlong) -> ::std::os::raw::c_int;
 }
-extern "C" {
-    pub fn greater(
-        v1: *const ::std::os::raw::c_void,
-        v2: *const ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-}
 #[doc = "A struct defining the objective values for an individual"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -7818,11 +7812,67 @@ fn bindgen_test_layout_front() {
         )
     );
 }
+#[doc = "A struct containing the front sets."]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct front_set {
+    #[doc = "The vector of fronts."]
+    pub sets: *mut front,
+    #[doc = "The current recursion depth of `fs`."]
+    pub fr: ::std::os::raw::c_int,
+    #[doc = " The maximum recursion depth of `fs` allocated so far (for `opt.value()` == `0`)."]
+    pub fr_max: ::std::os::raw::c_int,
+}
+#[test]
+fn bindgen_test_layout_front_set() {
+    const UNINIT: ::std::mem::MaybeUninit<front_set> = ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<front_set>(),
+        16usize,
+        concat!("Size of: ", stringify!(front_set))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<front_set>(),
+        8usize,
+        concat!("Alignment of ", stringify!(front_set))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).sets) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(front_set),
+            "::",
+            stringify!(sets)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).fr) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(front_set),
+            "::",
+            stringify!(fr)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).fr_max) as usize - ptr as usize },
+        12usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(front_set),
+            "::",
+            stringify!(fr_max)
+        )
+    );
+}
 extern "C" {
     pub fn hv_2d(arg1: front, arg2: point) -> f64;
 }
 extern "C" {
-    pub fn hv(arg1: front, arg2: point) -> f64;
+    pub fn hv(arg1: *mut front_set, arg2: front, arg3: point, arg4: ::std::os::raw::c_int) -> f64;
 }
 extern "C" {
     #[doc = "Calculate the hyper-volume with the WFG algorithm"]

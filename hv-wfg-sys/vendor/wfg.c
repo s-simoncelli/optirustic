@@ -39,33 +39,41 @@
 #define WORSE(x, y) (BEATS(y, x) ? (x) : (y))
 #define BETTER(x, y) (BEATS(y, x) ? (y) : (x))
 
-int obj_count; // the number of objectives
-
-/// Initialise the structure to track fronts
-front *fs;
-/// Current depth
-int fr = 0;
-/// Max depth malloced so far (for opt = 0)
-int frmax = -1;
-
-// This sorts points improving in the last objective
-int greater(const void *v1, const void *v2) {
-    point p = *(point *) v1;
-    point q = *(point *) v2;
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "UnusedParameter"
+// Sort points improving in the last objective
+bool greater(point *p, point *q, int fr, int obj_count) {
 #if opt == 1
     for (int i = obj_count - fr - 1; i >= 0; i--)
 #else
     for (int i = obj_count - 1; i >= 0; i--)
 #endif
-        if BEATS (p.objectives[i], q.objectives[i])
-            return 1;
-        else if BEATS (q.objectives[i], p.objectives[i])
-            return -1;
-    return 0;
+        if BEATS (p->objectives[i], q->objectives[i])
+            return true;
+        else if BEATS (q->objectives[i], p->objectives[i])
+            return false;
+    return false;
+}
+void sort_vec(point numbers[], int vec_size, front_set *fs, int obj_count) {
+    bool did_swap;
+    point temp;
+    do {
+        did_swap = false;
+        for (int i = 0; i <= vec_size - 2; i++) {
+            if (greater(&numbers[i], &numbers[i + 1], fs->fr, obj_count)) {
+                did_swap = true;
+                temp = numbers[i];
+                numbers[i] = numbers[i + 1];
+                numbers[i + 1] = temp;
+            }
+        }
+    } while (did_swap);
 }
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "UnusedParameter"
 // Returns -1 if p dominates q, 1 if q dominates p, 2 if p == q, 0 otherwise
-int dominates2way(point p, point q) {
+int dominates_2_way(point p, point q, int fr, int obj_count) {
     // domination could be checked in either order
 #if opt == 1
     for (int i = obj_count - fr - 1; i >= 0; i--)
@@ -85,16 +93,20 @@ int dominates2way(point p, point q) {
         }
     return 2;
 }
+#pragma clang diagnostic pop
 
 // creates the front ps[p+1 ..] in fs[fr], with each point bounded by ps[p] and dominated points removed
-void makeDominatedBit(front ps, int p) {
+void make_dominated_bit(front_set *fs, front ps, int p, int obj_count) {
+    if (fs == NULL) {
+        exit(1);
+    }
     // when opt = 0 each new frame is allocated as needed, because the worst-case needs #frames = #points
 #if opt == 0
-    if (fr > frmax || fr == 0) {
-        frmax = fr;
-        fs[fr].points = malloc(sizeof(point) * ps.number_of_individuals);
+    if (fs.fr > fs.fr_max || fs.fr == 0) {
+        fs.fr_max = fs.fr;
+        fs.sets[fs.fr].points = malloc(sizeof(point) * ps.number_of_individuals);
         for (int j = 0; j < ps.number_of_individuals; j++) {
-            fs[fr].points[j].objectives = malloc(sizeof(double) * obj_count);
+            fs.sets[fs.fr].points[j].objectives = malloc(sizeof(double) * obj_count);
         }
     }
 #endif
@@ -102,20 +114,20 @@ void makeDominatedBit(front ps, int p) {
     int z = ps.number_of_individuals - 1 - p;
     for (int i = 0; i < z; i++)
         for (int j = 0; j < obj_count; j++)
-            fs[fr].points[i].objectives[j] = WORSE(ps.points[p].objectives[j], ps.points[p + 1 + i].objectives[j]);
+            fs->sets[fs->fr].points[i].objectives[j] = WORSE(ps.points[p].objectives[j], ps.points[p + 1 + i].objectives[j]);
     point t;
-    fs[fr].number_of_individuals = 1;
+    fs->sets[fs->fr].number_of_individuals = 1;
 
     for (int i = 1; i < z; i++) {
         int j = 0;
         bool keep = true;
-        while (j < fs[fr].number_of_individuals && keep)
-            switch (dominates2way(fs[fr].points[i], fs[fr].points[j])) {
+        while (j < fs->sets[fs->fr].number_of_individuals && keep)
+            switch (dominates_2_way(fs->sets[fs->fr].points[i], fs->sets[fs->fr].points[j], fs->fr, obj_count)) {
                 case -1:
-                    t = fs[fr].points[j];
-                    fs[fr].number_of_individuals--;
-                    fs[fr].points[j] = fs[fr].points[fs[fr].number_of_individuals];
-                    fs[fr].points[fs[fr].number_of_individuals] = t;
+                    t = fs->sets[fs->fr].points[j];
+                    fs->sets[fs->fr].number_of_individuals--;
+                    fs->sets[fs->fr].points[j] = fs->sets[fs->fr].points[fs->sets[fs->fr].number_of_individuals];
+                    fs->sets[fs->fr].points[fs->sets[fs->fr].number_of_individuals] = t;
                     break;
                 case 0:
                     j++;
@@ -126,13 +138,13 @@ void makeDominatedBit(front ps, int p) {
             }
 
         if (keep) {
-            t = fs[fr].points[fs[fr].number_of_individuals];
-            fs[fr].points[fs[fr].number_of_individuals] = fs[fr].points[i];
-            fs[fr].points[i] = t;
-            fs[fr].number_of_individuals++;
+            t = fs->sets[fs->fr].points[fs->sets[fs->fr].number_of_individuals];
+            fs->sets[fs->fr].points[fs->sets[fs->fr].number_of_individuals] = fs->sets[fs->fr].points[i];
+            fs->sets[fs->fr].points[i] = t;
+            fs->sets[fs->fr].number_of_individuals++;
         }
     }
-    fr++;
+    fs->fr++;
 }
 
 // Returns the hyper-volume of ps[0 ..] in 2D
@@ -148,8 +160,8 @@ double hv_2d(front ps, point ref)
     return volume;
 }
 
-// Returns the inclusive hypervolume of p
-double inclusive_hv(point p, point ref) {
+// Return the inclusive hyper-volume of `p` with respect to the reference point `ref`
+double inclusive_hv(point p, point ref, int obj_count) {
     double volume = 1;
     for (int i = 0; i < obj_count; i++)
         volume *= fabs(p.objectives[i] - ref.objectives[i]);
@@ -157,25 +169,28 @@ double inclusive_hv(point p, point ref) {
 }
 
 
-// Returns the exclusive hypervolume of ps[p] relative to ps[p+1 ..]
-double exclusive_hv(front ps, int p, point ref) {
-    double volume = inclusive_hv(ps.points[p], ref);
+// Return the exclusive hyper-volume of `ps[p]` relative to ps[p+1 ..]
+double exclusive_hv(front_set *fs, front ps, int p, point ref, int obj_count) {
+    if (fs == NULL) {
+        exit(1);
+    }
+    double volume = inclusive_hv(ps.points[p], ref, obj_count);
     if (ps.number_of_individuals > p + 1) {
-        makeDominatedBit(ps, p);
-        volume -= hv(fs[fr - 1], ref);
-        fr--;
+        make_dominated_bit(fs, ps, p, obj_count);
+        volume -= hv(fs, fs->sets[fs->fr - 1], ref, obj_count);
+        fs->fr--;
     }
     return volume;
 }
 
 
-// returns the hypervolume of ps[0 ..]
-double hv(front ps, point ref) {
+// Return the hyper-volume of `ps`
+double hv(front_set *fs, front ps, point ref, int obj_count) {
 #if opt > 0
 #if DEBUG
     printf("Sorting\n");
 #endif
-    qsort(ps.points, ps.number_of_individuals, sizeof(point), greater);
+    sort_vec(ps.points, ps.number_of_individuals, fs, obj_count);
 #endif
 
 #if opt == 2
@@ -186,53 +201,54 @@ double hv(front ps, point ref) {
     double volume = 0;
 #if opt <= 1
     for (int i = 0; i < ps.number_of_individuals; i++) {
-        double exclhv_ind = exclusive_hv(ps, i, ref);
-        volume += exclhv_ind;
+        volume += exclusive_hv(fs, ps, i, ref, obj_count);
     }
 #else
     obj_count--;
     for (int i = ps.number_of_individuals - 1; i >= 0; i--)
         // we can ditch dominated points here,
         // but they will be ditched anyway in dominatedBit
-        volume += fabs(ps.points[i].objectives[obj_count] - ref.objectives[obj_count]) * exclusive_hv(ps, i, ref);
+        volume += fabs(ps.points[i].objectives[obj_count] - ref.objectives[obj_count]) * exclusive_hv(fs, ps, i, ref, obj_count);
     obj_count++;
 #endif
     return volume;
 }
 
 double calculate_hypervolume(front f, point ref) {
-    // number of objectives
-    obj_count = f.number_of_objectives;
+    int obj_count = f.number_of_objectives;
+    front_set fs;
+    fs.fr = 0;
+    fs.fr_max = -1;
 
 #if DEBUG
-    printf("Number of objectives = %d\n", obj_count);
+    printf("Number of objectives = %d\n", f.number_of_objectives);
     printf("Number of individuals = %d\n", f.number_of_individuals);
 #endif
 
     // allocate memory
 #if opt == 0
-    fs = malloc(sizeof(front) * f.number_of_individuals);
+    fs.sets = malloc(sizeof(front) * f.number_of_individuals);
 #else
     // slicing (opt > 1) saves a level of recursion
-    int maxd = obj_count - (opt / 2 + 1);
-    fs = malloc(sizeof(front) * maxd);
+    int maxd = f.number_of_objectives - (opt / 2 + 1);
+    fs.sets = malloc(sizeof(front) * maxd);
 
     // 3D base (opt = 3) needs space for the sentinels
     int maxp = f.number_of_individuals + 2 * (opt / 3);
     for (int i = 0; i < maxd; i++) {
-        fs[i].points = malloc(sizeof(point) * maxp);
+        fs.sets[i].points = malloc(sizeof(point) * maxp);
         for (int j = 0; j < maxp; j++) {
             // slicing(opt > 1) saves one extra objective at each level
-            fs[i].points[j].objectives = malloc(sizeof(double) * (obj_count - (i + 1) * (opt / 2)));
+            fs.sets[i].points[j].objectives = malloc(sizeof(double) * (f.number_of_objectives - (i + 1) * (opt / 2)));
         }
     }
 #endif
 
 #if opt >= 3
-    if (obj_count == 2) {
-        qsort(f.points, f.number_of_individuals, sizeof(point), greater);
+    if (f.number_of_objectives == 2) {
+        sort_vec(f.points, f.number_of_individuals, fs, f.number_of_objectives);
         return hv_2d(f, ref);
     } else
 #endif
-        return hv(f, ref);
+        return hv(&fs, f, ref, obj_count);
 }
