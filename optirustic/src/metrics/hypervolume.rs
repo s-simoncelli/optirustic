@@ -173,8 +173,8 @@ pub(crate) fn check_ref_point_coordinate(
     Ok(())
 }
 
-/// Calculate the exact hyper-volume metric for the objectives. This function uses a different
-/// method to ensure a correct and fast calculation depending on the number of problem objectives:
+/// Calculate the exact hyper-volume metric for the objectives. Depending on the number of problem
+/// objectives `n`, a different method is used to ensure a correct and fast calculation:
 ///
 /// - with `2` objectives: by calculating the rectangle area of each point contributing to the
 /// hyper-volume.
@@ -188,8 +188,8 @@ pub(crate) fn check_ref_point_coordinate(
 /// * `individuals`: The individuals to use in the calculation. The algorithm will use the objective
 /// vales stored in each individual.
 /// * `reference_point`: The reference or anti-optimal point to use in the calculation. If you are
-/// not sure the point to use you could pick the worst value of each objective from the individual's
-/// variable using [`estimate_reference_point`].
+/// not sure about the point to use you could pick the worst value of each objective from the
+/// individual's values using [`estimate_reference_point`].
 ///
 /// returns: `Result<f64, OError>`
 pub fn hyper_volume(
