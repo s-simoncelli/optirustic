@@ -133,7 +133,7 @@ impl HyperVolume2D {
 mod test {
     use std::sync::Arc;
 
-    use float_cmp::assert_approx_eq;
+    use float_cmp::{approx_eq, assert_approx_eq};
 
     use crate::core::{
         BoundedNumber, Constraint, Individual, Objective, ObjectiveDirection, Problem,
@@ -143,6 +143,7 @@ mod test {
         dummy_evaluator, individuals_from_obj_values_dummy, individuals_from_obj_values_ztd1,
     };
     use crate::metrics::hypervolume_2d::HyperVolume2D;
+    use crate::metrics::test_utils::parse_pagmo_test_data_file;
 
     #[test]
     /// Test that an error is returned if the reference point does not dominate the objectives
@@ -321,5 +322,32 @@ mod test {
 
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
         assert_approx_eq!(f64, hv.unwrap().compute(), 215.59, ulps = 2);
+    }
+
+    #[test]
+    /// Test the `HyperVolume2D` struct using Pagmo c_max_t100_d2_n128 test data.
+    /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
+    fn test_c_max_t1_d3_n2048() {
+        let all_test_data = parse_pagmo_test_data_file::<2>("c_max_t100_d2_n128").unwrap();
+        let objective_direction = [ObjectiveDirection::Minimise; 2];
+
+        for (ti, test_data) in all_test_data.iter().enumerate() {
+            let mut individuals = individuals_from_obj_values_dummy(
+                &test_data.objective_values,
+                &objective_direction,
+            );
+            let hv = HyperVolume2D::new(&mut individuals, &test_data.reference_point).unwrap();
+
+            let calculated = hv.compute();
+            let expected = test_data.hyper_volume;
+            if !approx_eq!(f64, calculated, expected, epsilon = 0.001) {
+                panic!(
+                    r#"assertion failed for test #{}: `(left approx_eq right)` left: `{:?}`, right: `{:?}`"#,
+                    ti + 1,
+                    calculated,
+                    expected,
+                )
+            }
+        }
     }
 }

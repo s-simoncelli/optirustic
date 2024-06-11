@@ -140,21 +140,21 @@ mod test {
     }
 
     #[test]
-    /// Test the `HyperVolumeFonseca2006` struct using Pagmo c_max_t1_d5_n1024 test data.
+    /// Test the `HyperVolumeWhile2012` struct using Pagmo c_max_t1_d5_n1024 test data.
     /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
     fn test_c_max_t1_d5_n1024() {
         assert_test_file::<5>("c_max_t1_d5_n1024");
     }
 
     #[test]
-    /// Test the `HyperVolumeFonseca2006` struct using Pagmo c_max_t100_d3_n128 test data.
+    /// Test the `HyperVolumeWhile2012` struct using Pagmo c_max_t100_d3_n128 test data.
     /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
     fn test_c_max_t100_d3_n128() {
         assert_test_file::<3>("c_max_t100_d3_n128");
     }
 
     #[test]
-    /// Test the `HyperVolumeFonseca2006` struct using Pagmo c_max_t1_d3_n2048 test data.
+    /// Test the `HyperVolumeWhile2012` struct using Pagmo c_max_t1_d3_n2048 test data.
     /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
     fn test_c_max_t1_d3_n2048() {
         assert_test_file::<3>("c_max_t1_d3_n2048");
