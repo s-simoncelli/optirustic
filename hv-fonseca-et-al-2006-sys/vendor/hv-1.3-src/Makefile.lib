@@ -1,0 +1,16 @@
+# -*- Makefile-gmake -*-
+VARIANT    ?= 4
+
+HV_SRCS    = hv.c avl.c
+HV_HDRS    = hv.h avl.h
+HV_OBJS    = $(HV_SRCS:.c=.o)
+HV_LIB     = fpli_hv.a
+
+$(HV_LIB): $(HV_OBJS)
+	$(QUIET_AR)$(RM) $@ && $(AR) rcs $@ $^
+
+## Augment CFLAGS for hv.[co] objects
+hv.o: CPPFLAGS += -D VARIANT=$(VARIANT)
+
+## Dependencies:
+$(HV_OBJS): $(HV_HDRS)
