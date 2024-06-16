@@ -7,7 +7,7 @@ use log::{debug, info};
 use rand::RngCore;
 use serde::Serialize;
 
-use crate::algorithms::{Algorithm, ExportHistory, fast_non_dominated_sort, StoppingConditionType};
+use crate::algorithms::{Algorithm, ExportHistory, StoppingConditionType};
 use crate::core::{
     Individual, Individuals, IndividualsMut, OError, Population, Problem, VariableValue,
 };
@@ -16,6 +16,7 @@ use crate::operators::{
     Crossover, CrowdedComparison, Mutation, PolynomialMutation, PolynomialMutationArgs, Selector,
     SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
 };
+use crate::utils::fast_non_dominated_sort;
 
 /// Input arguments for the NSGA2 algorithm.
 #[derive(Serialize, Clone)]
@@ -191,7 +192,7 @@ impl NSGA2 {
     /// * `individuals`: The individuals in a non-dominated front.
     ///
     /// returns: `Result<(), OError>`
-    pub fn set_crowding_distance(mut individuals: &mut [Individual]) -> Result<(), OError> {
+    fn set_crowding_distance(mut individuals: &mut [Individual]) -> Result<(), OError> {
         let data_name = "crowding_distance";
         let inf = VariableValue::Real(f64::INFINITY);
         let total_individuals = individuals.len();
@@ -642,8 +643,8 @@ mod test_sorting {
 #[cfg(test)]
 mod test_problems {
     use crate::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
-    use crate::core::problem::builtin_problems::{sch, ztd1, ztd2, ztd3, ztd4};
-    use crate::core::utils::{check_exact_value, check_value_in_range};
+    use crate::core::builtin_problems::{sch, ztd1, ztd2, ztd3, ztd4};
+    use crate::core::test_utils::{check_exact_value, check_value_in_range};
 
     const BOUND_TOL: f64 = 1.0 / 1000.0;
     const LOOSE_BOUND_TOL: f64 = 0.1;

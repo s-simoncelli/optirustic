@@ -9,8 +9,7 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::algorithms::{StoppingCondition, StoppingConditionType};
-use crate::core::{Individual, IndividualExport, Population, Problem, ProblemExport};
-use crate::core::error::OError;
+use crate::core::{Individual, IndividualExport, OError, Population, Problem, ProblemExport};
 
 #[derive(Serialize, Deserialize, Debug)]
 /// The data with the elapsed time.
@@ -24,7 +23,7 @@ pub struct Elapsed {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-/// The struct used to export the algorithm data to JSON file.
+/// The struct used to export an algorithm serialised data.
 pub struct AlgorithmSerialisedExport<T: Serialize> {
     pub options: T,
     pub problem: ProblemExport,
@@ -34,7 +33,7 @@ pub struct AlgorithmSerialisedExport<T: Serialize> {
     pub took: Elapsed,
 }
 
-/// The struct used to export the algorithm data.
+/// The struct used to export an algorithm data.
 #[derive(Debug)]
 pub struct AlgorithmExport {
     /// The problem.
