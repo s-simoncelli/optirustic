@@ -1,3 +1,12 @@
+#[cfg(feature = "plot")]
+use std::error::Error;
+
+#[cfg(feature = "plot")]
+use plotters::prelude::*;
+
+#[cfg(feature = "plot")]
+use crate::core::OError;
+
 /// Calculate the binomial coefficient. This gives the number of `k`-subsets possible out of a
 /// set of `n` distinct items. See <https://mathworld.wolfram.com/BinomialCoefficient.html>. Code
 /// adapted from <https://blog.plover.com/math/choose.html>.
@@ -28,6 +37,29 @@ fn binomial_coefficient(mut n: u64, k: u64) -> u64 {
 /// > Indraneel Das and J. E. Dennis. Normal-Boundary Intersection: A New Method for Generating the
 /// > Pareto Surface in Nonlinear Multicriteria Optimization Problems. SIAM Journal on Optimization.
 /// > 1998 8:3, 631-657. <https://doi.org/10.1137/S1052623496307510>
+///
+/// # Example
+/// ```
+/// use optirustic::utils::DasDarren1998;
+/// use optirustic::core::OError;
+///
+/// fn main() -> Result<(), OError> {
+///     // Consider the case of a 3D hyperplane with 3 objectives
+///     let number_of_objectives = 3;
+///     // Each objective axis is split into 5 gaps of equal size.
+///     let number_of_partitions = 5;
+///
+///     let m = DasDarren1998::new(number_of_objectives, number_of_partitions);
+///     // This returns the coordinates of the reference points between 0 and 1
+///     println!("Total pints = {:?}", m.number_of_points());
+///
+///     let weights = m.get_weights();
+///     println!("Weights = {:?}", weights);
+///
+///     // Save the charts of points to inspect them
+///     m.plot("ref_points_3obj_5gaps.png")
+/// }
+/// ```
 pub struct DasDarren1998 {
     /// The number of problem objectives.
     number_of_objectives: usize,
@@ -70,7 +102,7 @@ impl DasDarren1998 {
     /// Generate the vector of weights of reference points.
     ///
     /// return: `Vec<Vec<f64>>`. The vector of weights of size `self.number_of_points`. Each
-    /// nested vector, of  size equal to `self.number_of_objectives`, contains the relative
+    /// nested vector, of size equal to `self.number_of_objectives`, contains the relative
     /// coordinates (between 0 and 1) of the points for each objective.
     pub fn get_weights(&self) -> Vec<Vec<f64>> {
         let mut final_weights: Vec<Vec<f64>> = vec![];
@@ -125,6 +157,133 @@ impl DasDarren1998 {
                 break;
             }
         }
+    }
+
+    /// Generate and save a chart with the reference points. This is only available for problems with
+    /// 2 or 3 objectives.
+    ///
+    /// # Arguments
+    ///
+    /// * `file_name`: The file path where to save the chart.
+    ///
+    /// returns: `Result<(), OError>`
+    #[cfg(feature = "plot")]
+    pub fn plot(&self, file_name: &str) -> Result<(), OError> {
+        if self.number_of_objectives == 2 {
+            self.plot_2d(file_name)
+                .map_err(|e| OError::Generic(e.to_string()))
+        } else if self.number_of_objectives == 3 {
+            self.plot_3d(file_name)
+                .map_err(|e| OError::Generic(e.to_string()))
+        } else {
+            return Err(OError::Generic(
+                "Plotting is available when the number of objective is either 2 or 3".to_string(),
+            ));
+        }
+    }
+
+    /// Generate and save a 2D chart with the reference points.
+    ///
+    /// # Arguments
+    ///
+    /// * `file_name`: The file path where to save the chart.
+    ///
+    /// returns: `Result<(), Box<dyn Error>>`
+    #[cfg(feature = "plot")]
+    fn plot_2d(&self, file_name: &str) -> Result<(), Box<dyn Error>> {
+        let root = BitMapBackend::new(file_name, (800, 600)).into_drawing_area();
+
+        root.fill(&WHITE)?;
+
+        let mut chart = ChartBuilder::on(&root)
+            .x_label_area_size(65)
+            .y_label_area_size(65)
+            .margin_top(5)
+            .margin_left(10)
+            .margin_right(30)
+            .margin_bottom(5)
+            .caption(
+                "Reference points - Das & Darren (2019)",
+                ("sans-serif", 30.0),
+            )
+            .build_cartesian_2d(0f64..1.2f64, 0f64..1.2f64)?;
+
+        chart
+            .configure_mesh()
+            .bold_line_style(WHITE.mix(0.3))
+            .y_desc("Objective #2")
+            .x_desc("Objective #1")
+            .axis_desc_style(("sans-serif", 25, &BLACK))
+            .label_style(("sans-serif", 20, &BLACK))
+            .draw()?;
+
+        chart.draw_series(self.get_weights().iter().map(|p| {
+            Circle::new(
+                (p[0], p[1]),
+                5,
+                ShapeStyle {
+                    color: Palette99::pick(1).to_rgba(),
+                    filled: true,
+                    stroke_width: 1,
+                },
+            )
+        }))?;
+
+        root.present()?;
+        Ok(())
+    }
+
+    /// Generate and save a 3D chart with the reference points.
+    ///
+    /// # Arguments
+    ///
+    /// * `file_name`: The file path where to save the chart.
+    ///
+    /// returns: `Result<(), Box<dyn Error>>`
+    #[cfg(feature = "plot")]
+    fn plot_3d(&self, file_name: &str) -> Result<(), Box<dyn Error>> {
+        let root = BitMapBackend::new(file_name, (800, 600)).into_drawing_area();
+
+        root.fill(&WHITE)?;
+
+        let mut chart = ChartBuilder::on(&root)
+            .x_label_area_size(65)
+            .y_label_area_size(65)
+            .margin_top(5)
+            .margin_left(10)
+            .margin_right(30)
+            .margin_bottom(5)
+            .caption(
+                "Reference points - Das & Darren (2019)",
+                ("sans-serif", 30.0),
+            )
+            .build_cartesian_3d(0f64..1.2f64, 0f64..1.2f64, 0f64..1.2f64)?;
+
+        chart.with_projection(|mut pb| {
+            pb.yaw = 0.5;
+            pb.into_matrix()
+        });
+
+        chart
+            .configure_axes()
+            .light_grid_style(BLACK.mix(0.15))
+            .max_light_lines(3)
+            .draw()?;
+
+        chart.draw_series(self.get_weights().iter().map(|p| {
+            Circle::new(
+                (p[0], p[1], p[2]),
+                5,
+                ShapeStyle {
+                    color: Palette99::pick(1).to_rgba(),
+                    filled: true,
+                    stroke_width: 1,
+                },
+            )
+        }))?;
+
+        root.present()?;
+        Ok(())
     }
 }
 
