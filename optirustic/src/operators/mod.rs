@@ -5,7 +5,7 @@ pub use crossover::{Crossover, SimulatedBinaryCrossover, SimulatedBinaryCrossove
 pub use mutation::{Mutation, PolynomialMutation, PolynomialMutationArgs};
 pub use selector::{Selector, TournamentSelector};
 
-pub mod comparison;
-pub mod crossover;
-pub mod mutation;
-pub mod selector;
+mod comparison;
+mod crossover;
+mod mutation;
+mod selector;

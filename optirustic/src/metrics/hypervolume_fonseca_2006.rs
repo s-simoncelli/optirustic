@@ -4,9 +4,9 @@ use log::{debug, warn};
 
 use hv_fonseca_et_al_2006_sys::calculate_hv;
 
-use crate::algorithms::fast_non_dominated_sort;
 use crate::core::{Individual, Individuals, OError};
 use crate::metrics::hypervolume::{check_args, check_ref_point_coordinate};
+use crate::utils::fast_non_dominated_sort;
 
 /// Calculate the hyper-volume using the algorithm proposed by [Fonseca et al. (2006)](http://dx.doi.org/10.1109/CEC.2006.1688440)
 /// for a problem with `d` objectives and `n` individuals. The function calls version 4 of the
@@ -14,7 +14,7 @@ use crate::metrics::hypervolume::{check_args, check_ref_point_coordinate};
 ///
 /// **IMPLEMENTATION NOTES**:
 /// 1) Points dominated by the reference point are removed from the calculation.
-/// 2) Dominated and unfeasible solutions are excluded using the NSGA2 [`fast_non_dominated_sort`]
+/// 2) Dominated and unfeasible solutions are excluded using the NSGA2 [`crate::utils::fast_non_dominated_sort()`]
 /// algorithm in order to get the Pareto front. As assumed in the paper, non-dominated points do
 /// not contribute do the metric.
 /// 3) The coordinates of maximised objectives of the reference point are multiplied by -1 as the

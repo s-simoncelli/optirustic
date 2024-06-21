@@ -1,8 +1,8 @@
 use std::mem;
 
-use crate::algorithms::fast_non_dominated_sort;
 use crate::core::{Individual, Individuals, ObjectiveDirection, OError};
 use crate::metrics::hypervolume::{check_args, check_ref_point_coordinate};
+use crate::utils::fast_non_dominated_sort;
 
 /// Calculate the hyper-volume for a two-objective problem by summing the areas rectangle of the
 /// rectangles between the Pareto front and the chosen `reference_point`.
@@ -27,7 +27,7 @@ impl HyperVolume2D {
     /// Pareto front shape is strictly convex and has the same orientation of minimisation problems
     /// by inverting the sign of the objective values to maximise, and the reference point
     /// coordinates.
-    /// 3) Dominated and unfeasible solutions are excluded using the NSGA2 [`fast_non_dominated_sort`]
+    /// 3) Dominated and unfeasible solutions are excluded using the NSGA2 [`crate::utils::fast_non_dominated_sort()`]
     /// algorithm in order to get the Pareto front (i.e. with non-dominated solutions) to use in
     /// the calculation.
     /// 4) If `individuals` or the resulting Pareto front does not contain more than 2 points, a

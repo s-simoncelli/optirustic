@@ -1,6 +1,7 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
+/// Errors raised by the library.
 pub enum OError {
     #[error("The following error occurred: {0}")]
     Generic(String),

@@ -63,6 +63,7 @@ pub trait Evaluator: Sync + Send + Debug {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+/// Serialised data of a problem.
 pub struct ProblemExport {
     /// The problem objectives.
     objectives: HashMap<String, Objective>,

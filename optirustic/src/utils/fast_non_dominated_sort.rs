@@ -155,10 +155,10 @@ pub fn fast_non_dominated_sort(
 }
 
 #[cfg(test)]
-mod test_sorting {
-    use crate::algorithms::utils::fast_non_dominated_sort;
+mod test {
     use crate::core::{ObjectiveDirection, VariableValue};
     use crate::core::utils::individuals_from_obj_values_dummy;
+    use crate::utils::fast_non_dominated_sort;
 
     #[test]
     /// Test the non-dominated sorting. The resulting fronts and ranks were manually calculated by
