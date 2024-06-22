@@ -6,6 +6,54 @@ use serde::{Deserialize, Serialize};
 
 use crate::core::{OError, Problem, VariableValue};
 
+/// The data type and value that can be stored in an individual's data.
+#[derive(Clone, Debug, PartialEq)]
+pub enum DataValue {
+    /// The value for a floating-point number. This is a f64.
+    Real(f64),
+    /// The value for an integer number. This is an i64.
+    Integer(i64),
+    /// The value for a vector of floating-point numbers.
+    Vec(Vec<f64>),
+}
+
+impl DataValue {
+    /// Get the value if the data is of real type. This returns an error if the data is not real.
+    ///
+    /// returns: `Result<f64, OError>`
+    pub fn as_real(&self) -> Result<f64, OError> {
+        if let DataValue::Real(v) = self {
+            Ok(*v)
+        } else {
+            Err(OError::WrongDataType("real".to_string()))
+        }
+    }
+
+    /// Get the value if the data is of integer type. This returns an error if the data is not an
+    /// integer.
+    ///
+    /// returns: `Result<f64, OError>`
+    pub fn as_integer(&self) -> Result<i64, OError> {
+        if let DataValue::Integer(v) = self {
+            Ok(*v)
+        } else {
+            Err(OError::WrongDataType("integer".to_string()))
+        }
+    }
+
+    /// Get the value if the data is of vector type. This returns an error if the data is not a
+    /// vector.
+    ///
+    /// returns: `Result<f64, OError>`
+    pub fn as_vec(&self) -> Result<&Vec<f64>, OError> {
+        if let DataValue::Vec(v) = self {
+            Ok(v)
+        } else {
+            Err(OError::WrongDataType("vector".to_string()))
+        }
+    }
+}
+
 /// An individual in the population containing the problem solution, and the objective and
 /// constraint values.
 ///
@@ -58,7 +106,7 @@ pub struct Individual {
     evaluated: bool,
     /// Additional numeric data to store for the individuals (such as crowding distance or rank)
     /// depending on the algorithm the individuals are derived from.
-    data: HashMap<String, VariableValue>,
+    data: HashMap<String, DataValue>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -288,7 +336,7 @@ impl Individual {
     pub fn get_real_value(&self, name: &str) -> Result<f64, OError> {
         self.get_variable_value(name)?
             .as_real()
-            .map_err(|_| OError::WrongTypeVariableWithName(name.to_string(), "real".to_string()))
+            .map_err(|_| OError::WrongVariableTypeWithName(name.to_string(), "real".to_string()))
     }
 
     /// Get the number stored in an integer variable by name. This returns an error if the variable
@@ -302,7 +350,7 @@ impl Individual {
     pub fn get_integer_value(&self, name: &str) -> Result<i64, OError> {
         self.get_variable_value(name)?
             .as_integer()
-            .map_err(|_| OError::WrongTypeVariableWithName(name.to_string(), "integer".to_string()))
+            .map_err(|_| OError::WrongVariableTypeWithName(name.to_string(), "integer".to_string()))
     }
 
     /// Ge the objective value by name. This returns an error if the objective does not exist.
@@ -379,7 +427,7 @@ impl Individual {
     /// * `value`: The value.
     ///
     /// returns: `()`.
-    pub fn set_data(&mut self, name: &str, value: VariableValue) {
+    pub fn set_data(&mut self, name: &str, value: DataValue) {
         self.data.insert(name.to_string(), value);
     }
 
@@ -389,9 +437,9 @@ impl Individual {
     ///
     /// * `name`: The name of the data.
     ///
-    /// returns: `Option<VariableValue>`. This returns `None` if no custom data with the
-    /// given `name` exists.
-    pub fn get_data(&self, name: &str) -> Option<VariableValue> {
+    /// returns: `Option<DataValue>`. This returns `None` if no custom data with the given `name`
+    /// exists.
+    pub fn get_data(&self, name: &str) -> Option<DataValue> {
         self.data.get(name).cloned()
     }
 

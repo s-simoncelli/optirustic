@@ -18,11 +18,13 @@ pub enum OError {
     #[error("The variable type set on the problem '{0}' does not match the provided value")]
     NonMatchingVariableType(String),
     #[error("The variable is not {0}")]
-    WrongTypeVariable(String),
+    WrongVariableType(String),
     #[error("The variable '{0}' is not {1}")]
-    WrongTypeVariableWithName(String, String),
+    WrongVariableTypeWithName(String, String),
     #[error("The min value ({0}) must be strictly smaller than the max value ({1}).")]
     TooLargeLowerBound(String, String),
+    #[error("The data type is not {0}")]
+    WrongDataType(String),
     #[error("An error occurred in the comparison operator '{0}': {1}")]
     ComparisonOperator(String, String),
     #[error("An error occurred in the selector operator '{0}': {1}")]

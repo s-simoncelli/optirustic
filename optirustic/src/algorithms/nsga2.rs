@@ -9,7 +9,7 @@ use serde::Serialize;
 
 use crate::algorithms::{Algorithm, ExportHistory, StoppingConditionType};
 use crate::core::{
-    Individual, Individuals, IndividualsMut, OError, Population, Problem, VariableValue,
+    DataValue, Individual, Individuals, IndividualsMut, OError, Population, Problem,
 };
 use crate::core::utils::{argsort, get_rng, Sort, vector_max, vector_min};
 use crate::operators::{
@@ -212,7 +212,7 @@ impl NSGA2 {
     /// returns: `Result<(), OError>`
     fn set_crowding_distance(mut individuals: &mut [Individual]) -> Result<(), OError> {
         let data_name = "crowding_distance";
-        let inf = VariableValue::Real(f64::INFINITY);
+        let inf = DataValue::Real(f64::INFINITY);
         let total_individuals = individuals.len();
 
         // if there are enough point set distance to + infinite
@@ -226,7 +226,7 @@ impl NSGA2 {
         }
 
         for individual in individuals.iter_mut() {
-            individual.set_data(data_name, VariableValue::Real(0.0));
+            individual.set_data(data_name, DataValue::Real(0.0));
         }
 
         let problem = individuals.individual(0)?.problem();
@@ -261,13 +261,13 @@ impl NSGA2 {
                 let current_distance = individuals
                     .individual(ind_i)?
                     .get_data(data_name)
-                    .unwrap_or(VariableValue::Real(0.0));
+                    .unwrap_or(DataValue::Real(0.0));
 
-                if let VariableValue::Real(current_distance) = current_distance {
+                if let DataValue::Real(current_distance) = current_distance {
                     let delta = (obj_values[obj_i + 1] - obj_values[obj_i - 1]) / delta_range;
                     individuals
                         .individual_as_mut(ind_i)?
-                        .set_data(data_name, VariableValue::Real(current_distance + delta));
+                        .set_data(data_name, DataValue::Real(current_distance + delta));
                 }
             }
         }
@@ -439,7 +439,7 @@ mod test_sorting {
     use float_cmp::assert_approx_eq;
 
     use crate::algorithms::NSGA2;
-    use crate::core::{Individuals, ObjectiveDirection, VariableValue};
+    use crate::core::{DataValue, Individuals, ObjectiveDirection};
     use crate::core::utils::individuals_from_obj_values_dummy;
 
     #[test]
@@ -454,7 +454,7 @@ mod test_sorting {
         for i in individuals {
             assert_eq!(
                 i.get_data("crowding_distance").unwrap(),
-                VariableValue::Real(f64::INFINITY)
+                DataValue::Real(f64::INFINITY)
             );
         }
     }
@@ -471,7 +471,7 @@ mod test_sorting {
         for i in individuals {
             assert_eq!(
                 i.get_data("crowding_distance").unwrap(),
-                VariableValue::Real(f64::INFINITY)
+                DataValue::Real(f64::INFINITY)
             );
         }
     }
@@ -498,7 +498,7 @@ mod test_sorting {
                     .unwrap()
                     .get_data("crowding_distance")
                     .unwrap(),
-                VariableValue::Real(2.0)
+                DataValue::Real(2.0)
             );
             // boundaries
             assert_eq!(
@@ -508,7 +508,7 @@ mod test_sorting {
                     .unwrap()
                     .get_data("crowding_distance")
                     .unwrap(),
-                VariableValue::Real(f64::INFINITY)
+                DataValue::Real(f64::INFINITY)
             );
             assert_eq!(
                 individuals
@@ -517,7 +517,7 @@ mod test_sorting {
                     .unwrap()
                     .get_data("crowding_distance")
                     .unwrap(),
-                VariableValue::Real(f64::INFINITY)
+                DataValue::Real(f64::INFINITY)
             );
         }
     }
@@ -543,7 +543,7 @@ mod test_sorting {
                 .unwrap()
                 .get_data("crowding_distance")
                 .unwrap(),
-            VariableValue::Real(3.0)
+            DataValue::Real(3.0)
         );
         assert_eq!(
             individuals
@@ -552,7 +552,7 @@ mod test_sorting {
                 .unwrap()
                 .get_data("crowding_distance")
                 .unwrap(),
-            VariableValue::Real(f64::INFINITY)
+            DataValue::Real(f64::INFINITY)
         );
         assert_eq!(
             individuals
@@ -561,7 +561,7 @@ mod test_sorting {
                 .unwrap()
                 .get_data("crowding_distance")
                 .unwrap(),
-            VariableValue::Real(f64::INFINITY)
+            DataValue::Real(f64::INFINITY)
         );
     }
 
@@ -587,7 +587,7 @@ mod test_sorting {
                 .unwrap()
                 .get_data("crowding_distance")
                 .unwrap(),
-            VariableValue::Real(f64::INFINITY)
+            DataValue::Real(f64::INFINITY)
         );
         assert_eq!(
             individuals
@@ -596,7 +596,7 @@ mod test_sorting {
                 .unwrap()
                 .get_data("crowding_distance")
                 .unwrap(),
-            VariableValue::Real(1.0)
+            DataValue::Real(1.0)
         );
         assert_eq!(
             individuals
@@ -605,7 +605,7 @@ mod test_sorting {
                 .unwrap()
                 .get_data("crowding_distance")
                 .unwrap(),
-            VariableValue::Real(1.5)
+            DataValue::Real(1.5)
         );
         assert_eq!(
             individuals
@@ -614,7 +614,7 @@ mod test_sorting {
                 .unwrap()
                 .get_data("crowding_distance")
                 .unwrap(),
-            VariableValue::Real(f64::INFINITY)
+            DataValue::Real(f64::INFINITY)
         );
     }
 
@@ -654,7 +654,7 @@ mod test_sorting {
                     .unwrap()
                     .as_real()
                     .unwrap(),
-                VariableValue::Real(value).as_real().unwrap(),
+                DataValue::Real(value).as_real().unwrap(),
                 epsilon = 0.001
             );
         }

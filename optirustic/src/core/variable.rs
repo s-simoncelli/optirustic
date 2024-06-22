@@ -298,7 +298,7 @@ impl VariableValue {
         if let VariableValue::Real(v) = self {
             Ok(*v)
         } else {
-            Err(OError::WrongTypeVariable("real".to_string()))
+            Err(OError::WrongVariableType("real".to_string()))
         }
     }
 
@@ -310,7 +310,7 @@ impl VariableValue {
         if let VariableValue::Integer(v) = self {
             Ok(*v)
         } else {
-            Err(OError::WrongTypeVariable("integer".to_string()))
+            Err(OError::WrongVariableType("integer".to_string()))
         }
     }
 }

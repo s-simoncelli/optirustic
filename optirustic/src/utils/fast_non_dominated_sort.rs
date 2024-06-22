@@ -1,4 +1,4 @@
-use crate::core::{Individual, OError, VariableValue};
+use crate::core::{DataValue, Individual, OError};
 use crate::operators::{BinaryComparisonOperator, ParetoConstrainedDominance, PreferredSolution};
 
 /// Outputs of the non-dominated sort algorithm.
@@ -88,7 +88,7 @@ pub fn fast_non_dominated_sort(
         // front whose items have rank 1
         if domination_counter[pi] == 0 {
             current_front.push(pi);
-            individuals[pi].set_data("rank", VariableValue::Integer(1));
+            individuals[pi].set_data("rank", DataValue::Integer(1));
         }
     }
 
@@ -122,7 +122,7 @@ pub fn fast_non_dominated_sort(
                 // dominated by `p` and `q` belongs to the next front
                 if domination_counter[*qi] == 0 {
                     next_front.push(*qi);
-                    individuals[*qi].set_data("rank", VariableValue::Integer(i + 1));
+                    individuals[*qi].set_data("rank", DataValue::Integer(i + 1));
                 }
             }
         }
@@ -156,7 +156,7 @@ pub fn fast_non_dominated_sort(
 
 #[cfg(test)]
 mod test {
-    use crate::core::{ObjectiveDirection, VariableValue};
+    use crate::core::{DataValue, ObjectiveDirection};
     use crate::core::utils::individuals_from_obj_values_dummy;
     use crate::utils::fast_non_dominated_sort;
 
@@ -191,7 +191,7 @@ mod test {
         for idx in &expected_first {
             assert_eq!(
                 individuals[*idx].get_data("rank").unwrap(),
-                VariableValue::Integer(1)
+                DataValue::Integer(1)
             );
         }
 
@@ -201,7 +201,7 @@ mod test {
         for idx in expected_second {
             assert_eq!(
                 individuals[idx].get_data("rank").unwrap(),
-                VariableValue::Integer(2)
+                DataValue::Integer(2)
             );
         }
 
@@ -210,7 +210,7 @@ mod test {
         for idx in expected_third {
             assert_eq!(
                 individuals[idx].get_data("rank").unwrap(),
-                VariableValue::Integer(3)
+                DataValue::Integer(3)
             );
         }
 
@@ -252,7 +252,7 @@ mod test {
         for idx in &expected_first {
             assert_eq!(
                 individuals[*idx].get_data("rank").unwrap(),
-                VariableValue::Integer(1)
+                DataValue::Integer(1)
             );
         }
 
@@ -287,7 +287,7 @@ mod test {
         for idx in &expected_first {
             assert_eq!(
                 individuals[*idx].get_data("rank").unwrap(),
-                VariableValue::Integer(1)
+                DataValue::Integer(1)
             );
         }
 
@@ -324,7 +324,7 @@ mod test {
         for idx in &expected_first {
             assert_eq!(
                 individuals[*idx].get_data("rank").unwrap(),
-                VariableValue::Integer(1)
+                DataValue::Integer(1)
             );
         }
 
@@ -334,7 +334,7 @@ mod test {
         for idx in expected_second {
             assert_eq!(
                 individuals[idx].get_data("rank").unwrap(),
-                VariableValue::Integer(2)
+                DataValue::Integer(2)
             );
         }
 
@@ -343,7 +343,7 @@ mod test {
         for idx in expected_third {
             assert_eq!(
                 individuals[idx].get_data("rank").unwrap(),
-                VariableValue::Integer(3)
+                DataValue::Integer(3)
             );
         }
 
