@@ -23,7 +23,7 @@ pub struct NonDominatedSortResults {
 /// This sorts solutions into fronts and ranks the individuals based on the number of solutions
 /// an individual dominates. Solutions that are not dominated by any other individuals will belong
 /// to the first front. The method also stores the `rank` property into each individual; to retrieve
-/// it, use `Individual::set_data("rank").unwrap()`.
+/// it, use `Individual::get_data("rank").unwrap()`.
 ///
 /// Implemented based on paragraph 3A in:
 /// > K. Deb, A. Pratap, S. Agarwal and T. Meyarivan, "A fast and elitist multi-objective genetic

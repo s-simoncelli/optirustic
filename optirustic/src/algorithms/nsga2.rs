@@ -123,8 +123,8 @@ impl NSGA2 {
 
         let nsga2_args = options.clone();
         let problem = Arc::new(problem);
-        info!("Created initial random population");
         let population = Population::init(problem.clone(), options.number_of_individuals);
+        info!("Created initial random population");
 
         let mutation_options = match options.mutation_operator_options {
             Some(o) => o,
@@ -135,30 +135,10 @@ impl NSGA2 {
         let crossover_options = options.crossover_operator_options.unwrap_or_default();
         let crossover_operator = SimulatedBinaryCrossover::new(crossover_options.clone())?;
 
-        // log options
-        let mut log_opts: String = "Algorithm options are:\n".to_owned();
-        log_opts.push_str(
-            format!("\t* Number of variables {:>13}\n\t* Number of objectives {:>12}\n\t* Number of constraints {:>11}\n",
-                    problem.number_of_variables(),
-                    problem.number_of_objectives(),
-                    problem.number_of_constraints()
-            ).as_str()
+        info!(
+            "{}",
+            Self::algorithm_option_str(&problem, &crossover_options, &mutation_options)
         );
-        log_opts.push_str(
-            format!(
-                "\t* Crossover distribution index {:>5}\n\t* Crossover probability {:>11}\n\t* Crossover var probability {:>9}\n",
-                crossover_options.distribution_index, crossover_options.crossover_probability, crossover_options.variable_probability,
-            )
-            .as_str(),
-        );
-        log_opts.push_str(
-            format!(
-                "\t* Mutation index parameter {:>9}\n\t* Mutation var probability {:>10}",
-                mutation_options.index_parameter, crossover_options.variable_probability,
-            )
-            .as_str(),
-        );
-        info!("{}", log_opts);
 
         Ok(Self {
             number_of_individuals: options.number_of_individuals,
@@ -177,6 +157,44 @@ impl NSGA2 {
         })
     }
 
+    /// Get a string listing the algorithm options.
+    ///
+    /// # Arguments
+    ///
+    /// * `problem`: The problem.
+    /// * `crossover_options`: The crossover operator options.
+    /// * `mutation_options`: The mutation operator options.
+    ///
+    /// returns: `String`
+    pub fn algorithm_option_str(
+        problem: &Arc<Problem>,
+        crossover_options: &SimulatedBinaryCrossoverArgs,
+        mutation_options: &PolynomialMutationArgs,
+    ) -> String {
+        let mut log_opts: String = "Algorithm options are:\n".to_owned();
+        log_opts.push_str(
+            format!("\t* Number of variables {:>13}\n\t* Number of objectives {:>12}\n\t* Number of constraints {:>11}\n",
+                    problem.number_of_variables(),
+                    problem.number_of_objectives(),
+                    problem.number_of_constraints()
+            ).as_str()
+        );
+        log_opts.push_str(
+            format!(
+                "\t* Crossover distribution index {:>5}\n\t* Crossover probability {:>11}\n\t* Crossover var probability {:>9}\n",
+                crossover_options.distribution_index, crossover_options.crossover_probability, crossover_options.variable_probability,
+            )
+                .as_str(),
+        );
+        log_opts.push_str(
+            format!(
+                "\t* Mutation index parameter {:>9}\n\t* Mutation var probability {:>10}",
+                mutation_options.index_parameter, crossover_options.variable_probability,
+            )
+            .as_str(),
+        );
+        log_opts
+    }
     /// Calculate the crowding distance (with complexity $O(M * log(N))$, where `M` is the number of
     /// objectives and `N` the number of individuals). This set the distance on the individual's data,
     /// to retrieve it, use `Individual::set_data("crowding_distance").unwrap()`.
@@ -272,6 +290,12 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
             NSGA2::do_evaluation(self.population.individuals_as_mut())?;
         }
 
+        debug!("Calculating rank");
+        fast_non_dominated_sort(self.population.individuals_as_mut(), false)?;
+
+        debug!("Calculating crowding distance");
+        NSGA2::set_crowding_distance(self.population.individuals_as_mut())?;
+
         info!("Initial evaluation completed");
         self.generation += 1;
 
@@ -279,14 +303,8 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
     }
 
     fn evolve(&mut self) -> Result<(), OError> {
-        debug!("Calculating rank");
-        fast_non_dominated_sort(self.population.individuals_as_mut(), false)?;
-
-        debug!("Calculating crowding distance");
-        NSGA2::set_crowding_distance(self.population.individuals_as_mut())?;
-
         // Create the new population, based on the population at the previous time-step, of size
-        // `self.number_of_individuals`. The loop will add two individuals at the time.
+        // self.number_of_individuals. The loop adds two individuals at the time.
         debug!("Generating new population (selection+mutation)");
         let mut offsprings: Vec<Individual> = Vec::new();
         for _ in 0..self.number_of_individuals / 2 {
@@ -370,13 +388,15 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
             });
             last_front.reverse();
 
-            // add the items ti complete the population
+            // add the items to complete the population
             last_front.truncate(self.number_of_individuals - new_population.size());
             new_population.add_new_individuals(last_front);
         }
 
-        // update the population
+        // update the population and the distance for the CrowdedComparison operator at the next
+        // loop
         self.population = new_population;
+        NSGA2::set_crowding_distance(self.population.individuals_as_mut())?;
 
         self.generation += 1;
         Ok(())
@@ -640,6 +660,7 @@ mod test_sorting {
         }
     }
 }
+
 #[cfg(test)]
 mod test_problems {
     use crate::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
