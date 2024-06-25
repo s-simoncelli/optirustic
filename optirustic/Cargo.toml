@@ -17,6 +17,7 @@ ordered-float = "4.2.0"
 hv-fonseca-et-al-2006-sys = { path = "../hv-fonseca-et-al-2006-sys" }
 hv-wfg-sys = { path = "../hv-wfg-sys" }
 plotters = { version = "0.3.6", optional = true }
+nalgebra = "0.32.6"
 
 [dev-dependencies]
 float-cmp = "0.9.0"
