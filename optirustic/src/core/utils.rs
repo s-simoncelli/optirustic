@@ -80,6 +80,26 @@ pub fn vector_max(v: &[f64]) -> Result<f64, OError> {
         ))?)
 }
 
+/// Returns `true` if two arrays are element-wise equal within a tolerance. This behaves as the
+///numpy implementation at <https://numpy.org/doc/stable/reference/generated/numpy.allclose.html>.
+///
+/// # Arguments
+///
+/// * `a`: First vector to compare.
+/// * `b`: Second vector to compare.
+/// * `r_tol`: The relative tolerance parameter
+/// * `a_tol`: The absolute tolerance parameter
+///
+/// returns: `bool`
+pub fn all_close(a: &[f64], b: &[f64], r_tol: Option<f64>, a_tol: Option<f64>) -> bool {
+    let r_tol = r_tol.unwrap_or(1e-05);
+    let a_tol = a_tol.unwrap_or(1e-08);
+
+    a.iter()
+        .zip(b)
+        .any(|(v1, v2)| (v1 - v2).abs() <= (a_tol + r_tol * v2.abs()))
+}
+
 /// Define the sort type
 #[derive(PartialEq)]
 pub enum Sort {
@@ -124,10 +144,7 @@ pub(crate) fn individuals_from_obj_values_dummy<const N: usize>(
 ) -> Vec<Individual> {
     let mut objectives = Vec::new();
     for (i, direction) in objective_direction.iter().enumerate() {
-        objectives.push(Objective::new(
-            format!("obj{i}").as_str(),
-            direction.clone(),
-        ));
+        objectives.push(Objective::new(format!("obj{i}").as_str(), *direction));
     }
     let variables = vec![VariableType::Real(
         BoundedNumber::new("X", 0.0, 2.0).unwrap(),

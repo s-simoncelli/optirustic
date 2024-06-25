@@ -479,8 +479,7 @@ mod test_crowded_comparison {
     use std::sync::Arc;
 
     use crate::core::{
-        BoundedNumber, Individual, Objective, ObjectiveDirection, Problem, VariableType,
-        VariableValue,
+        BoundedNumber, DataValue, Individual, Objective, ObjectiveDirection, Problem, VariableType,
     };
     use crate::core::utils::dummy_evaluator;
     use crate::operators::{BinaryComparisonOperator, PreferredSolution};
@@ -497,8 +496,8 @@ mod test_crowded_comparison {
 
         let mut solution1 = Individual::new(problem.clone());
         let mut solution2 = Individual::new(problem.clone());
-        solution1.set_data("rank", VariableValue::Integer(1));
-        solution2.set_data("rank", VariableValue::Integer(4));
+        solution1.set_data("rank", DataValue::Integer(1));
+        solution2.set_data("rank", DataValue::Integer(4));
 
         // Sol 1 dominates
         assert_eq!(
@@ -507,7 +506,7 @@ mod test_crowded_comparison {
         );
 
         // Sol 2 dominates
-        solution1.set_data("rank", VariableValue::Integer(5));
+        solution1.set_data("rank", DataValue::Integer(5));
         assert_eq!(
             CrowdedComparison::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::Second
@@ -525,11 +524,11 @@ mod test_crowded_comparison {
 
         let mut solution1 = Individual::new(problem.clone());
         let mut solution2 = Individual::new(problem.clone());
-        solution1.set_data("rank", VariableValue::Integer(1));
-        solution2.set_data("rank", VariableValue::Integer(1));
+        solution1.set_data("rank", DataValue::Integer(1));
+        solution2.set_data("rank", DataValue::Integer(1));
 
-        solution1.set_data("crowding_distance", VariableValue::Real(10.5));
-        solution2.set_data("crowding_distance", VariableValue::Real(0.32));
+        solution1.set_data("crowding_distance", DataValue::Real(10.5));
+        solution2.set_data("crowding_distance", DataValue::Real(0.32));
         // Sol 1 dominates
         assert_eq!(
             CrowdedComparison::compare(&solution1, &solution2).unwrap(),
@@ -537,7 +536,7 @@ mod test_crowded_comparison {
         );
 
         // Sol 2 dominates
-        solution2.set_data("crowding_distance", VariableValue::Real(100.32));
+        solution2.set_data("crowding_distance", DataValue::Real(100.32));
         assert_eq!(
             CrowdedComparison::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::Second
