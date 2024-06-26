@@ -140,29 +140,29 @@ impl BinaryComparisonOperator for CrowdedComparison {
         second_solution: &Individual,
     ) -> Result<PreferredSolution, OError> {
         let rank1 = match first_solution.get_data("rank") {
-            None => {
+            Err(_) => {
                 return Err(OError::ComparisonOperator(
                     "CrowdedComparison".to_string(),
                     "The rank on the first individual does not exist".to_string(),
                 ))
             }
-            Some(r) => r.as_integer()?,
+            Ok(r) => r.as_integer()?,
         };
         let rank2 = match second_solution.get_data("rank") {
-            None => {
+            Err(_) => {
                 return Err(OError::ComparisonOperator(
                     "CrowdedComparison".to_string(),
                     "The rank on the second individual does not exist".to_string(),
                 ))
             }
-            Some(r) => r.as_integer()?,
+            Ok(r) => r.as_integer()?,
         };
 
         match rank1.cmp(&rank2) {
             Ordering::Less => Ok(PreferredSolution::First),
             Ordering::Equal => {
                 let d1 = match first_solution.get_data("crowding_distance") {
-                    None => {
+                    Err(_) => {
                         return Err(OError::ComparisonOperator(
                             "CrowdedComparison".to_string(),
                             format!(
@@ -171,10 +171,10 @@ impl BinaryComparisonOperator for CrowdedComparison {
                             ),
                         ))
                     }
-                    Some(r) => r.as_real()?,
+                    Ok(r) => r.as_real()?,
                 };
                 let d2 = match second_solution.get_data("crowding_distance") {
-                    None => {
+                    Err(_) => {
                         return Err(OError::ComparisonOperator(
                             "CrowdedComparison".to_string(),
                             format!(
@@ -183,7 +183,7 @@ impl BinaryComparisonOperator for CrowdedComparison {
                         ),
                         ))
                     }
-                    Some(r) => r.as_real()?,
+                    Ok(r) => r.as_real()?,
                 };
 
                 if d1 > d2 {

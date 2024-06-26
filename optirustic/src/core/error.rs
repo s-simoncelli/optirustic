@@ -23,6 +23,8 @@ pub enum OError {
     WrongVariableTypeWithName(String, String),
     #[error("The min value ({0}) must be strictly smaller than the max value ({1}).")]
     TooLargeLowerBound(String, String),
+    #[error("The data named {0} is not set on the individual")]
+    WrongDataName(String),
     #[error("The data type is not {0}")]
     WrongDataType(String),
     #[error("An error occurred in the comparison operator '{0}': {1}")]

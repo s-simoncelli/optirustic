@@ -431,16 +431,19 @@ impl Individual {
         self.data.insert(name.to_string(), value);
     }
 
-    /// Get custom data set on the individual.
+    /// Get custom data set on the individual. This returns an error if no custom data with the
+    /// provided `name` is set on the individual.
     ///
     /// # Arguments
     ///
     /// * `name`: The name of the data.
     ///
-    /// returns: `Option<DataValue>`. This returns `None` if no custom data with the given `name`
-    /// exists.
-    pub fn get_data(&self, name: &str) -> Option<DataValue> {
-        self.data.get(name).cloned()
+    /// returns: `Result<DataValue, OError>`
+    pub fn get_data(&self, name: &str) -> Result<DataValue, OError> {
+        self.data
+            .get(name)
+            .cloned()
+            .ok_or(OError::WrongDataName(name.to_string()))
     }
 
     /// Export all the solution data (constraint and objective values, constraint violation and
