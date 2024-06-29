@@ -14,7 +14,7 @@ pub enum DataValue {
     /// The value for an integer number. This is an i64.
     Integer(i64),
     /// The value for a vector of floating-point numbers.
-    Vec(Vec<f64>),
+    Vector(Vec<f64>),
 }
 
 impl DataValue {
@@ -46,7 +46,7 @@ impl DataValue {
     ///
     /// returns: `Result<f64, OError>`
     pub fn as_vec(&self) -> Result<&Vec<f64>, OError> {
-        if let DataValue::Vec(v) = self {
+        if let DataValue::Vector(v) = self {
             Ok(v)
         } else {
             Err(OError::WrongDataType("vector".to_string()))
