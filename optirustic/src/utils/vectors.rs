@@ -81,6 +81,27 @@ pub fn all_close(a: &[f64], b: &[f64], r_tol: Option<f64>, a_tol: Option<f64>) -
         .any(|(v1, v2)| (v1 - v2).abs() <= (a_tol + r_tol * v2.abs()))
 }
 
+/// Return the index of the minimum values of the vector.
+///
+/// # Arguments
+///
+/// * `vector`: The vector.
+///
+/// returns: `(usize, f64)`: The index of minimum value and the minimum value.
+/// ```
+pub fn argmin(vector: &[f64]) -> (usize, f64) {
+    let mut min_value = f64::INFINITY;
+    let mut min_index: usize = 0;
+    for (index, value) in vector.iter().enumerate() {
+        if *value < min_value {
+            min_value = *value;
+            min_index = index;
+        }
+    }
+
+    (min_index, min_value)
+}
+
 #[cfg(test)]
 mod test {
     use crate::utils::argsort;
