@@ -1,7 +1,7 @@
 use crate::core::{Individual, Individuals, Objective, ObjectiveDirection, OError};
-use crate::core::utils::{vector_max, vector_min};
 use crate::metrics::{HyperVolumeFonseca2006, HyperVolumeWhile2012};
 use crate::metrics::hypervolume_2d::HyperVolume2D;
+use crate::utils::{vector_max, vector_min};
 
 /// Calculates a reference point by taking the maximum of each objective (or minimum if the
 /// objective is maximised) from the calculated individual's objective values, so that the point will

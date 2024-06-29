@@ -431,8 +431,8 @@ impl Individual {
         self.data.insert(name.to_string(), value);
     }
 
-    /// Get custom data set on the individual. This returns an error if no custom data with the
-    /// provided `name` is set on the individual.
+    /// Get a copy of the custom data set on the individual. This returns an error if no custom
+    /// data with the provided `name` is set on the individual.
     ///
     /// # Arguments
     ///

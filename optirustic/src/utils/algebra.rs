@@ -1,6 +1,6 @@
 use nalgebra::{DMatrix, SVD};
 
-use crate::core::utils::all_close;
+use crate::utils::all_close;
 
 /// Return the least-squares solution to a linear matrix equation using singular value decomposition
 /// (SVD). This solves the linear system `A * x = b`, where `A` is the coefficient matrix of the
@@ -70,12 +70,73 @@ pub fn solve_linear_system(
     Ok(solution.data.as_vec().clone())
 }
 
+/// Calculate the dot product between two vectors. The order in which the vectors are given does
+/// not matter as the product is commutative. This returns an error if the size of the vectors does
+/// not match.
+///
+/// # Arguments
+///
+/// * `a`: The first vector.
+/// * `b`: The second vector.
+///
+/// returns: `Result<f64, String>`
+pub fn dot_product(a: &[f64], b: &[f64]) -> Result<f64, String> {
+    if a.len() != b.len() {
+        return Err(format!(
+            "The length of vector a ({:?}) must match the length of vector b ({:?})",
+            a, b
+        ));
+    }
+
+    Ok(a.iter().zip(b).map(|(v_a, v_b)| v_a * v_b).sum())
+}
+
+/// Get the vector magnitude or length.
+///
+/// # Arguments
+///
+/// * `vector`: The vector.
+///
+/// returns: `Result<f64, String>`
+pub fn vector_magnitude(vector: &[f64]) -> Result<f64, String> {
+    Ok(dot_product(vector, vector)?.sqrt())
+}
+
+/// Calculate the perpendicular distance between a reference direction vector `ref_dir` and a
+/// `point`. This returns an error if the size of the vectors does not match.
+///
+/// # Arguments
+///
+/// * `ref_dir`: The reference direction.
+/// * `point`: The point coordinates.
+///
+/// returns: `Result<f64, String>`
+pub fn perpendicular_distance(ref_dir: &[f64], point: &[f64]) -> Result<f64, String> {
+    let ref_dir_magnitude = vector_magnitude(ref_dir)?;
+
+    // this is a scalar representing the projection of L onto the reference direction
+    let projection = dot_product(point, ref_dir)? / ref_dir_magnitude;
+
+    let mut distance_vector: Vec<f64> = Vec::with_capacity(point.len());
+    for (p, r) in point.iter().zip(ref_dir) {
+        // projection is multiplied by unit vector (r / ref_dir_magnitude) to get the projection
+        // vector parallel to ref_dir.
+        let projection_vector = projection * r / ref_dir_magnitude;
+
+        // this is then subtracted from the point vector to get the vector perpendicular to ref_dir
+        distance_vector.push(projection_vector - p);
+    }
+
+    // get vector length
+    vector_magnitude(&distance_vector)
+}
+
 #[cfg(test)]
 mod tests {
     use float_cmp::assert_approx_eq;
 
     use crate::core::test_utils::assert_approx_array_eq;
-    use crate::utils::lin_sys_solve::solve_linear_system;
+    use crate::utils::algebra::{dot_product, perpendicular_distance, solve_linear_system};
 
     #[test]
     /// Test the lsquare function on a linear system.
@@ -107,5 +168,26 @@ mod tests {
         let x = solve_linear_system(&x, &y, true).unwrap();
         assert_approx_eq!(f64, x[0], 1.0, epsilon = 0.0001);
         assert_approx_eq!(f64, x[1], -0.95, epsilon = 0.0001);
+    }
+
+    #[test]
+    /// Test the dot product function.
+    fn test_dot_product() {
+        let a = vec![1.0, 2.0, 3.0];
+        let b = vec![4.0, -5.0, 6.0];
+        assert_eq!(12.0, dot_product(&a, &b).unwrap());
+    }
+
+    #[test]
+    /// Test the perpendicular distance function.
+    fn test_perpendicular_distance() {
+        let line = vec![1.0, 1.0, 1.0];
+        let point = vec![0.0, 0.0, 2.0];
+        assert_approx_eq!(
+            f64,
+            perpendicular_distance(&line, &point).unwrap(),
+            1.632993,
+            epsilon = 0.0001
+        );
     }
 }
