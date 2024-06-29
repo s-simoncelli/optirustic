@@ -17,6 +17,9 @@ pub struct NonDominatedSortResults {
     pub domination_counter: Vec<usize>,
 }
 
+/// The data key where the rank is stored for each [`Individual`].
+const RANK_KEY: &str = "rank";
+
 /// Non-dominated fast sorting from NSGA2 paper (with complexity $O(M * N^2)$, where `M` is the
 /// number of objectives and `N` the number of individuals).
 ///
@@ -88,7 +91,7 @@ pub fn fast_non_dominated_sort(
         // front whose items have rank 1
         if domination_counter[pi] == 0 {
             current_front.push(pi);
-            individuals[pi].set_data("rank", DataValue::Integer(1));
+            individuals[pi].set_data(RANK_KEY, DataValue::Integer(1));
         }
     }
 
@@ -122,7 +125,7 @@ pub fn fast_non_dominated_sort(
                 // dominated by `p` and `q` belongs to the next front
                 if domination_counter[*qi] == 0 {
                     next_front.push(*qi);
-                    individuals[*qi].set_data("rank", DataValue::Integer(i + 1));
+                    individuals[*qi].set_data(RANK_KEY, DataValue::Integer(i + 1));
                 }
             }
         }
@@ -159,6 +162,7 @@ mod test {
     use crate::core::{DataValue, ObjectiveDirection};
     use crate::core::utils::individuals_from_obj_values_dummy;
     use crate::utils::fast_non_dominated_sort;
+    use crate::utils::fast_non_dominated_sort::RANK_KEY;
 
     #[test]
     /// Test the non-dominated sorting. The resulting fronts and ranks were manually calculated by
@@ -190,7 +194,7 @@ mod test {
         // check rank
         for idx in &expected_first {
             assert_eq!(
-                individuals[*idx].get_data("rank").unwrap(),
+                individuals[*idx].get_data(RANK_KEY).unwrap(),
                 DataValue::Integer(1)
             );
         }
@@ -200,7 +204,7 @@ mod test {
         assert_eq!(result.front_indexes[1], expected_second);
         for idx in expected_second {
             assert_eq!(
-                individuals[idx].get_data("rank").unwrap(),
+                individuals[idx].get_data(RANK_KEY).unwrap(),
                 DataValue::Integer(2)
             );
         }
@@ -209,7 +213,7 @@ mod test {
         assert_eq!(result.front_indexes[2], expected_third);
         for idx in expected_third {
             assert_eq!(
-                individuals[idx].get_data("rank").unwrap(),
+                individuals[idx].get_data(RANK_KEY).unwrap(),
                 DataValue::Integer(3)
             );
         }
@@ -251,7 +255,7 @@ mod test {
         // check rank
         for idx in &expected_first {
             assert_eq!(
-                individuals[*idx].get_data("rank").unwrap(),
+                individuals[*idx].get_data(RANK_KEY).unwrap(),
                 DataValue::Integer(1)
             );
         }
@@ -286,7 +290,7 @@ mod test {
         // check rank
         for idx in &expected_first {
             assert_eq!(
-                individuals[*idx].get_data("rank").unwrap(),
+                individuals[*idx].get_data(RANK_KEY).unwrap(),
                 DataValue::Integer(1)
             );
         }
@@ -323,7 +327,7 @@ mod test {
         // check rank
         for idx in &expected_first {
             assert_eq!(
-                individuals[*idx].get_data("rank").unwrap(),
+                individuals[*idx].get_data(RANK_KEY).unwrap(),
                 DataValue::Integer(1)
             );
         }
@@ -333,7 +337,7 @@ mod test {
         assert_eq!(result.front_indexes[1], expected_second);
         for idx in expected_second {
             assert_eq!(
-                individuals[idx].get_data("rank").unwrap(),
+                individuals[idx].get_data(RANK_KEY).unwrap(),
                 DataValue::Integer(2)
             );
         }
@@ -342,7 +346,7 @@ mod test {
         assert_eq!(result.front_indexes[2], expected_third);
         for idx in expected_third {
             assert_eq!(
-                individuals[idx].get_data("rank").unwrap(),
+                individuals[idx].get_data(RANK_KEY).unwrap(),
                 DataValue::Integer(3)
             );
         }
