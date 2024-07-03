@@ -45,9 +45,13 @@ pub struct NSGA3Arg {
     /// The options of the Simulated Binary Crossover (SBX) operator. This operator is used to
     /// generate new children by recombining the variables of parent solutions. This defaults to
     /// [`SimulatedBinaryCrossoverArgs::default()`].
+    /// NOTE: it is advisable to use a large `distribution_index` to prevent the problem explained in
+    /// Section IIa point #3 in the paper. With many objectives, "two distant parent solutions are
+    /// likely to produce offspring solutions that are also distant from parents", which should be
+    /// prevented.
     pub crossover_operator_options: Option<SimulatedBinaryCrossoverArgs>,
     /// The options to Polynomial Mutation (PM) operator used to mutate the variables of an
-    /// individual. This defaults to [`SimulatedBinaryCrossoverArgs::default()`],
+    /// individual. This defaults to [`PolynomialMutationArgs::default()`],
     /// with a distribution index or index parameter of `20` and variable probability equal `1`
     /// divided by the number of real variables in the problem (i.e., each variable will have the
     /// same probability of being mutated).
@@ -90,13 +94,13 @@ pub struct NSGA3 {
     population: Population,
     /// The problem being solved.
     problem: Arc<Problem>,
-    /// The operator to use to select the individuals for reproduction.
+    /// The operator to use to select the individuals for reproduction. This is a binary tournament
+    /// selector ([`TournamentSelector`]) with the [`CrowdedComparison`] comparison operator.
     selector_operator: TournamentSelector<CrowdedComparison>,
-    /// The operator to use to generate a new children by recombining the variables of parent
-    /// solutions. This is a binary tournament selector ([`TournamentSelector`]) with the
-    /// [`CrowdedComparison`] comparison operator.
+    /// The SBX operator to use to generate a new children by recombining the variables of parent
+    /// solutions.
     crossover_operator: SimulatedBinaryCrossover,
-    /// The operator to use to mutate the variables of an individual.
+    /// The PM operator to use to mutate the variables of an individual.
     mutation_operator: PolynomialMutation,
     /// The evolution step.
     generation: usize,
