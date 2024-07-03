@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::ops::RangeBounds;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -13,6 +14,8 @@ pub enum DataValue {
     Real(f64),
     /// The value for an integer number. This is an i64.
     Integer(i64),
+    /// The value for a usize.
+    USize(usize),
     /// The value for a vector of floating-point numbers.
     Vector(Vec<f64>),
 }
@@ -50,6 +53,18 @@ impl DataValue {
             Ok(v)
         } else {
             Err(OError::WrongDataType("vector".to_string()))
+        }
+    }
+
+    /// Get the value if the data is of usize type. This returns an error if the data is not an
+    /// usize.
+    ///
+    /// returns: `Result<f64, OError>`
+    pub fn as_usize(&self) -> Result<usize, OError> {
+        if let DataValue::USize(v) = self {
+            Ok(*v)
+        } else {
+            Err(OError::WrongDataType("usize".to_string()))
         }
     }
 }
@@ -109,6 +124,14 @@ pub struct Individual {
     data: HashMap<String, DataValue>,
 }
 
+impl PartialEq for Individual {
+    fn eq(&self, other: &Self) -> bool {
+        self.variable_values == other.variable_values
+            && self.constraint_values == other.constraint_values
+            && self.objective_values == other.objective_values
+            && self.data == other.data
+    }
+}
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IndividualExport {
     /// The value of the constraints.
@@ -500,8 +523,15 @@ impl Population {
     /// Get the population size.
     ///
     /// return: `usize`
-    pub fn size(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.0.len()
+    }
+
+    /// Return `true` if the population is empty.
+    ///
+    /// return: `bool`
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 
     /// Get the population individuals.
@@ -509,6 +539,13 @@ impl Population {
     /// return: `&[Individual]`
     pub fn individuals(&self) -> &[Individual] {
         self.0.as_ref()
+    }
+
+    /// Get a population individual by its index.
+    ///
+    /// return: `Option<&Individual>`
+    pub fn individual(&self, index: usize) -> Option<&Individual> {
+        self.0.get(index)
     }
 
     /// Borrow the population individuals as mutable reference.
@@ -522,11 +559,36 @@ impl Population {
     ///
     /// # Arguments
     ///
-    /// * `individual`: The vector of individuals to add.
+    /// * `individuals`: The vector of individuals to add.
     ///
     /// returns: `()`
-    pub fn add_new_individuals(&mut self, individual: Vec<Individual>) {
-        self.0.extend(individual);
+    pub fn add_new_individuals(&mut self, individuals: Vec<Individual>) {
+        self.0.extend(individuals);
+    }
+
+    /// Add a new individual to the population.
+    ///
+    /// # Arguments
+    ///
+    /// * `individual`: The individual to add.
+    ///
+    /// returns: `()`
+    pub fn add_individual(&mut self, individual: Individual) {
+        self.0.push(individual);
+    }
+
+    /// Remove the specified range from the population in bulk and return all removed elements.
+    ///
+    /// # Arguments
+    ///
+    /// * `range_to_remove`: The range to remove.
+    ///
+    /// returns: `Vec<Individual>`
+    pub fn drain<R>(&mut self, range_to_remove: R) -> Vec<Individual>
+    where
+        R: RangeBounds<usize>,
+    {
+        self.0.drain(range_to_remove).collect()
     }
 
     /// Generate a population with a number of individuals equal to `number_of_individuals`. All

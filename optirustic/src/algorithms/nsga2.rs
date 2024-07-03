@@ -333,7 +333,7 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
         }
         debug!("Combining parents and offsprings in new population");
         self.population.add_new_individuals(offsprings);
-        debug!("New population size is {}", self.population.size());
+        debug!("New population size is {}", self.population.len());
 
         debug!("Evaluating population");
         if self.parallel {
@@ -359,16 +359,16 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
         // This implements the algorithm at the bottom of page 186 in Deb et al. (2002).
         let mut last_front: Option<Vec<Individual>> = None;
         for (fi, front) in sorting_results.fronts.into_iter().enumerate() {
-            if new_population.size() + front.len() <= self.number_of_individuals {
+            if new_population.len() + front.len() <= self.number_of_individuals {
                 debug!("Adding front #{} (size: {})", fi + 1, front.len());
                 new_population.add_new_individuals(front);
-            } else if new_population.size() == self.number_of_individuals {
+            } else if new_population.len() == self.number_of_individuals {
                 debug!("Population reached target size");
                 break;
             } else {
                 debug!(
                     "Population almost full ({} individuals)",
-                    new_population.size()
+                    new_population.len()
                 );
                 last_front = Some(front.clone());
                 break;
@@ -391,7 +391,7 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
             last_front.reverse();
 
             // add the items to complete the population
-            last_front.truncate(self.number_of_individuals - new_population.size());
+            last_front.truncate(self.number_of_individuals - new_population.len());
             new_population.add_new_individuals(last_front);
         }
 
