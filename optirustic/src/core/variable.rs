@@ -257,7 +257,7 @@ pub trait VariableValueGenerator {
 }
 
 /// The value of a variable to set on an individual.
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum VariableValue {
     /// The value for a floating-point number. This is a f64.
@@ -268,6 +268,20 @@ pub enum VariableValue {
     Boolean(bool),
     /// The value for a choice variable.
     Choice(String),
+}
+
+impl PartialEq for VariableValue {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (VariableValue::Real(s), VariableValue::Real(o)) => {
+                (s.is_nan() && o.is_nan()) || (*s == *o)
+            }
+            (VariableValue::Integer(s), VariableValue::Integer(o)) => *s == *o,
+            (VariableValue::Boolean(s), VariableValue::Boolean(o)) => s == o,
+            (VariableValue::Choice(s), VariableValue::Choice(o)) => s == o,
+            _ => false,
+        }
+    }
 }
 
 impl VariableValue {

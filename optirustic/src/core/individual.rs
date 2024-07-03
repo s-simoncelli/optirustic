@@ -6,18 +6,31 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 use crate::core::{OError, Problem, VariableValue};
+use crate::utils::hasmap_eq_with_nans;
 
 /// The data type and value that can be stored in an individual's data.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum DataValue {
     /// The value for a floating-point number. This is a f64.
     Real(f64),
     /// The value for an integer number. This is an i64.
     Integer(i64),
-    /// The value for a usize.
+    /// The value for an usize.
     USize(usize),
     /// The value for a vector of floating-point numbers.
     Vector(Vec<f64>),
+}
+
+impl PartialEq for DataValue {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (DataValue::Real(s), DataValue::Real(o)) => (s.is_nan() && o.is_nan()) || (*s == *o),
+            (DataValue::Integer(s), DataValue::Integer(o)) => *s == *o,
+            (DataValue::USize(s), DataValue::USize(o)) => s == o,
+            (DataValue::Vector(s), DataValue::Vector(o)) => s == o,
+            _ => false,
+        }
+    }
 }
 
 impl DataValue {
@@ -117,7 +130,7 @@ pub struct Individual {
     objective_values: HashMap<String, f64>,
     /// Whether the individual has been evaluated and the problem constraint and objective values
     /// are available. When an individual is created with some variables after the population
-    /// evolution, constraints and objectives need to be evaluated using a user-defined function.
+    /// evolves, constraints and objectives need to be evaluated using a user-defined function.
     evaluated: bool,
     /// Additional numeric data to store for the individuals (such as crowding distance or rank)
     /// depending on the algorithm the individuals are derived from.
@@ -125,13 +138,21 @@ pub struct Individual {
 }
 
 impl PartialEq for Individual {
+    /// Compare two individual's constraints, variables, objectives and stored data.
+    ///
+    /// # Arguments
+    ///
+    /// * `other`: The other individual to compare.
+    ///
+    /// returns: `bool`
     fn eq(&self, other: &Self) -> bool {
         self.variable_values == other.variable_values
-            && self.constraint_values == other.constraint_values
-            && self.objective_values == other.objective_values
+            && hasmap_eq_with_nans(&self.constraint_values, &other.constraint_values)
+            && hasmap_eq_with_nans(&self.objective_values, &other.objective_values)
             && self.data == other.data
     }
 }
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IndividualExport {
     /// The value of the constraints.
