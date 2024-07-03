@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use crate::core::OError;
 
 /// Define the sort type
@@ -102,9 +104,39 @@ pub fn argmin(vector: &[f64]) -> (usize, f64) {
     (min_index, min_value)
 }
 
+/// Return the vector items and its index corresponding to the minimum value returned by the closure.
+///
+/// # Arguments
+///
+/// * `vector`: The vector.
+/// * `f`: The closure that receives the vector item and its index and returns a number to minimise.
+///
+/// returns: `Option<(usize, &I)>`: The vector index and its value or `None` if `vector` is
+/// empty.
+pub fn argmin_by<I, F>(vector: &[I], f: F) -> Option<(usize, &I)>
+where
+    I: Sized,
+    F: FnMut((usize, &I)) -> f64,
+{
+    #[inline]
+    fn key<T>(
+        mut f: impl FnMut((usize, &T)) -> f64,
+    ) -> impl FnMut((usize, &T)) -> (f64, (usize, &T)) {
+        move |(index, it)| (f((index, it)), (index, it))
+    }
+
+    #[inline]
+    fn compare<T>((x_p, _): &(f64, T), (y_p, _): &(f64, T)) -> Ordering {
+        x_p.total_cmp(y_p)
+    }
+
+    let (_, (index, x)) = vector.iter().enumerate().map(key(f)).min_by(compare)?;
+    Some((index, x))
+}
+
 #[cfg(test)]
 mod test {
-    use crate::utils::argsort;
+    use crate::utils::{argmin_by, argsort};
     use crate::utils::vectors::Sort;
 
     #[test]
@@ -113,5 +145,26 @@ mod test {
 
         assert_eq!(argsort(&vec, Sort::Ascending), vec![4, 1, 3, 0, 2]);
         assert_eq!(argsort(&vec, Sort::Descending), vec![2, 0, 3, 1, 4]);
+    }
+
+    #[test]
+    fn test_armin_by() {
+        #[derive(PartialEq, Debug)]
+        struct A {
+            distance: f64,
+            other: f64,
+        }
+
+        let values = [10.0, -99.0, 55.2, -1.0];
+        let a_values: Vec<A> = values
+            .iter()
+            .map(|v| A {
+                distance: *v,
+                other: 0.0,
+            })
+            .collect();
+        let (min_index, min_distance) = argmin_by(&a_values, |(_, a)| a.distance).unwrap();
+        assert_eq!(min_index, 1);
+        assert_eq!(min_distance, &a_values[1]);
     }
 }
