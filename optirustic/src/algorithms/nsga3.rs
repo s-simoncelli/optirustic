@@ -485,6 +485,7 @@ impl<'a> Normalise<'a> {
                 .enumerate()
                 .map(|(j, v)| v - self.ideal_point[j])
                 .collect();
+            debug!("Translated objectives to {:?}", translated_objectives);
             x.set_data(
                 NORMALISED_OBJECTIVE_KEY,
                 DataValue::Vector(translated_objectives),
@@ -515,6 +516,7 @@ impl<'a> Normalise<'a> {
                     .clone(),
             );
         }
+        println!("Set extreme points to {:?}", extreme_points);
 
         // Step 6 - Compute intercepts a_j with the least-square method
         let intercept_result = Self::calculate_plane_intercepts(&extreme_points)
@@ -535,6 +537,7 @@ impl<'a> Normalise<'a> {
             }
             Some(i) => i,
         };
+        println!("Found intercepts {:?}", intercepts);
 
         // Step 7 - Normalize objectives (f_n). The denominator differs from Eq. 5 in the paper
         // because the intercepts are already calculated using the translated objectives. The new
@@ -546,6 +549,7 @@ impl<'a> Normalise<'a> {
                 .enumerate()
                 .map(|(oi, obj_value)| obj_value / intercepts[oi])
                 .collect();
+            println!("Normalised objectives to {:?}", tmp);
             individual.set_data(NORMALISED_OBJECTIVE_KEY, DataValue::Vector(tmp));
         }
         Ok(())
@@ -676,6 +680,13 @@ impl<'a> AssociateToRefPoint<'a> {
                 DataValue::Vector(self.reference_points[ri].clone()),
             );
             ind.set_data(REF_POINT_INDEX, DataValue::USize(ri));
+            println!(
+                "Associated objective point {:?} to reference point #{} {:?} - distance = {}",
+                ind.get_objective_values()?,
+                ri,
+                self.reference_points[ri],
+                min_d
+            );
         }
 
         Ok(())
@@ -739,23 +750,30 @@ impl<'a> Niching<'a> {
     }
 
     /// Add new individuals to the population. This updates [`self.new_population`] by draining
-    /// items from [`self.potential_individuals`]
+    /// items from [`self.potential_individuals`]. Reference points not associated with any point in
+    /// [`self.potential_individuals`] and excluded from the current evolution are removed from
+    /// [`self.rho_h`].
     ///
     /// return: `Result<(), OError>`
     fn calculate(&mut self) -> Result<(), OError> {
         let mut k = 1;
-        let mut excluded_ref_point_index: Vec<usize> = Vec::new();
+        let name = "NSGA3-Niching".to_string();
         while k <= self.missing_item_count {
-            // step 3 - select the reference point with the minimum rho_j counter
+            debug!("Adding point {k}");
+
+            // step 3 - select the reference point with the minimum rho_j counter. Reference points
+            // that have no association with individuals in F_l (Z_r = Z_r/{j_hat}, step 15) are
+            // excluded by removing them from rho_j
             let min_rho_j = *self
                 .rho_j
                 .iter()
                 .min_by(|(_, v1), (_, v2)| v1.cmp(v2))
                 .ok_or(OError::AlgorithmRun(
-                    "NSGA3-Niching".to_string(),
+                    name.clone(),
                     "Empty rho_j set".to_string(),
                 ))?
                 .1;
+            debug!("min_rho_j = {min_rho_j}");
 
             // collect all reference point indexes j with minimum rho_j - exclude reference points
             // that have no association with individuals in F_l (Z_r = Z_r/{j_hat}, step 15)
@@ -763,7 +781,7 @@ impl<'a> Niching<'a> {
                 .rho_j
                 .iter()
                 .filter_map(|(ref_index, ref_counter)| {
-                    if *ref_counter == min_rho_j && !excluded_ref_point_index.contains(ref_index) {
+                    if *ref_counter == min_rho_j {
                         Some(*ref_index)
                     } else {
                         None
@@ -772,12 +790,18 @@ impl<'a> Niching<'a> {
                 .collect();
 
             // step 4
-            let j_hat = if j_min_set.len() > 1 {
-                // select point randomly
-                *j_min_set.choose(self.rng.as_mut()).unwrap()
-            } else {
-                *j_min_set.first().unwrap()
+            let j_hat = match j_min_set.len() {
+                0 => {
+                    return Err(OError::AlgorithmRun(
+                        name.clone(),
+                        "Empty j_min_set set".to_string(),
+                    ))
+                }
+                1 => *j_min_set.first().unwrap(),
+                // select point randomly when set size is > 11
+                _ => *j_min_set.choose(self.rng.as_mut()).unwrap(),
             };
+            debug!("j_hat = {j_hat}");
 
             // step 5 - individual in F_j linked to current reference point index j_hat
             let i_j: Vec<&Individual> = self
@@ -785,6 +809,7 @@ impl<'a> Niching<'a> {
                 .iter()
                 .filter(|ind| ind.get_data(REF_POINT_INDEX).unwrap() == DataValue::USize(j_hat))
                 .collect();
+            debug!("I_j = {:?}", i_j);
 
             if !i_j.is_empty() {
                 // here step 8 and 10 are combined. In step 8 ref point has no association with
@@ -796,6 +821,10 @@ impl<'a> Niching<'a> {
                     ind.get_data(MIN_DISTANCE).unwrap().as_real().unwrap()
                 })
                 .unwrap();
+                debug!(
+                    "Associated reference point {j_hat} to objective {:?}",
+                    self.potential_individuals[new_ind_index].get_objective_values()?
+                );
 
                 // step 8 or 10 + 12 - Add individual with the shortest distance and remove
                 // it from F_l
@@ -803,13 +832,14 @@ impl<'a> Niching<'a> {
                     .add_individual(self.potential_individuals.remove(new_ind_index));
                 // step 12 - mark reference point as associated to new F_l's individual
                 *self.rho_j.get_mut(&j_hat).unwrap() += 1;
+
                 // step 13
                 k += 1;
             } else {
                 // step 15 - no point in F_l is associated with reference point indexed by j_hat.
-                // j_hat will have no linked individual at this evolution. Skip it.
+                // j_hat will have no linked individual at this evolution. Excluding it.
                 debug!("Excluding ref point index {j_hat} - no candidates associated with it");
-                excluded_ref_point_index.push(j_hat);
+                self.rho_j.remove(&j_hat);
             }
         }
 
@@ -921,10 +951,10 @@ mod test_algorithms {
     }
 
     #[test]
-    /// Check niching that adds point with min distance.
-    fn test_niching() {
-        env_logger::init();
-
+    /// Check niching that (1) adds point with min distance when there reference point is not
+    /// already associated with an objective; (2) reference points not linked to potential individuals
+    /// are excluded from the algorithm.
+    fn test_niching_rho0() {
         // create dummy population with 4 individuals
         let dummy_objectives = vec![[0.0, 0.0]; 2];
         let mut individuals = individuals_from_obj_values_dummy(
@@ -968,12 +998,73 @@ mod test_algorithms {
             &mut rng,
         );
         n.calculate().unwrap();
+        // let excluded = n.excluded_ref_point_index;
 
         // counter for ref_point #3 has increased
         assert_eq!(rho_j[&2_usize], 1_usize);
         // 3rd individual is added to the population
         assert_eq!(pop.len(), 3);
-        // assert!(*pop.individual(2).unwrap() == selected_ind);
+        assert_eq!(pop.individual(2).unwrap(), &selected_ind);
+        // 4th reference point should be excluded because has no association
+        // NOTE: do not check this due to random ref_point selection (if point 4 is picked first,
+        // this is excluded otherwise it will not).
+        // assert!(
+        //     !rho_j.contains(&3_usize),
+        //     "excluded = {:?} does not contain ref_point #4",
+        //     rho_j
+        // );
+    }
+    #[test]
+    /// Check niching that adds point with min distance when there reference point is already
+    /// associated with another objective.
+    fn test_niching_rho1() {
+        // create dummy population with 4 individuals
+        let dummy_objectives = vec![[0.0, 0.0]; 2];
+        let mut individuals = individuals_from_obj_values_dummy(
+            &dummy_objectives,
+            &[ObjectiveDirection::Minimise; 2],
+        );
+        let problem = individuals[0].problem().clone();
+        let mut rho_j: HashMap<usize, usize> = HashMap::new();
+
+        // link 2 individuals to 2 out of 4 reference points
+        individuals[0].set_data(REF_POINT_INDEX, DataValue::USize(0));
+        individuals[0].set_data(MIN_DISTANCE, DataValue::Real(0.1));
+        rho_j.entry(0).or_insert(1);
+
+        individuals[1].set_data(REF_POINT_INDEX, DataValue::USize(1));
+        individuals[1].set_data(MIN_DISTANCE, DataValue::Real(0.2));
+        rho_j.entry(1).or_insert(1);
+        let mut pop = Population::new_with(individuals);
+
+        // potential individuals - both are linked to ref_point #2 but ind_4 is closer
+        let mut ind_3 = Individual::new(problem.clone());
+        ind_3.set_data(REF_POINT_INDEX, DataValue::USize(1));
+        ind_3.set_data(MIN_DISTANCE, DataValue::Real(99.0));
+
+        let mut ind_4 = Individual::new(problem);
+        ind_4.set_data(REF_POINT_INDEX, DataValue::USize(1));
+        ind_4.set_data(MIN_DISTANCE, DataValue::Real(0.9));
+
+        // counter is 0 for all other ref_points
+        rho_j.entry(2).or_insert(0);
+        let mut potential_individuals = vec![ind_3, ind_4];
+        let selected_ind = potential_individuals[1].clone();
+
+        let mut rng = get_rng(Some(1));
+        let mut n = Niching::new(
+            &mut pop,
+            &mut potential_individuals,
+            1,
+            &mut rho_j,
+            &mut rng,
+        );
+        n.calculate().unwrap();
+
+        // counter for ref_point #3 has increased
+        assert_eq!(rho_j[&1_usize], 2_usize);
+        // 3rd individual is added to the population
+        assert_eq!(pop.len(), 3);
         assert_eq!(pop.individual(2).unwrap(), &selected_ind);
     }
 }
