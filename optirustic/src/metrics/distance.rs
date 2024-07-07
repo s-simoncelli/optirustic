@@ -10,23 +10,48 @@ static DISTANCE_NAME: &str = "Distance";
 /// genetic algorithm:
 /// 1) Generational Distance (GD)
 ///
-///     $  GD (A, R) =  \frac{1}{| A |} \[ \sum_{a \in A } min_{r \in R} \quad  d(a, r)^p \]^{1/p} $
+///     $  GD (A, R) =  \frac{1}{| A |} \cdot \[ \sum_{a \in A } min_{r \in R} \quad  d(a, r)^p \]^{1/p} $
 ///
 /// 2) Inverted Generational Distance (IGD)
 ///
-///     $  IGD (A, R) =  GD (R, A) = \frac{1}{| R |} \[ \sum_{r \in R } min_{a \in A} \quad  d(r, a)^p \]^{1/p} $
+///     $  IGD (A, R) =  GD (R, A) = \frac{1}{| R |} \cdot \[ \sum_{r \in R } min_{a \in A} \quad  d(r, a)^p \]^{1/p} $
+///
+/// 3) Generational Distance Plus (GD+)
+///
+///     $  GD_+ (A, R) =  \frac{1}{| A |} \cdot \[ \sum_{a \in A } min_{r \in R} \quad  d^{+}(a, r)^p \]^{1/p} $
+///
+/// 4) Inverted Generational Distance Plus (IGD+)
+///
+///     $  IGD_+ (A, R) =  GD (R, A) = \frac{1}{| R |} \cdot \[ \sum_{r \in R } min_{a \in A} \quad  d^{+}(r, a)^p \]^{1/p} $
+///
+/// 5) Averaged Hausdorff distance ($delta_P$):
+///
+///     $ \Delta_P = max\[IGD_p(R,A), \quad IGD_p(A, R)\] $
+///
+///  with $IGD_p(A, R)$ the modified IGD where $ 1/ | A | $ is elevated to $1/p$
+///
+///
+///   $ IGD_{p}(A, R) = \[ \frac{1}{| R |} \cdot \sum_{r \in R } min_{a \in A} \quad  d(r, a)^p \]^{1/p} $
+///
 ///
 /// where
 /// - $p$ is an exponent set to `1`;
 /// - $a$ is an objective point on the hyper-space belonging to the front $A$;
 /// - $r$ is the coordinates for a reference point belonging to the reference front $R$. $R$ is either
 ///   the true Pareto front or a good approximation of it;
+/// - $|A|$ the number of points in the front;
 /// - $d$ is the distance $ \sqrt{ \sum_{j \in 1 }^{M} (a_k-r_k)^2 } $ with `M` being the objective
-///   number.
-/// - $|A|$ the number of points in the front.
+///   number;
+/// - $d^{+}$ is the distance $ \sqrt{ \sum_{j \in 1 }^{M} \[max(a_k-r_k, 0) \]^2 } $.
 ///
-/// NOTE: the GD and IGD metrics are not Pareto-compliant and is not a good metric to assess the
-/// quality of a Pareto front (i.e. the metrics may give low distance for a non-optional front).
+/// # Definitions
+/// [Ishibuchi et al. (2015)](https://ci-labo-omu.github.io/assets/paper/pdf_file/multiobjective/EMO_2015_IGD_Camera-Ready.pdf)
+/// provides a good explanation of all the equations and their meaning.
+///
+/// # Notes
+/// - the GD and IGD metrics are not Pareto-compliant and is not a good metric to assess the
+///   quality of a Pareto front (i.e. the metrics may give low distance for a non-optional front);
+/// - the IGD+ is weakly Pareto compliant.
 pub struct Distance<'a> {
     /// The vector of objective values.
     objectives: Vec<Vec<f64>>,
@@ -93,6 +118,7 @@ impl<'a> Distance<'a> {
             &self.objectives,
             self.reference_front,
             Distance::squared_distance,
+            false,
             Some(1),
         )
     }
@@ -111,6 +137,7 @@ impl<'a> Distance<'a> {
             self.reference_front,
             &self.objectives,
             Distance::squared_distance,
+            false,
             Some(1),
         )
     }
@@ -123,11 +150,19 @@ impl<'a> Distance<'a> {
             &self.objectives,
             self.reference_front,
             Distance::max_distance,
+            false,
             Some(1),
         )
     }
 
     /// Calculate the inverted generational distance plus (IGD+).
+    ///
+    /// # Reference
+    /// > Hisao Ishibuchi, Hiroyuki Masuda, Yuki Tanigaki, Yusuke Nojima (2015). “Modified Distance
+    /// Calculation in Generational Distance and Inverted Generational Distance.” In António
+    /// Gaspar-Cunha, Carlos Henggeler Antunes, Carlos A. Coello Coello (eds.), Evolutionary
+    /// Multi-criterion Optimization, EMO 2015 Part I, volume 9018 of Lecture Notes in Computer
+    /// Science, 110--125. Springer, Heidelberg, Germany.
     ///
     /// returns: `Result<f64, OError>`
     pub fn inverted_generational_distance_plus(&self) -> Result<f64, OError> {
@@ -135,8 +170,36 @@ impl<'a> Distance<'a> {
             self.reference_front,
             &self.objectives,
             Distance::max_distance,
+            false,
             Some(1),
         )
+    }
+
+    /// Calculate the averaged Hausdorff distance ($\Delta_P$).
+    ///
+    /// # Reference
+    /// > Oliver Schütze, X Esquivel, A Lara, Carlos A. Coello Coello (2012). “Using the Averaged
+    /// Hausdorff Distance as a Performance Measure in Evolutionary Multiobjective Optimization.”
+    /// IEEE Transactions on Evolutionary Computation, 16(4), 504--522.
+    ///
+    /// returns: `Result<f64, OError>`
+    pub fn hausdorff_distance(&self) -> Result<f64, OError> {
+        Ok(f64::max(
+            Distance::_generational_distance(
+                &self.objectives,
+                self.reference_front,
+                Distance::squared_distance,
+                true,
+                None,
+            )?,
+            Distance::_generational_distance(
+                self.reference_front,
+                &self.objectives,
+                Distance::squared_distance,
+                true,
+                None,
+            )?,
+        ))
     }
 
     /// Squared distance between two points used in the GD and IGD metrics.
@@ -174,12 +237,15 @@ impl<'a> Distance<'a> {
     /// * `r`: The reference points to use to calculate the distance.
     /// * `distance_function`: The function to use to calculate the distance between the points.
     /// * `p`: The exponent to use in the calculation. Default to 1.
+    /// * `is_hausdorff`: Whether to elevate the inverse of the counter $1/|A|$ to $1/p$. This must
+    /// be `true` when calculating the Hausdorff distance, `false` otherwise.
     ///
     /// returns: `Result<f64, OError>`
     fn _generational_distance<F>(
         a: &[Vec<f64>],
         r: &[Vec<f64>],
         distance_function: F,
+        is_hausdorff: bool,
         p: Option<u8>,
     ) -> Result<f64, OError>
     where
@@ -199,7 +265,14 @@ impl<'a> Distance<'a> {
             })
             .sum::<Result<f64, OError>>()?;
 
-        Ok(distance_sum.powf(1.0 / (p as f64)) / a.len() as f64)
+        let exponent = 1.0 / (p as f64);
+        if is_hausdorff {
+            // for Hausdorff distance
+            Ok((distance_sum / a.len() as f64).powf(exponent))
+        } else {
+            // for GD, GD+, IGD and IGD+
+            Ok(distance_sum.powf(exponent) / a.len() as f64)
+        }
     }
 }
 
