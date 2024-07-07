@@ -109,10 +109,9 @@ impl NSGA2 {
     ///
     /// returns: `NSGA2`.
     pub fn new(problem: Problem, options: NSGA2Arg) -> Result<Self, OError> {
-        let name = "NSGA2".to_string();
         if options.number_of_individuals < 3 {
             return Err(OError::AlgorithmInit(
-                name,
+                "NSGA2".to_string(),
                 "The population size must have at least 3 individuals".to_string(),
             ));
         }
@@ -120,7 +119,7 @@ impl NSGA2 {
         // matches `number_of_individuals`
         if options.number_of_individuals.rem(2) != 0 {
             return Err(OError::AlgorithmInit(
-                name,
+                "NSGA2".to_string(),
                 "The population size must be a multiple of 2".to_string(),
             ));
         }
