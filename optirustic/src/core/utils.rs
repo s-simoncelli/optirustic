@@ -58,7 +58,7 @@ pub fn dummy_evaluator() -> Box<dyn Evaluator> {
 /// returns: `Vec<Individual>`
 #[cfg(test)]
 pub(crate) fn individuals_from_obj_values_dummy<const N: usize>(
-    objective_values: &Vec<[f64; N]>,
+    objective_values: &[[f64; N]],
     objective_direction: &[ObjectiveDirection; N],
 ) -> Vec<Individual> {
     let mut objectives = Vec::new();
