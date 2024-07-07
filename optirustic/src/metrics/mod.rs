@@ -1,8 +1,10 @@
+pub use distance::Distance;
 pub use hypervolume::{estimate_reference_point, hyper_volume};
 pub use hypervolume_2d::HyperVolume2D;
 pub use hypervolume_fonseca_2006::HyperVolumeFonseca2006;
 pub use hypervolume_while_2012::HyperVolumeWhile2012;
 
+mod distance;
 mod hypervolume;
 mod hypervolume_2d;
 mod hypervolume_fonseca_2006;
