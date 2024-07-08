@@ -17,8 +17,8 @@ use crate::operators::{
     SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
 };
 use crate::utils::{
-    argmin, argmin_by, DasDarren1998, fast_non_dominated_sort, perpendicular_distance,
-    solve_linear_system, vector_max, vector_min,
+    argmin, argmin_by, DasDarren1998, fast_non_dominated_sort, NumberOfPartitions,
+    perpendicular_distance, solve_linear_system, vector_max, vector_min,
 };
 
 /// The data key where the normalised objectives are stored for each [`Individual`].
@@ -48,10 +48,8 @@ pub enum Nsga3NumberOfIndividuals {
 pub struct NSGA3Arg {
     /// The number of individuals in the population.
     pub number_of_individuals: Nsga3NumberOfIndividuals,
-    /// The number of uniform gaps between two consecutive points along all objective axis on
-    /// the hyperplane. This is used to calculate the reference points or weight using the
-    /// [`DasDarren1998`] approach.
-    pub number_of_partitions: usize,
+    /// The number of partitions to use to calculate the reference points or weight.
+    pub number_of_partitions: NumberOfPartitions,
     /// The options of the Simulated Binary Crossover (SBX) operator. This operator is used to
     /// generate new children by recombining the variables of parent solutions. This defaults to
     /// [`SimulatedBinaryCrossoverArgs::default()`].
@@ -145,15 +143,10 @@ impl NSGA3 {
     /// returns: `NSGA3`.
     pub fn new(problem: Problem, options: NSGA3Arg) -> Result<Self, OError> {
         let name = "NSGA3".to_string();
-        if options.number_of_partitions < 3 {
-            return Err(OError::AlgorithmInit(
-                name,
-                "The number of partition must be at least 3".to_string(),
-            ));
-        }
+        let nsga3_args = options.clone();
 
         let das_darren =
-            DasDarren1998::new(problem.number_of_objectives(), options.number_of_partitions);
+            DasDarren1998::new(problem.number_of_objectives(), options.number_of_partitions)?;
         let reference_points = das_darren.get_weights();
         info!("Created reference directions");
 
@@ -195,7 +188,6 @@ impl NSGA3 {
             );
         }
 
-        let nsga3_args = options.clone();
         let problem = Arc::new(problem);
         let population = Population::init(problem.clone(), number_of_individuals);
         info!("Created initial random population");
@@ -270,7 +262,7 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
     fn evolve(&mut self) -> Result<(), OError> {
         // Create the new population, based on the population at the previous time-step, of size
         // self.number_of_individuals. The loop adds two individuals at the time.
-        debug!("Generating new population (selection+mutation)");
+        debug!("Generating new population (selection + crossover + mutation)");
         let mut offsprings: Vec<Individual> = Vec::new();
         for _ in 0..self.number_of_individuals / 2 {
             let parents =
@@ -888,7 +880,7 @@ mod test_algorithms {
     use crate::core::{DataValue, Individual, ObjectiveDirection, Population};
     use crate::core::test_utils::assert_approx_array_eq;
     use crate::core::utils::{get_rng, individuals_from_obj_values_dummy};
-    use crate::utils::DasDarren1998;
+    use crate::utils::{DasDarren1998, NumberOfPartitions};
 
     #[test]
     /// Test intercepts. Points were generated from numpy from uniform distribution with normal
@@ -916,7 +908,7 @@ mod test_algorithms {
     #[test]
     /// Test AssociateToRefPoint that calculates the correct distances and reference point association
     fn test_association() {
-        let das_darren = DasDarren1998::new(3, 4);
+        let das_darren = DasDarren1998::new(3, NumberOfPartitions::OneLayer(4)).unwrap();
         let ref_points = das_darren.get_weights();
 
         let dummy_objectives = vec![[0.0, 0.0], [50.0, 50.0]];

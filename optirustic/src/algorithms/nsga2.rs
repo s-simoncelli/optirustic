@@ -307,7 +307,7 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
     fn evolve(&mut self) -> Result<(), OError> {
         // Create the new population, based on the population at the previous time-step, of size
         // self.number_of_individuals. The loop adds two individuals at the time.
-        debug!("Generating new population (selection+mutation)");
+        debug!("Generating new population (selection + crossover + mutation)");
         let mut offsprings: Vec<Individual> = Vec::new();
         for _ in 0..self.number_of_individuals / 2 {
             let parents =
