@@ -33,7 +33,7 @@ fn binomial_coefficient(mut n: u64, k: u64) -> u64 {
 }
 
 /// Define the number of partitions for the two layers.
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Debug)]
 pub struct TwoLayerPartitions {
     /// This is the number of partitions to use in the boundary layer.
     pub boundary_layer: usize,
@@ -51,7 +51,7 @@ pub struct TwoLayerPartitions {
 ///    want to reduce the number of reference points to use. Using two layers allows (1) setting a
 ///    smaller number of reference points, (2) controlling the point density in the inner area and
 ///    (3) ensure a well-spaced point distribution.
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Debug)]
 pub enum NumberOfPartitions {
     /// Create only one layer of points by specifying the number of uniform gaps between two
     /// consecutive points along all objective axis on the hyper-plane.
@@ -81,7 +81,7 @@ pub enum NumberOfPartitions {
 ///     let number_of_partitions = 5;
 ///
 ///     let partitions = NumberOfPartitions::OneLayer(number_of_partitions);
-///     let m = DasDarren1998::new(number_of_objectives, partitions)?;
+///     let m = DasDarren1998::new(number_of_objectives, &partitions)?;
 ///     // This returns the coordinates of the reference points between 0 and 1
 ///     println!("Total points = {:?}", m.number_of_points());
 ///
@@ -112,7 +112,7 @@ pub enum NumberOfPartitions {
 ///         scaling: None
 ///     };
 ///     let partitions = NumberOfPartitions::TwoLayers(layers);
-///     let m = DasDarren1998::new(number_of_objectives, partitions)?;
+///     let m = DasDarren1998::new(number_of_objectives, &partitions)?;
 ///     // This returns the coordinates of the reference points between 0 and 1
 ///     println!("Total points = {:?}", m.number_of_points());
 ///
@@ -143,7 +143,7 @@ impl DasDarren1998 {
     /// returns: `Result<DasDarren1998, OError>`
     pub fn new(
         number_of_objectives: usize,
-        number_of_partitions: NumberOfPartitions,
+        number_of_partitions: &NumberOfPartitions,
     ) -> Result<Self, OError> {
         match &number_of_partitions {
             NumberOfPartitions::OneLayer(_) => {}
@@ -160,7 +160,7 @@ impl DasDarren1998 {
 
         Ok(DasDarren1998 {
             number_of_objectives,
-            number_of_partitions,
+            number_of_partitions: number_of_partitions.clone(),
         })
     }
 
@@ -446,7 +446,7 @@ mod test {
     #[test]
     /// Test the Das & Darren method with 3 objectives and 3 partitions.
     fn test_das_darren_3obj() {
-        let m = DasDarren1998::new(3, NumberOfPartitions::OneLayer(3)).unwrap();
+        let m = DasDarren1998::new(3, &NumberOfPartitions::OneLayer(3)).unwrap();
         let weights = m.get_weights();
         let expected_weights = [
             [0.0, 0.0, 1.0],
@@ -461,6 +461,7 @@ mod test {
             [1.0, 0.0, 0.0],
         ];
         assert_eq!(weights.len() as u64, m.number_of_points());
+        assert_eq!(expected_weights.len(), weights.len());
 
         for (wi, exp_weight_coordinates) in expected_weights.iter().enumerate() {
             assert_approx_array_eq(&weights[wi], exp_weight_coordinates);
@@ -470,7 +471,7 @@ mod test {
     #[test]
     /// Test the Das & Darren method with 4 objectives and 5 partitions.
     fn test_das_darren_5obj() {
-        let m = DasDarren1998::new(4, NumberOfPartitions::OneLayer(5)).unwrap();
+        let m = DasDarren1998::new(4, &NumberOfPartitions::OneLayer(5)).unwrap();
         let weights = m.get_weights();
         let expected_weights = [
             [0.0, 0.0, 0.0, 1.0],
@@ -531,6 +532,7 @@ mod test {
             [1.0, 0.0, 0.0, 0.0],
         ];
         assert_eq!(weights.len() as u64, m.number_of_points());
+        assert_eq!(expected_weights.len(), weights.len());
 
         for (wi, exp_weight_coordinates) in expected_weights.iter().enumerate() {
             assert_approx_array_eq(&weights[wi], exp_weight_coordinates);
@@ -541,11 +543,11 @@ mod test {
     /// test the two layers
     fn test_das_darren_two_layers() {
         let layers = TwoLayerPartitions {
-            boundary_layer: 5,
-            inner_layer: 4,
+            boundary_layer: 4,
+            inner_layer: 3,
             scaling: Some(0.5),
         };
-        let m = DasDarren1998::new(3, NumberOfPartitions::TwoLayers(layers)).unwrap();
+        let m = DasDarren1998::new(3, &NumberOfPartitions::TwoLayers(layers)).unwrap();
         let weights = m.get_weights();
         let expected_weights = [
             [0., 0., 1.],
@@ -575,6 +577,7 @@ mod test {
             [0.66666667, 0.16666667, 0.16666667],
         ];
         assert_eq!(weights.len() as u64, m.number_of_points());
+        assert_eq!(expected_weights.len(), weights.len());
 
         for (wi, exp_weight_coordinates) in expected_weights.iter().enumerate() {
             assert_approx_array_eq(&weights[wi], exp_weight_coordinates);
