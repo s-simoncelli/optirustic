@@ -369,6 +369,24 @@ impl Individual {
         Ok(&self.variable_values[name])
     }
 
+    /// Ge the constraint value by name. This return an error if the constraint name does not exist.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The constraint name.
+    ///
+    /// returns: `Result<f64, OError>`
+    pub fn get_constraint_value(&self, name: &str) -> Result<f64, OError> {
+        if !self.constraint_values.contains_key(name) {
+            return Err(OError::NonExistingName(
+                "constraint".to_string(),
+                name.to_string(),
+            ));
+        }
+
+        Ok(self.constraint_values[name])
+    }
+
     /// Get the number stored in a real variable by name. This returns an error if the variable
     /// name does not exist or the variable is not of type real.
     ///

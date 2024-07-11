@@ -354,14 +354,17 @@ impl Problem {
     }
 }
 
+/// Set table I in Deb et al. (2002)'s NSGA2 paper.
 pub mod builtin_problems {
     use std::collections::HashMap;
     use std::error::Error;
     use std::f64::consts::PI;
 
+    use nalgebra::RealField;
+
     use crate::core::{
-        BoundedNumber, EvaluationResult, Evaluator, Individual, Objective, ObjectiveDirection,
-        OError, Problem, VariableType,
+        BoundedNumber, Constraint, EvaluationResult, Evaluator, Individual, Objective, ObjectiveDirection,
+        OError, Problem, RelationalOperator, VariableType,
     };
 
     /// The Schaffer’s study (SCH) problem.
@@ -438,14 +441,16 @@ pub mod builtin_problems {
     ///
     /// # Arguments:
     ///
-    /// * `n`: The number of variables.
-    pub fn ztd1(n: usize) -> Result<Problem, OError> {
+    /// * `n_vars`: The number of variables.
+    ///
+    /// return: `Result<Problem, OError>`
+    pub fn ztd1(n_vars: usize) -> Result<Problem, OError> {
         let objectives = vec![
             Objective::new("f1", ObjectiveDirection::Minimise),
             Objective::new("f2", ObjectiveDirection::Minimise),
         ];
         let mut variables: Vec<VariableType> = Vec::new();
-        for i in 1..=n {
+        for i in 1..=n_vars {
             variables.push(VariableType::Real(BoundedNumber::new(
                 format!("x{i}").as_str(),
                 0.0,
@@ -456,16 +461,16 @@ pub mod builtin_problems {
         #[derive(Debug)]
         struct UserEvaluator {
             /// The number of variables with n > 1
-            n: usize,
+            n_vars: usize,
         }
         impl Evaluator for UserEvaluator {
             fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
                 let x1 = i.get_variable_value("x1")?.as_real()?;
 
-                let a = (2..=self.n)
+                let a = (2..=self.n_vars)
                     .map(|xi| i.get_variable_value(format!("x{xi}").as_str())?.as_real())
                     .sum::<Result<f64, _>>()?;
-                let g = 1.0 + 9.0 * a / (self.n as f64 - 1.0);
+                let g = 1.0 + 9.0 * a / (self.n_vars as f64 - 1.0);
 
                 let mut objectives = HashMap::new();
                 objectives.insert("f1".to_string(), x1);
@@ -477,7 +482,7 @@ pub mod builtin_problems {
             }
         }
 
-        let e = Box::new(UserEvaluator { n });
+        let e = Box::new(UserEvaluator { n_vars });
         Problem::new(objectives, variables, None, e)
     }
 
@@ -485,14 +490,16 @@ pub mod builtin_problems {
     ///
     /// # Arguments:
     ///
-    /// * `n`: The number of variables.
-    pub fn ztd2(n: usize) -> Result<Problem, OError> {
+    /// * `n_vars`: The number of variables.
+    ///
+    /// return: `Result<Problem, OError>`
+    pub fn ztd2(n_vars: usize) -> Result<Problem, OError> {
         let objectives = vec![
             Objective::new("f1", ObjectiveDirection::Minimise),
             Objective::new("f2", ObjectiveDirection::Minimise),
         ];
         let mut variables: Vec<VariableType> = Vec::new();
-        for i in 1..=n {
+        for i in 1..=n_vars {
             variables.push(VariableType::Real(BoundedNumber::new(
                 format!("x{i}").as_str(),
                 0.0,
@@ -503,16 +510,16 @@ pub mod builtin_problems {
         #[derive(Debug)]
         struct UserEvaluator {
             /// The number of variables with n > 1
-            n: usize,
+            n_vars: usize,
         }
         impl Evaluator for UserEvaluator {
             fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
                 let x1 = i.get_variable_value("x1")?.as_real()?;
 
-                let a = (2..=self.n)
+                let a = (2..=self.n_vars)
                     .map(|xi| i.get_variable_value(format!("x{xi}").as_str())?.as_real())
                     .sum::<Result<f64, _>>()?;
-                let g = 1.0 + 9.0 * a / (self.n as f64 - 1.0);
+                let g = 1.0 + 9.0 * a / (self.n_vars as f64 - 1.0);
 
                 let mut objectives = HashMap::new();
                 objectives.insert("f1".to_string(), x1);
@@ -524,7 +531,7 @@ pub mod builtin_problems {
             }
         }
 
-        let e = Box::new(UserEvaluator { n });
+        let e = Box::new(UserEvaluator { n_vars });
         Problem::new(objectives, variables, None, e)
     }
 
@@ -532,14 +539,16 @@ pub mod builtin_problems {
     ///
     /// # Arguments:
     ///
-    /// * `n`: The number of variables.
-    pub fn ztd3(n: usize) -> Result<Problem, OError> {
+    /// * `n_vars`: The number of variables.
+    ///
+    /// return: `Result<Problem, OError>`
+    pub fn ztd3(n_vars: usize) -> Result<Problem, OError> {
         let objectives = vec![
             Objective::new("f1", ObjectiveDirection::Minimise),
             Objective::new("f2", ObjectiveDirection::Minimise),
         ];
         let mut variables: Vec<VariableType> = Vec::new();
-        for i in 1..=n {
+        for i in 1..=n_vars {
             variables.push(VariableType::Real(BoundedNumber::new(
                 format!("x{i}").as_str(),
                 0.0,
@@ -550,16 +559,16 @@ pub mod builtin_problems {
         #[derive(Debug)]
         struct UserEvaluator {
             /// The number of variables with n > 1
-            n: usize,
+            n_vars: usize,
         }
         impl Evaluator for UserEvaluator {
             fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
                 let x1 = i.get_variable_value("x1")?.as_real()?;
 
-                let a = (2..=self.n)
+                let a = (2..=self.n_vars)
                     .map(|xi| i.get_variable_value(format!("x{xi}").as_str())?.as_real())
                     .sum::<Result<f64, _>>()?;
-                let g = 1.0 + 9.0 * a / (self.n as f64 - 1.0);
+                let g = 1.0 + 9.0 * a / (self.n_vars as f64 - 1.0);
 
                 let mut objectives = HashMap::new();
                 objectives.insert("f1".to_string(), x1);
@@ -574,7 +583,7 @@ pub mod builtin_problems {
             }
         }
 
-        let e = Box::new(UserEvaluator { n });
+        let e = Box::new(UserEvaluator { n_vars });
         Problem::new(objectives, variables, None, e)
     }
 
@@ -582,8 +591,10 @@ pub mod builtin_problems {
     ///
     /// # Arguments:
     ///
-    /// * `n`: The number of variables.
-    pub fn ztd4(n: usize) -> Result<Problem, OError> {
+    /// * `n_vars`: The number of variables.
+    ///
+    /// return: `Result<Problem, OError>`
+    pub fn ztd4(n_vars: usize) -> Result<Problem, OError> {
         let objectives = vec![
             Objective::new("f1", ObjectiveDirection::Minimise),
             Objective::new("f2", ObjectiveDirection::Minimise),
@@ -591,7 +602,7 @@ pub mod builtin_problems {
         let mut variables: Vec<VariableType> = Vec::new();
         variables.push(VariableType::Real(BoundedNumber::new("x1", 0.0, 1.0)?));
 
-        for i in 2..=n {
+        for i in 2..=n_vars {
             variables.push(VariableType::Real(BoundedNumber::new(
                 format!("x{i}").as_str(),
                 -5.0,
@@ -602,19 +613,19 @@ pub mod builtin_problems {
         #[derive(Debug)]
         struct UserEvaluator {
             /// The number of variables with n > 1
-            n: usize,
+            n_vars: usize,
         }
         impl Evaluator for UserEvaluator {
             fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
                 let x1 = i.get_variable_value("x1")?.as_real()?;
 
-                let a = (2..=self.n)
+                let a = (2..=self.n_vars)
                     .map(|xi| {
                         let xi = i.get_variable_value(format!("x{xi}").as_str())?.as_real()?;
                         Ok::<f64, OError>(xi.powi(2) - 10.0 * f64::cos(4.0 * PI * xi))
                     })
                     .sum::<Result<f64, _>>()?;
-                let g = 1.0 + 10.0 * (self.n as f64 - 1.0) + a;
+                let g = 1.0 + 10.0 * (self.n_vars as f64 - 1.0) + a;
 
                 let mut objectives = HashMap::new();
                 objectives.insert("f1".to_string(), x1);
@@ -626,7 +637,7 @@ pub mod builtin_problems {
             }
         }
 
-        let e = Box::new(UserEvaluator { n });
+        let e = Box::new(UserEvaluator { n_vars });
         Problem::new(objectives, variables, None, e)
     }
 
@@ -634,14 +645,16 @@ pub mod builtin_problems {
     ///
     /// # Arguments:
     ///
-    /// * `n`: The number of variables.
-    pub fn ztd6(n: usize) -> Result<Problem, OError> {
+    /// * `n_vars`: The number of variables.
+    ///
+    /// return: `Result<Problem, OError>`
+    pub fn ztd6(n_vars: usize) -> Result<Problem, OError> {
         let objectives = vec![
             Objective::new("f1", ObjectiveDirection::Minimise),
             Objective::new("f2", ObjectiveDirection::Minimise),
         ];
         let mut variables: Vec<VariableType> = Vec::new();
-        for i in 1..=n {
+        for i in 1..=n_vars {
             variables.push(VariableType::Real(BoundedNumber::new(
                 format!("x{i}").as_str(),
                 0.0,
@@ -652,16 +665,16 @@ pub mod builtin_problems {
         #[derive(Debug)]
         struct UserEvaluator {
             /// The number of variables with n > 1
-            n: usize,
+            n_vars: usize,
         }
         impl Evaluator for UserEvaluator {
             fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
                 let x1 = i.get_variable_value("x1")?.as_real()?;
 
-                let a = (2..=self.n)
+                let a = (2..=self.n_vars)
                     .map(|xi| i.get_variable_value(format!("x{xi}").as_str())?.as_real())
                     .sum::<Result<f64, _>>()?
-                    / (self.n as f64 - 1.0);
+                    / (self.n_vars as f64 - 1.0);
                 let g = 1.0 + 9.0 * f64::powf(a, 0.25);
 
                 let mut objectives = HashMap::new();
@@ -675,21 +688,128 @@ pub mod builtin_problems {
             }
         }
 
-        let e = Box::new(UserEvaluator { n });
+        let e = Box::new(UserEvaluator { n_vars });
         Problem::new(objectives, variables, None, e)
+    }
+
+    /// Test problem from K.Deb,L. Thiele,M. Laumanns,and E. Zitzler, “Scalable test problems for
+    /// evolutionary multi-objective optimization”
+    ///
+    /// # Arguments:
+    ///
+    /// * `n_vars`: The number of variables.
+    /// * `n_objectives`: The number of objectives.
+    ///
+    /// return: `Result<Problem, OError>`
+    pub fn dtlz1(n_vars: usize, n_objectives: usize) -> Result<Problem, OError> {
+        // k must be > 0, then n + 1 >= M
+        if n_vars + 1 < n_objectives {
+            return Err(OError::Generic(
+                "n_vars + 1 >= n_objectives not met. Increase n_vars.".to_string(),
+            ));
+        }
+
+        let objectives = (1..=n_objectives)
+            .map(|i| Objective::new(format!("f{i}").as_str(), ObjectiveDirection::Minimise))
+            .collect();
+        let constraints: Vec<Constraint> = vec![Constraint::new(
+            "g",
+            RelationalOperator::GreaterOrEqualTo,
+            0.0,
+        )];
+
+        let mut variables: Vec<VariableType> = Vec::new();
+        for i in 1..=n_vars {
+            variables.push(VariableType::Real(BoundedNumber::new(
+                format!("x{i}").as_str(),
+                0.0,
+                1.0,
+            )?));
+        }
+
+        #[derive(Debug)]
+        struct UserEvaluator {
+            n_vars: usize,
+            n_objectives: usize,
+        }
+        impl Evaluator for UserEvaluator {
+            fn evaluate(&self, ind: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+                // Calculate g(x_M)
+                let k = self.n_vars - self.n_objectives + 1;
+                let mut sum_g = Vec::new();
+                for i in k..=self.n_objectives {
+                    let xi = ind
+                        .get_variable_value(format!("x{i}").as_str())?
+                        .as_real()?;
+                    sum_g.push((xi - 0.5).powi(2) - f64::cos(20.0 * f64::pi() * (xi - 0.5)));
+                }
+                let g = 100.0 * (k as f64 + sum_g.iter().sum::<f64>());
+
+                // Add constraints values
+                let mut constraints = HashMap::new();
+                constraints.insert("g".to_string(), g);
+
+                // Add objective values
+                // M = 5 (self.n_objectives)
+                // F1 (o=1) = 0.5 * x1 * x2 * x3 * x4 * (1 + g) = 0.5 * Prod_{j=1:M-o} * 1 * (1 + g)
+                // F2 (o=2) = 0.5 * x1 * x2 * x3 * (1 - x4) * (1 + g) = 0.5 * Prod_{j=1:M-o} * (1 - x_{M-o+1}) * (1 + g)
+                // ...
+                // F4 = 0.5 * x1 * (1 - x2) * (1 + g)
+                // F5 (o=5) = 0.5 * (1 - x1) * (1 + g) = 0.5 * 1 * (1 - x_{M-o+1})
+                let mut objectives = HashMap::new();
+                for o in 1..=self.n_objectives {
+                    // first factor (product of x's)
+                    let prod = if self.n_objectives == o {
+                        1.0
+                    } else {
+                        let mut tmp = Vec::new();
+                        for j in 1..=self.n_objectives - o {
+                            tmp.push(
+                                ind.get_variable_value(format!("x{j}").as_str())?
+                                    .as_real()?,
+                            );
+                        }
+                        tmp.iter().product()
+                    };
+                    // second factor (1 - x_{M-o+1})
+                    let delta = if o == 1 {
+                        1.0
+                    } else {
+                        let x = ind
+                            .get_variable_value(format!("x{}", self.n_objectives - o + 1).as_str())?
+                            .as_real()?;
+                        1.0 - x
+                    };
+                    objectives.insert(format!("f{o}"), 0.5 * prod * delta * (1.0 + g));
+                }
+                Ok(EvaluationResult {
+                    constraints: Some(constraints),
+                    objectives,
+                })
+            }
+        }
+
+        let e = Box::new(UserEvaluator {
+            n_vars,
+            n_objectives,
+        });
+        Problem::new(objectives, variables, Some(constraints), e)
     }
 }
 
 #[cfg(test)]
 mod test {
+    use std::sync::Arc;
+
     use crate::core::{
-        BoundedNumber, Constraint, Objective, ObjectiveDirection, Problem, RelationalOperator,
-        VariableType,
+        BoundedNumber, Constraint, Individual, Objective, ObjectiveDirection, Problem,
+        RelationalOperator, VariableType, VariableValue,
     };
+    use crate::core::builtin_problems::dtlz1;
     use crate::core::utils::dummy_evaluator;
 
     #[test]
-    /// Test when objectives and constraints already exist
+    /// Test when objectives and constraints already exist when a new problem is created.
     fn test_already_existing_data() {
         let objectives = vec![
             Objective::new("obj1", ObjectiveDirection::Minimise),
@@ -710,5 +830,40 @@ mod test {
             Constraint::new("c1", RelationalOperator::GreaterThan, -1.0),
         ];
         assert!(Problem::new(objectives, var_types2, Some(constraints), e).is_err());
+    }
+
+    #[test]
+    /// Test the DTLZ1 problem implementation
+    fn test_dtlz1() {
+        let problem = Arc::new(dtlz1(4, 3).unwrap());
+        let mut individual = Individual::new(problem.clone());
+        individual
+            .update_variable("x1", VariableValue::Real(0.2))
+            .unwrap();
+        for i in 2..=problem.number_of_variables() {
+            individual
+                .update_variable(format!("x{i}").as_str(), VariableValue::Real(0.5))
+                .unwrap();
+        }
+        let data = problem.evaluator.evaluate(&individual).unwrap();
+        let constraints = data.constraints.clone().unwrap();
+        individual.update_constraint("g", constraints["g"]).unwrap();
+
+        // g must yield 0
+        assert!(
+            individual.is_feasible(),
+            "g must be larger or equal to 0 but was {:?}",
+            individual.get_constraint_value("g").unwrap()
+        );
+
+        // ideal Pareto front leads to sum of objective = 0.5
+        assert_eq!(
+            problem
+                .objective_names()
+                .iter()
+                .map(|name| data.objectives[name])
+                .sum::<f64>(),
+            0.5
+        );
     }
 }
