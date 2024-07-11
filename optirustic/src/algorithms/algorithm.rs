@@ -80,7 +80,7 @@ pub struct ExportHistory {
 
 impl ExportHistory {
     /// Initialise the export history configuration. This returns an error if the destination folder
-    /// does not exists.
+    /// does not exist.
     ///
     /// # Arguments
     ///
@@ -357,10 +357,23 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
                 seconds,
             },
         };
-        let data = serde_json::to_string_pretty(&export)
-            .map_err(|e| OError::AlgorithmExport(e.to_string()))?;
+        let data = serde_json::to_string_pretty(&export).map_err(|e| {
+            OError::AlgorithmExport(format!(
+                "The following error occurred while converting the history struct: {e}"
+            ))
+        })?;
 
-        fs::write(destination, data).map_err(|e| OError::AlgorithmExport(e.to_string()))?;
+        let mut file = destination.to_owned();
+        file.push(format!(
+            "History_{}_gen{}.json",
+            self.name(),
+            self.generation()
+        ));
+        fs::write(file, data).map_err(|e| {
+            OError::AlgorithmExport(format!(
+                "The following error occurred while exporting the history JSON file: {e}",
+            ))
+        })?;
         Ok(())
     }
 }
