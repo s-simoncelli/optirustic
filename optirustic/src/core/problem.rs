@@ -702,7 +702,7 @@ pub mod builtin_problems {
     ///
     /// return: `Result<Problem, OError>`
     pub fn dtlz1(n_vars: usize, n_objectives: usize) -> Result<Problem, OError> {
-        // k must be > 0, then n + 1 >= M
+        // if k must be > 0, then n + 1 >= M
         if n_vars + 1 < n_objectives {
             return Err(OError::Generic(
                 "n_vars + 1 >= n_objectives not met. Increase n_vars.".to_string(),
@@ -737,12 +737,14 @@ pub mod builtin_problems {
                 // Calculate g(x_M)
                 let k = self.n_vars - self.n_objectives + 1;
                 let mut sum_g = Vec::new();
-                for i in k..=self.n_objectives {
+                // get last k variables
+                for i in (self.n_vars - k + 1)..=self.n_vars {
                     let xi = ind
                         .get_variable_value(format!("x{i}").as_str())?
                         .as_real()?;
                     sum_g.push((xi - 0.5).powi(2) - f64::cos(20.0 * f64::pi() * (xi - 0.5)));
                 }
+
                 let g = 100.0 * (k as f64 + sum_g.iter().sum::<f64>());
 
                 // Add constraints values
@@ -801,6 +803,8 @@ pub mod builtin_problems {
 mod test {
     use std::sync::Arc;
 
+    use float_cmp::assert_approx_eq;
+
     use crate::core::{
         BoundedNumber, Constraint, Individual, Objective, ObjectiveDirection, Problem,
         RelationalOperator, VariableType, VariableValue,
@@ -833,8 +837,8 @@ mod test {
     }
 
     #[test]
-    /// Test the DTLZ1 problem implementation
-    fn test_dtlz1() {
+    /// Test the DTLZ1 problem implementation with the optimal solution
+    fn test_dtlz1_optimal_solutions() {
         let problem = Arc::new(dtlz1(4, 3).unwrap());
         let mut individual = Individual::new(problem.clone());
         individual
@@ -865,5 +869,26 @@ mod test {
                 .sum::<f64>(),
             0.5
         );
+    }
+
+    #[test]
+    /// Test the DTLZ1 problem with random individuals
+    fn test_dtlz1_random_solutions() {
+        let vars = [
+            0.73188057, 0.51797262, 0.98407662, 0.09153859, 0.37063724, 0.27198675, 0.4345953,
+        ];
+        let problem = Arc::new(dtlz1(vars.len(), 3).unwrap());
+        let mut individual = Individual::new(problem.clone());
+        for (i, var) in vars.iter().enumerate() {
+            individual
+                .update_variable(format!("x{}", i + 1).as_str(), VariableValue::Real(*var))
+                .unwrap();
+        }
+        let data = problem.evaluator.evaluate(&individual).unwrap();
+
+        // objectives manually calculated
+        assert_approx_eq!(f64, 96.8251680772, data.objectives["f1"], epsilon = 0.00001);
+        assert_approx_eq!(f64, 90.1058864585, data.objectives["f2"], epsilon = 0.00001);
+        assert_approx_eq!(f64, 68.4809104734, data.objectives["f3"], epsilon = 0.00001);
     }
 }
