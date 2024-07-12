@@ -292,7 +292,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
             // Export history
             if let Some(export) = self.export_history() {
                 if history_gen_step >= export.generation_step {
-                    self.save_to_json(&export.destination)?;
+                    self.save_to_json(&export.destination, None)?;
                     history_gen_step = 0;
                 } else {
                     history_gen_step += 1;
@@ -306,6 +306,11 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
                 StoppingConditionType::MaxGeneration(t) => t.is_met(self.generation()),
             };
             if terminate {
+                // save last file
+                if let Some(export) = self.export_history() {
+                    self.save_to_json(&export.destination, Some("Final"))?;
+                }
+
                 info!("Stopping evolution because the {} was reached", cond.name());
                 info!("Took {}", self.elapsed_as_string());
                 break;
@@ -343,7 +348,8 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
     /// * `destination`: The path to the JSON file.
     ///
     /// return `Result<(), OError>`
-    fn save_to_json(&self, destination: &PathBuf) -> Result<(), OError> {
+    fn save_to_json(&self, destination: &PathBuf, file_prefix: Option<&str>) -> Result<(), OError> {
+        let file_prefix = file_prefix.unwrap_or("History");
         let [hours, minutes, seconds] = self.elapsed();
         let export = AlgorithmSerialisedExport {
             options: self.algorithm_options(),
@@ -365,7 +371,8 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
 
         let mut file = destination.to_owned();
         file.push(format!(
-            "History_{}_gen{}.json",
+            "{}_{}_gen{}.json",
+            file_prefix,
             self.name(),
             self.generation()
         ));

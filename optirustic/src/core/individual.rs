@@ -369,6 +369,17 @@ impl Individual {
         Ok(&self.variable_values[name])
     }
 
+    /// Ge the vector with the variable values for the individual.
+    ///
+    /// returns: `Result<Vec<f64>, OError>`
+    pub fn get_variable_values(&self) -> Result<Vec<&VariableValue>, OError> {
+        self.problem
+            .variable_names()
+            .iter()
+            .map(|var_name| self.get_variable_value(var_name))
+            .collect()
+    }
+
     /// Ge the constraint value by name. This return an error if the constraint name does not exist.
     ///
     /// # Arguments

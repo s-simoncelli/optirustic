@@ -139,10 +139,11 @@ impl BinaryComparisonOperator for CrowdedComparison {
         first_solution: &Individual,
         second_solution: &Individual,
     ) -> Result<PreferredSolution, OError> {
+        let name = "CrowdedComparison".to_string();
         let rank1 = match first_solution.get_data("rank") {
             Err(_) => {
                 return Err(OError::ComparisonOperator(
-                    "CrowdedComparison".to_string(),
+                    name,
                     "The rank on the first individual does not exist".to_string(),
                 ))
             }
@@ -151,7 +152,7 @@ impl BinaryComparisonOperator for CrowdedComparison {
         let rank2 = match second_solution.get_data("rank") {
             Err(_) => {
                 return Err(OError::ComparisonOperator(
-                    "CrowdedComparison".to_string(),
+                    name,
                     "The rank on the second individual does not exist".to_string(),
                 ))
             }
@@ -164,7 +165,7 @@ impl BinaryComparisonOperator for CrowdedComparison {
                 let d1 = match first_solution.get_data("crowding_distance") {
                     Err(_) => {
                         return Err(OError::ComparisonOperator(
-                            "CrowdedComparison".to_string(),
+                            name,
                             format!(
                                 "The crowding distance on the first individual {:?} does not exist",
                                 first_solution.variables()
@@ -176,7 +177,7 @@ impl BinaryComparisonOperator for CrowdedComparison {
                 let d2 = match second_solution.get_data("crowding_distance") {
                     Err(_) => {
                         return Err(OError::ComparisonOperator(
-                            "CrowdedComparison".to_string(),
+                            name,
                             format!(
                             "The crowding distance on the second individual {:?} does not exist",
                             second_solution.variables()
