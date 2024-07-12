@@ -13,8 +13,8 @@ use crate::algorithms::{Algorithm, ExportHistory, NSGA2, StoppingConditionType};
 use crate::core::{DataValue, Individual, Individuals, OError, Population, Problem};
 use crate::core::utils::get_rng;
 use crate::operators::{
-    Crossover, CrowdedComparison, Mutation, PolynomialMutation, PolynomialMutationArgs, Selector,
-    SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
+    Crossover, Mutation, ParetoConstrainedDominance, PolynomialMutation, PolynomialMutationArgs,
+    Selector, SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
 };
 use crate::utils::{
     argmin, argmin_by, DasDarren1998, fast_non_dominated_sort, NumberOfPartitions,
@@ -103,8 +103,8 @@ pub struct NSGA3 {
     /// The problem being solved.
     problem: Arc<Problem>,
     /// The operator to use to select the individuals for reproduction. This is a binary tournament
-    /// selector ([`TournamentSelector`]) with the [`CrowdedComparison`] comparison operator.
-    selector_operator: TournamentSelector<CrowdedComparison>,
+    /// selector ([`TournamentSelector`]) with the [`ParetoConstrainedDominance`] comparison operator.
+    selector_operator: TournamentSelector<ParetoConstrainedDominance>,
     /// The SBX operator to use to generate a new children by recombining the variables of parent
     /// solutions.
     crossover_operator: SimulatedBinaryCrossover,
@@ -145,10 +145,15 @@ impl NSGA3 {
         let name = "NSGA3".to_string();
         let nsga3_args = options.clone();
 
-        let das_darren =
-            DasDarren1998::new(problem.number_of_objectives(), options.number_of_partitions)?;
+        let das_darren = DasDarren1998::new(
+            problem.number_of_objectives(),
+            &options.number_of_partitions,
+        )?;
         let reference_points = das_darren.get_weights();
-        info!("Created reference directions");
+        info!(
+            "Created {} reference directions",
+            das_darren.number_of_points()
+        );
 
         // create the population
         let mut number_of_individuals = match options.number_of_individuals {
@@ -160,7 +165,8 @@ impl NSGA3 {
                         "The population size must have at least 3 individuals".to_string(),
                     ));
                 }
-                if count > das_darren.number_of_points() as usize {
+                // add tolerance (for example Deb et al. sometimes uses pop + 1 = ref_point)
+                if count - 1 > das_darren.number_of_points() as usize {
                     return Err(OError::AlgorithmInit(
                         name,
                         format!(
@@ -192,7 +198,7 @@ impl NSGA3 {
         let population = Population::init(problem.clone(), number_of_individuals);
         info!("Created initial random population");
 
-        let selector_operator = TournamentSelector::<CrowdedComparison>::new(2);
+        let selector_operator = TournamentSelector::<ParetoConstrainedDominance>::new(2);
         let mutation_options = match options.mutation_operator_options {
             Some(o) => o,
             None => PolynomialMutationArgs::default(problem.clone().as_ref()),
@@ -235,6 +241,13 @@ impl NSGA3 {
     /// returns: `Result<DataValue, OError>`
     fn get_normalised_objectives(individual: &Individual) -> Result<DataValue, OError> {
         individual.get_data(NORMALISED_OBJECTIVE_KEY)
+    }
+
+    /// Get the reference points used in the evolution.
+    ///
+    /// return: `Vec<Vec<f64>>`
+    pub fn reference_points(&self) -> Vec<Vec<f64>> {
+        self.reference_points.clone()
     }
 }
 
@@ -536,7 +549,7 @@ impl<'a> Normalise<'a> {
                     .clone(),
             );
         }
-        println!("Set extreme points to {:?}", extreme_points);
+        debug!("Set extreme points to {:?}", extreme_points);
 
         // Step 6 - Compute intercepts a_j with the least-square method
         let intercept_result = Self::calculate_plane_intercepts(&extreme_points)
@@ -557,7 +570,7 @@ impl<'a> Normalise<'a> {
             }
             Some(i) => i,
         };
-        println!("Found intercepts {:?}", intercepts);
+        debug!("Found intercepts {:?}", intercepts);
 
         // Step 7 - Normalize objectives (f_n). The denominator differs from Eq. 5 in the paper
         // because the intercepts are already calculated using the translated objectives. The new
@@ -569,7 +582,7 @@ impl<'a> Normalise<'a> {
                 .enumerate()
                 .map(|(oi, obj_value)| obj_value / intercepts[oi])
                 .collect();
-            println!("Normalised objectives to {:?}", tmp);
+            debug!("Normalised objectives to {:?}", tmp);
             individual.set_data(NORMALISED_OBJECTIVE_KEY, DataValue::Vector(tmp));
         }
         Ok(())
@@ -700,7 +713,7 @@ impl<'a> AssociateToRefPoint<'a> {
                 DataValue::Vector(self.reference_points[ri].clone()),
             );
             ind.set_data(REF_POINT_INDEX, DataValue::USize(ri));
-            println!(
+            debug!(
                 "Associated objective point {:?} to reference point #{} {:?} - distance = {}",
                 ind.get_objective_values()?,
                 ri,
@@ -908,7 +921,7 @@ mod test_algorithms {
     #[test]
     /// Test AssociateToRefPoint that calculates the correct distances and reference point association
     fn test_association() {
-        let das_darren = DasDarren1998::new(3, NumberOfPartitions::OneLayer(4)).unwrap();
+        let das_darren = DasDarren1998::new(3, &NumberOfPartitions::OneLayer(4)).unwrap();
         let ref_points = das_darren.get_weights();
 
         let dummy_objectives = vec![[0.0, 0.0], [50.0, 50.0]];
