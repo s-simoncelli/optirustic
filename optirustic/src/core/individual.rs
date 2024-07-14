@@ -5,82 +5,8 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
-use crate::core::{OError, Problem, VariableValue};
+use crate::core::{DataValue, OError, Problem, VariableValue};
 use crate::utils::hasmap_eq_with_nans;
-
-/// The data type and value that can be stored in an individual's data.
-#[derive(Clone, Debug)]
-pub enum DataValue {
-    /// The value for a floating-point number. This is a f64.
-    Real(f64),
-    /// The value for an integer number. This is an i64.
-    Integer(i64),
-    /// The value for an usize.
-    USize(usize),
-    /// The value for a vector of floating-point numbers.
-    Vector(Vec<f64>),
-}
-
-impl PartialEq for DataValue {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (DataValue::Real(s), DataValue::Real(o)) => (s.is_nan() && o.is_nan()) || (*s == *o),
-            (DataValue::Integer(s), DataValue::Integer(o)) => *s == *o,
-            (DataValue::USize(s), DataValue::USize(o)) => s == o,
-            (DataValue::Vector(s), DataValue::Vector(o)) => s == o,
-            _ => false,
-        }
-    }
-}
-
-impl DataValue {
-    /// Get the value if the data is of real type. This returns an error if the data is not real.
-    ///
-    /// returns: `Result<f64, OError>`
-    pub fn as_real(&self) -> Result<f64, OError> {
-        if let DataValue::Real(v) = self {
-            Ok(*v)
-        } else {
-            Err(OError::WrongDataType("real".to_string()))
-        }
-    }
-
-    /// Get the value if the data is of integer type. This returns an error if the data is not an
-    /// integer.
-    ///
-    /// returns: `Result<f64, OError>`
-    pub fn as_integer(&self) -> Result<i64, OError> {
-        if let DataValue::Integer(v) = self {
-            Ok(*v)
-        } else {
-            Err(OError::WrongDataType("integer".to_string()))
-        }
-    }
-
-    /// Get the value if the data is of vector type. This returns an error if the data is not a
-    /// vector.
-    ///
-    /// returns: `Result<f64, OError>`
-    pub fn as_vec(&self) -> Result<&Vec<f64>, OError> {
-        if let DataValue::Vector(v) = self {
-            Ok(v)
-        } else {
-            Err(OError::WrongDataType("vector".to_string()))
-        }
-    }
-
-    /// Get the value if the data is of usize type. This returns an error if the data is not an
-    /// usize.
-    ///
-    /// returns: `Result<f64, OError>`
-    pub fn as_usize(&self) -> Result<usize, OError> {
-        if let DataValue::USize(v) = self {
-            Ok(*v)
-        } else {
-            Err(OError::WrongDataType("usize".to_string()))
-        }
-    }
-}
 
 /// An individual in the population containing the problem solution, and the objective and
 /// constraint values.
@@ -165,6 +91,12 @@ pub struct IndividualExport {
     variable_values: HashMap<String, VariableValue>,
     /// Whether the solution meets all the problem constraints.
     is_feasible: bool,
+    /// Whether the individual has been evaluated and the problem constraint and objective values
+    /// are available.
+    evaluated: bool,
+    /// Additional numeric data to store for the individuals (such as crowding distance or rank)
+    /// depending on the algorithm the individuals are derived from.
+    data: HashMap<String, DataValue>,
 }
 
 impl Display for Individual {
@@ -369,9 +301,9 @@ impl Individual {
         Ok(&self.variable_values[name])
     }
 
-    /// Ge the vector with the variable values for the individual.
+    /// Get the vector with the variable values for the individual.
     ///
-    /// returns: `Result<Vec<f64>, OError>`
+    /// returns: `Result<Vec<&VariableValue>, OError>`
     pub fn get_variable_values(&self) -> Result<Vec<&VariableValue>, OError> {
         self.problem
             .variable_names()
@@ -380,7 +312,7 @@ impl Individual {
             .collect()
     }
 
-    /// Ge the constraint value by name. This return an error if the constraint name does not exist.
+    /// Get the constraint value by name. This return an error if the constraint name does not exist.
     ///
     /// # Arguments
     ///
@@ -543,12 +475,14 @@ impl Individual {
             constraint_violation: self.constraint_violation(),
             variable_values: self.variable_values.clone(),
             is_feasible: self.is_feasible(),
+            evaluated: self.evaluated,
+            data: self.data.clone(),
         }
     }
 }
 
 /// The population with the solutions.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct Population(pub Vec<Individual>);
 
 impl Population {
