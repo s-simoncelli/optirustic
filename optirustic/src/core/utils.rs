@@ -10,6 +10,8 @@ use crate::core::{BoundedNumber, Objective, ObjectiveDirection, Problem, Variabl
 use crate::core::{EvaluationResult, Evaluator, Individual};
 #[cfg(test)]
 use crate::core::problem::builtin_problems::ztd1;
+#[cfg(test)]
+use crate::core::VariableValue::Real;
 
 /// Get the random number generator. If no seed is provided, this randomly generated.
 ///
@@ -60,25 +62,42 @@ pub fn dummy_evaluator() -> Box<dyn Evaluator> {
 pub(crate) fn individuals_from_obj_values_dummy<const N: usize>(
     objective_values: &[[f64; N]],
     objective_direction: &[ObjectiveDirection; N],
+    variable_values: Option<&[Vec<f64>]>,
 ) -> Vec<Individual> {
     let mut objectives = Vec::new();
     for (i, direction) in objective_direction.iter().enumerate() {
         objectives.push(Objective::new(format!("obj{i}").as_str(), *direction));
     }
-    let variables = vec![VariableType::Real(
-        BoundedNumber::new("X", 0.0, 2.0).unwrap(),
-    )];
+    let variables = if let Some(variable_values) = variable_values {
+        (0..variable_values.len())
+            .map(|i| {
+                VariableType::Real(BoundedNumber::new(format!("X{i}").as_str(), 0.0, 2.0).unwrap())
+            })
+            .collect()
+    } else {
+        vec![VariableType::Real(
+            BoundedNumber::new("X", 0.0, 2.0).unwrap(),
+        )]
+    };
     let problem = Arc::new(Problem::new(objectives, variables, None, dummy_evaluator()).unwrap());
 
     // create the individuals
     let mut individuals: Vec<Individual> = Vec::new();
-    for data in objective_values {
+    for (ind_idx, data) in objective_values.iter().enumerate() {
         let mut individual = Individual::new(problem.clone());
         for (oi, obj_value) in data.iter().enumerate() {
             individual
                 .update_objective(format!("obj{oi}").as_str(), *obj_value)
                 .unwrap();
         }
+        if let Some(variable_values) = variable_values {
+            for (vi, var_value) in variable_values[ind_idx].iter().enumerate() {
+                individual
+                    .update_variable(format!("X{vi}").as_str(), Real(*var_value))
+                    .unwrap();
+            }
+        }
+
         individuals.push(individual);
     }
 

@@ -122,6 +122,7 @@ mod test {
             let mut individuals = individuals_from_obj_values_dummy(
                 &test_data.objective_values,
                 &objective_direction,
+                None,
             );
             let mut hv =
                 HyperVolumeWhile2012::new(&mut individuals, &test_data.reference_point).unwrap();

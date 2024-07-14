@@ -154,6 +154,7 @@ mod test {
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            None,
         );
 
         // x too small
@@ -171,6 +172,7 @@ mod test {
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
             &[ObjectiveDirection::Maximise, ObjectiveDirection::Minimise],
+            None,
         );
         let ref_point = [6.0, 20.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
@@ -181,6 +183,7 @@ mod test {
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Maximise],
+            None,
         );
         let ref_point = [20.0, 19.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
@@ -297,6 +300,7 @@ mod test {
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
             &[ObjectiveDirection::Maximise, ObjectiveDirection::Minimise],
+            None,
         );
 
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
@@ -318,6 +322,7 @@ mod test {
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Maximise],
+            None,
         );
 
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
@@ -335,6 +340,7 @@ mod test {
             let mut individuals = individuals_from_obj_values_dummy(
                 &test_data.objective_values,
                 &objective_direction,
+                None,
             );
             let hv = HyperVolume2D::new(&mut individuals, &test_data.reference_point).unwrap();
 

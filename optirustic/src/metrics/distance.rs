@@ -346,7 +346,7 @@ mod test {
         let directions = [ObjectiveDirection::Minimise; 2];
 
         // Column I(A)
-        let individuals_a = individuals_from_obj_values_dummy(&a, &directions);
+        let individuals_a = individuals_from_obj_values_dummy(&a, &directions, None);
         let metric = Distance::new(&individuals_a, &z).unwrap();
         assert_approx_eq!(
             f64,
@@ -374,7 +374,7 @@ mod test {
         );
 
         // Column I(B)
-        let individuals_b = individuals_from_obj_values_dummy(&b, &directions);
+        let individuals_b = individuals_from_obj_values_dummy(&b, &directions, None);
         let metric = Distance::new(&individuals_b, &z).unwrap();
         assert_approx_eq!(
             f64,
@@ -432,7 +432,7 @@ mod test {
         let expected = [expected_1, expected_2];
         let directions = [ObjectiveDirection::Minimise; 2];
         for (objective, expected) in [objective_1, objective_2].iter().zip(expected) {
-            let individuals = individuals_from_obj_values_dummy(objective, &directions);
+            let individuals = individuals_from_obj_values_dummy(objective, &directions, None);
             let metric = Distance::new(&individuals, &ref_points).unwrap();
 
             assert_approx_eq!(

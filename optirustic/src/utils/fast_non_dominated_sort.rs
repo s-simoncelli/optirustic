@@ -184,6 +184,7 @@ mod test {
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            None,
         );
         let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
 
@@ -245,6 +246,7 @@ mod test {
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
             &[ObjectiveDirection::Maximise, ObjectiveDirection::Minimise],
+            None,
         );
         let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
 
@@ -280,6 +282,7 @@ mod test {
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Maximise],
+            None,
         );
         let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
 
@@ -317,6 +320,7 @@ mod test {
                 ObjectiveDirection::Minimise,
                 ObjectiveDirection::Minimise,
             ],
+            None,
         );
         let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
 

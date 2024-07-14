@@ -120,7 +120,7 @@ mod test {
         let objective_direction = [ObjectiveDirection::Minimise; 3];
 
         let mut individuals =
-            individuals_from_obj_values_dummy(&objective_values, &objective_direction);
+            individuals_from_obj_values_dummy(&objective_values, &objective_direction, None);
         let ref_point = vec![2.0, 2.0, 2.0];
         let hv = HyperVolumeFonseca2006::new(&mut individuals, &ref_point);
         assert!(hv
@@ -136,8 +136,11 @@ mod test {
         let objective_direction = [ObjectiveDirection::Minimise; 3];
         let ref_point = [3.0, 3.0, 3.0];
 
-        let mut individuals =
-            individuals_from_obj_values_dummy(&objective_values, &objective_direction.clone());
+        let mut individuals = individuals_from_obj_values_dummy(
+            &objective_values,
+            &objective_direction.clone(),
+            None,
+        );
         let hv = HyperVolumeFonseca2006::new(&mut individuals, &ref_point).unwrap();
         assert_eq!(hv.compute(), 8.0);
     }
@@ -157,6 +160,7 @@ mod test {
             let mut individuals = individuals_from_obj_values_dummy(
                 &test_data.objective_values,
                 &objective_direction,
+                None,
             );
             let hv =
                 HyperVolumeFonseca2006::new(&mut individuals, &test_data.reference_point).unwrap();
