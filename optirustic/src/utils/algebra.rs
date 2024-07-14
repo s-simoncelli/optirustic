@@ -2,6 +2,22 @@ use nalgebra::{DMatrix, SVD};
 
 use crate::utils::all_close;
 
+/// The tolerance values used to check whether the solver finds acceptable solutions of the linear
+/// system. See [`crate::utils::all_close`].
+pub struct LinearSolverTolerance {
+    pub relative: f64,
+    pub absolute: f64,
+}
+
+impl Default for LinearSolverTolerance {
+    fn default() -> Self {
+        Self {
+            relative: 1e-05,
+            absolute: 1e-08,
+        }
+    }
+}
+
 /// Return the least-squares solution to a linear matrix equation using singular value decomposition
 /// (SVD). This solves the linear system `A * x = b`, where `A` is the coefficient matrix of the
 /// linear system, `b` the dependent variable and `x` the unknown. `None` is returned if the `A * x`
@@ -12,28 +28,29 @@ use crate::utils::all_close;
 /// * `a`: The vector representing the matrix A. This must be a vector whose size is the number of
 /// rows in A and each nested vector len is the number of columns in A.
 /// * `b`: The column vector b.
-/// * `check_solution`: Whether to check that the found solution is within strict tolerances. When
-/// true and the solution is outside the tolerances, this returns an error.
+/// * `tolerances`: The tolerances to check whether the found solution is acceptable. When the
+/// solution is outside the tolerances, this returns an error. When `None`, the solution validity
+/// is not checked.
 ///
 /// returns: `Result<Vec<f64>, String>`
 ///
 /// # Examples
 ///
 /// ```
-/// use optirustic::utils::solve_linear_system;
+/// use optirustic::utils::{LinearSolverTolerance, solve_linear_system};
 /// let a = vec![
 ///     vec![1.0, 9.0, -5.0],
 ///     vec![-3.0, -5.0, -5.0],
 ///     vec![-2.0, -7.0, 1.0],
 /// ];
 /// let b = vec![-32.0, -10.0, 13.0];
-/// let x = solve_linear_system(&a, &b, true).unwrap();
+/// let x = solve_linear_system(&a, &b, Some(LinearSolverTolerance::default())).unwrap();
 /// println!("{:?}", x); // Some(vec![5.0, -3.0, 2.0])
 /// ```
 pub fn solve_linear_system(
     a: &[Vec<f64>],
     b: &[f64],
-    check_solution: bool,
+    tolerances: Option<LinearSolverTolerance>,
 ) -> Result<Vec<f64>, String> {
     // Size check to prevent panic in nalgebra crate
     let num_rows = a.len();
@@ -64,8 +81,15 @@ pub fn solve_linear_system(
     // check that the calculated solution is within tolerance
     let found_b = a * &solution;
 
-    if check_solution & !all_close(b.data.as_slice(), found_b.data.as_slice(), None, None) {
-        return Err("The solution is outside the tolerance limits".to_string());
+    if let Some(tolerances) = tolerances {
+        if !all_close(
+            b.data.as_slice(),
+            found_b.data.as_slice(),
+            Some(tolerances.relative),
+            Some(tolerances.absolute),
+        ) {
+            return Err("The solution is outside the tolerance limits".to_string());
+        }
     }
     Ok(solution.data.as_vec().clone())
 }
@@ -137,6 +161,7 @@ mod tests {
 
     use crate::core::test_utils::assert_approx_array_eq;
     use crate::utils::algebra::{dot_product, perpendicular_distance, solve_linear_system};
+    use crate::utils::LinearSolverTolerance;
 
     #[test]
     /// Test the lsquare function on a linear system.
@@ -148,7 +173,7 @@ mod tests {
             vec![-2.0, -7.0, 1.0],
         ];
         let b = vec![-32.0, -10.0, 13.0];
-        let x = solve_linear_system(&a, &b, true).unwrap();
+        let x = solve_linear_system(&a, &b, Some(LinearSolverTolerance::default())).unwrap();
 
         let expected = vec![5.0, -3.0, 2.0];
         assert_approx_array_eq(&x, &expected);
@@ -165,7 +190,7 @@ mod tests {
         ];
         let y = vec![-1.0, 0.2, 0.9, 2.1];
 
-        let x = solve_linear_system(&x, &y, true).unwrap();
+        let x = solve_linear_system(&x, &y, Some(LinearSolverTolerance::default())).unwrap();
         assert_approx_eq!(f64, x[0], 1.0, epsilon = 0.0001);
         assert_approx_eq!(f64, x[1], -0.95, epsilon = 0.0001);
     }
