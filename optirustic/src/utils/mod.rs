@@ -2,7 +2,10 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::hash::{BuildHasher, Hash};
 
-pub use algebra::{dot_product, perpendicular_distance, solve_linear_system, vector_magnitude};
+pub use algebra::{
+    dot_product, LinearSolverTolerance, perpendicular_distance, solve_linear_system,
+    vector_magnitude,
+};
 pub use fast_non_dominated_sort::{fast_non_dominated_sort, NonDominatedSortResults};
 pub use reference_points::{DasDarren1998, NumberOfPartitions, TwoLayerPartitions};
 
@@ -74,14 +77,14 @@ pub fn vector_max(v: &[f64]) -> Result<f64, OError> {
 }
 
 /// Returns `true` if two arrays are element-wise equal within a tolerance. This behaves as the
-///numpy implementation at <https://numpy.org/doc/stable/reference/generated/numpy.allclose.html>.
+/// numpy implementation at <https://numpy.org/doc/stable/reference/generated/numpy.allclose.html>.
 ///
 /// # Arguments
 ///
 /// * `a`: First vector to compare.
 /// * `b`: Second vector to compare.
-/// * `r_tol`: The relative tolerance parameter
-/// * `a_tol`: The absolute tolerance parameter
+/// * `r_tol`: The relative tolerance parameter.
+/// * `a_tol`: The absolute tolerance parameter.
 ///
 /// returns: `bool`
 pub fn all_close(a: &[f64], b: &[f64], r_tol: Option<f64>, a_tol: Option<f64>) -> bool {

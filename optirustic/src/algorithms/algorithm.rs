@@ -1,4 +1,5 @@
 use std::{fmt, fs};
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -9,7 +10,9 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::algorithms::{StoppingCondition, StoppingConditionType};
-use crate::core::{Individual, IndividualExport, OError, Population, Problem, ProblemExport};
+use crate::core::{
+    DataValue, Individual, IndividualExport, OError, Population, Problem, ProblemExport,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 /// The data with the elapsed time.
@@ -30,6 +33,7 @@ pub struct AlgorithmSerialisedExport<T: Serialize> {
     pub individuals: Vec<IndividualExport>,
     pub generation: usize,
     pub algorithm: String,
+    pub additional_data: Option<HashMap<String, DataValue>>,
     pub took: Elapsed,
 }
 
@@ -90,7 +94,8 @@ impl ExportHistory {
     /// the given folder.
     ///
     /// returns: `Result<ExportHistory, OError>`
-    pub fn new(generation_step: usize, destination: &PathBuf) -> Result<Self, OError> {
+    pub fn new(generation_step: usize, destination: &str) -> Result<Self, OError> {
+        let destination = PathBuf::from(destination);
         if !destination.exists() {
             return Err(OError::Generic(format!(
                 "The destination folder '{:?}' does not exist",
@@ -160,6 +165,13 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
     ///
     /// return: `Option<&ExportHistory>`.
     fn export_history(&self) -> Option<&ExportHistory>;
+
+    /// Export additional data stored by the algorithm.
+    ///
+    /// return: `Option<HashMap<String, DataValue>>`
+    fn additional_export_data(&self) -> Option<HashMap<String, DataValue>> {
+        None
+    }
 
     /// Get the elapsed hours, minutes and seconds since the start of the algorithm.
     ///
@@ -288,10 +300,13 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
                 self.generation(),
                 self.elapsed_as_string()
             );
+            debug!("========================");
+            debug!("");
+            debug!("");
 
             // Export history
             if let Some(export) = self.export_history() {
-                if history_gen_step >= export.generation_step {
+                if self.generation() == 1 || history_gen_step >= export.generation_step {
                     self.save_to_json(&export.destination, None)?;
                     history_gen_step = 0;
                 } else {
@@ -357,6 +372,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
             individuals: self.population().serialise(),
             generation: self.generation(),
             algorithm: self.name(),
+            additional_data: self.additional_export_data(),
             took: Elapsed {
                 hours,
                 minutes,
