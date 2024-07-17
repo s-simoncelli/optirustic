@@ -40,7 +40,7 @@ pub trait Evaluator: Sync + Send + Debug {
     /// use optirustic::core::{EvaluationResult, Individual, Evaluator};
     ///
     /// // solve a SCH problem with two objectives to minimise: x^2 and (x-2)^2. The problem has
-    /// // one variables named "x" and two objectives named "x^2" and "(x-2)^2".
+    /// // one variable named "x" and two objectives named "x^2" and "(x-2)^2".
     /// #[derive(Debug)]
     ///     struct UserEvaluator;
     ///     impl Evaluator for UserEvaluator {
@@ -801,6 +801,9 @@ pub mod builtin_problems {
 
 #[cfg(test)]
 mod test {
+    use std::env;
+    use std::fs::read_to_string;
+    use std::path::Path;
     use std::sync::Arc;
 
     use float_cmp::assert_approx_eq;
@@ -871,24 +874,56 @@ mod test {
         );
     }
 
+    /// Read problem data
+    fn read_test_file(file_name: &str) -> Vec<Vec<f64>> {
+        let test_path = Path::new(&env::current_dir().unwrap())
+            .join("src")
+            .join("core")
+            .join("test_data");
+
+        // data for one test
+        let mut values: Vec<Vec<f64>> = vec![];
+
+        for (li, line) in read_to_string(test_path.join(file_name))
+            .unwrap()
+            .lines()
+            .enumerate()
+        {
+            if li == 0 {
+                continue;
+            }
+            let point = line
+                .split(',')
+                .skip(1)
+                .map(|v| v.to_string().parse::<f64>())
+                .collect::<Result<Vec<f64>, _>>()
+                .unwrap();
+            values.push(point);
+        }
+        values
+    }
+
     #[test]
     /// Test the DTLZ1 problem with random individuals
     fn test_dtlz1_random_solutions() {
-        let vars = [
-            0.73188057, 0.51797262, 0.98407662, 0.09153859, 0.37063724, 0.27198675, 0.4345953,
-        ];
-        let problem = Arc::new(dtlz1(vars.len(), 3).unwrap());
-        let mut individual = Individual::new(problem.clone());
-        for (i, var) in vars.iter().enumerate() {
-            individual
-                .update_variable(format!("x{}", i + 1).as_str(), VariableValue::Real(*var))
-                .unwrap();
-        }
-        let data = problem.evaluator.evaluate(&individual).unwrap();
+        // randomly generated variables
+        let all_vars = read_test_file("DTLZ1_variables.csv");
+        let all_expected_objectives = read_test_file("DTLZ1_objectives.csv");
 
-        // objectives manually calculated
-        assert_approx_eq!(f64, 96.8251680772, data.objectives["f1"], epsilon = 0.00001);
-        assert_approx_eq!(f64, 90.1058864585, data.objectives["f2"], epsilon = 0.00001);
-        assert_approx_eq!(f64, 68.4809104734, data.objectives["f3"], epsilon = 0.00001);
+        for (expected_objectives, vars) in all_expected_objectives.iter().zip(all_vars) {
+            let problem = Arc::new(dtlz1(vars.len(), 3).unwrap());
+            let mut individual = Individual::new(problem.clone());
+            for (i, var) in vars.iter().enumerate() {
+                individual
+                    .update_variable(format!("x{}", i + 1).as_str(), VariableValue::Real(*var))
+                    .unwrap();
+            }
+            let data = problem.evaluator.evaluate(&individual).unwrap();
+
+            for (i, obj) in expected_objectives.iter().enumerate() {
+                let name = format!("f{}", i + 1);
+                assert_approx_eq!(f64, *obj, data.objectives[&name], epsilon = 0.00001);
+            }
+        }
     }
 }
