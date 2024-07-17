@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Trait to define a condition that causes an algorithm to terminate.
 pub trait StoppingCondition<T: PartialOrd> {
@@ -17,7 +17,7 @@ pub trait StoppingCondition<T: PartialOrd> {
 }
 
 /// Number of generations after which a genetic algorithm terminates.
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct MaxGeneration(pub usize);
 
 impl StoppingCondition<usize> for MaxGeneration {
@@ -31,7 +31,7 @@ impl StoppingCondition<usize> for MaxGeneration {
 }
 
 /// Elapsed time after which a genetic algorithm terminates.
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct MaxDuration(pub Duration);
 
 impl StoppingCondition<Duration> for MaxDuration {
@@ -46,7 +46,7 @@ impl StoppingCondition<Duration> for MaxDuration {
 
 /// The type of stopping condition. Pick one type to inform the algorithm how/when it should
 /// terminate the population evolution.
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum StoppingConditionType {
     /// Set a maximum duration
     MaxDuration(MaxDuration),

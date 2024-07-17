@@ -8,6 +8,7 @@ use std::time::Instant;
 use log::{debug, info};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 
 use crate::algorithms::{StoppingCondition, StoppingConditionType};
 use crate::core::{
@@ -26,14 +27,25 @@ pub struct Elapsed {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(bound = "T: Serialize, for<'de2> T: Deserialize<'de2>")]
 /// The struct used to export an algorithm serialised data.
-pub struct AlgorithmSerialisedExport<T: Serialize> {
+pub struct AlgorithmSerialisedExport<T>
+where
+    T: Serialize + Clone + DeserializeOwned,
+{
+    /// Specific options for an algorithm.
     pub options: T,
+    /// The problem configuration.
     pub problem: ProblemExport,
+    /// The individuals in the population.
     pub individuals: Vec<IndividualExport>,
+    /// The generation the export was collected at.
     pub generation: usize,
+    /// The algorithm name.
     pub algorithm: String,
+    /// Any additional data exported by the algorithm.
     pub additional_data: Option<HashMap<String, DataValue>>,
+    /// The time took to reach the `generation`.
     pub took: Elapsed,
 }
 
@@ -73,7 +85,7 @@ impl AlgorithmExport {
 /// an algorithm to save objectives, constraints and solutions to a file each time the generation
 /// counter in [`Algorithm::generation`] increases by a certain step provided in `generation_step`.
 /// Exporting history may be useful to track convergence and inspect an algorithm evolution.
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ExportHistory {
     /// Export the algorithm data each time the generation counter in [`Algorithm::generation`]
     /// increases by the provided step.
@@ -120,7 +132,7 @@ impl Display for AlgorithmExport {
 }
 
 /// The trait to use to implement an algorithm.
-pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
+pub trait Algorithm<T: Serialize + Clone + DeserializeOwned>: Display {
     /// Initialise the algorithm.
     ///
     /// return: `Result<(), OError>`
@@ -289,6 +301,10 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
     fn run(&mut self) -> Result<(), OError> {
         info!("Starting {}", self.name());
         self.initialise()?;
+        // Export at init
+        if let Some(export) = self.export_history() {
+            self.save_to_json(&export.destination, Some("Init"))?;
+        }
 
         let mut history_gen_step: usize = 0;
         loop {
@@ -306,7 +322,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
 
             // Export history
             if let Some(export) = self.export_history() {
-                if self.generation() == 1 || history_gen_step >= export.generation_step {
+                if history_gen_step >= export.generation_step {
                     self.save_to_json(&export.destination, None)?;
                     history_gen_step = 0;
                 } else {
@@ -353,7 +369,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
         }
     }
 
-    fn algorithm_options(&self) -> &AlgorithmOptions;
+    fn algorithm_options(&self) -> T;
 
     /// Save the algorithm data (individuals' objective, variables and constraints, the problem,
     /// ...) to a JSON file.
@@ -367,7 +383,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
         let file_prefix = file_prefix.unwrap_or("History");
         let [hours, minutes, seconds] = self.elapsed();
         let export = AlgorithmSerialisedExport {
-            options: self.algorithm_options(),
+            options: self.algorithm_options().clone(),
             problem: self.problem().serialise(),
             individuals: self.population().serialise(),
             generation: self.generation(),
@@ -398,5 +414,26 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
             ))
         })?;
         Ok(())
+    }
+
+    /// Read the results previously exported with [`Self::save_to_json`].
+    ///
+    /// # Arguments
+    ///
+    /// * `file`: The path to the JSON file.
+    ///
+    /// returns: `Result<AlgorithmSerialisedExport<T>, OError>`
+    fn read_results(file: &str) -> Result<AlgorithmSerialisedExport<T>, OError> {
+        let file_path = PathBuf::from(file);
+        if !file_path.exists() {
+            return Err(OError::Generic(format!("The file '{file}' does not exist")));
+        }
+        let data = fs::File::open(file_path)
+            .map_err(|e| OError::Generic(format!("Cannot read the file '{file}' because: {e}")))?;
+
+        let history: AlgorithmSerialisedExport<T> = serde_json::from_reader(data).map_err(|e| {
+            OError::Generic(format!("Cannot parse the JSON file '{file}' because: {e}"))
+        })?;
+        Ok(history)
     }
 }

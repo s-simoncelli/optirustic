@@ -3,7 +3,7 @@ use std::error::Error;
 
 #[cfg(feature = "plot")]
 use plotters::prelude::*;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "plot")]
 use crate::core::OError;
@@ -33,7 +33,7 @@ fn binomial_coefficient(mut n: u64, k: u64) -> u64 {
 }
 
 /// Define the number of partitions for the two layers.
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TwoLayerPartitions {
     /// This is the number of partitions to use in the boundary layer.
     pub boundary_layer: usize,
@@ -51,7 +51,7 @@ pub struct TwoLayerPartitions {
 ///    want to reduce the number of reference points to use. Using two layers allows (1) setting a
 ///    smaller number of reference points, (2) controlling the point density in the inner area and
 ///    (3) ensure a well-spaced point distribution.
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Clone, Deserialize, Debug)]
 pub enum NumberOfPartitions {
     /// Create only one layer of points by specifying the number of uniform gaps between two
     /// consecutive points along all objective axis on the hyper-plane.

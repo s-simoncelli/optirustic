@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use log::{debug, info};
 use rand::RngCore;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::algorithms::{Algorithm, ExportHistory, StoppingConditionType};
 use crate::core::{
@@ -22,7 +22,7 @@ use crate::utils::{argsort, fast_non_dominated_sort, Sort, vector_max, vector_mi
 const CROWDING_DIST_KEY: &str = "crowding_distance";
 
 /// Input arguments for the NSGA2 algorithm.
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct NSGA2Arg {
     /// The number of individuals to use in the population. This must be a multiple of `2`.
     pub number_of_individuals: usize,
@@ -432,8 +432,8 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
         self.export_history.as_ref()
     }
 
-    fn algorithm_options(&self) -> &NSGA2Arg {
-        &self.args
+    fn algorithm_options(&self) -> NSGA2Arg {
+        self.args.clone()
     }
 }
 #[cfg(test)]
@@ -452,6 +452,7 @@ mod test_sorting {
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            None,
         );
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
         for i in individuals {
@@ -469,6 +470,7 @@ mod test_sorting {
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            None,
         );
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
         for i in individuals {
@@ -491,6 +493,7 @@ mod test_sorting {
             let mut individuals = individuals_from_obj_values_dummy(
                 &objectives,
                 &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+                None,
             );
             NSGA2::set_crowding_distance(&mut individuals).unwrap();
 
@@ -536,6 +539,7 @@ mod test_sorting {
                 ObjectiveDirection::Minimise,
                 ObjectiveDirection::Minimise,
             ],
+            None,
         );
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
 
@@ -580,6 +584,7 @@ mod test_sorting {
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            None,
         );
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
 
@@ -635,6 +640,7 @@ mod test_sorting {
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            None,
         );
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
 
