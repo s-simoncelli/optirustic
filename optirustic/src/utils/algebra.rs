@@ -126,23 +126,23 @@ pub fn vector_magnitude(vector: &[f64]) -> Result<f64, String> {
     Ok(dot_product(vector, vector)?.sqrt())
 }
 
-/// Calculate the perpendicular distance between a reference direction vector `ref_dir` and a
-/// `point`. This returns an error if the size of the vectors does not match.
+/// Calculate the perpendicular distance between a line vector `line` and a `point`. This returns
+/// an error if the size of the vectors does not match.
 ///
 /// # Arguments
 ///
-/// * `ref_dir`: The reference direction.
+/// * `line`: The reference line.
 /// * `point`: The point coordinates.
 ///
 /// returns: `Result<f64, String>`
-pub fn perpendicular_distance(ref_dir: &[f64], point: &[f64]) -> Result<f64, String> {
-    let ref_dir_magnitude = vector_magnitude(ref_dir)?;
+pub fn perpendicular_distance(line: &[f64], point: &[f64]) -> Result<f64, String> {
+    let ref_dir_magnitude = vector_magnitude(line)?;
 
     // this is a scalar representing the projection of L onto the reference direction
-    let projection = dot_product(point, ref_dir)? / ref_dir_magnitude;
+    let projection = dot_product(point, line)? / ref_dir_magnitude;
 
     let mut distance_vector: Vec<f64> = Vec::with_capacity(point.len());
-    for (p, r) in point.iter().zip(ref_dir) {
+    for (p, r) in point.iter().zip(line) {
         // projection is multiplied by unit vector (r / ref_dir_magnitude) to get the projection
         // vector parallel to ref_dir.
         let projection_vector = projection * r / ref_dir_magnitude;
@@ -214,5 +214,22 @@ mod tests {
             1.632993,
             epsilon = 0.0001
         );
+
+        let point = [
+            0.027922074966251483,
+            0.4628371619519296,
+            0.04936679328526684,
+        ];
+        let lines = [
+            [0.08333333333333333, 0.25, 0.6666666666666666],
+            [0.08333333333333333, 0.3333333333333333, 0.5833333333333334],
+            [0.08333333333333333, 0.75, 0.16666666666666666],
+        ];
+        let expected_distance = [0.41604855196117385, 0.3774074655777061, 0.05670308534505434];
+        let distances = lines
+            .iter()
+            .map(|l| perpendicular_distance(l, &point).unwrap())
+            .collect::<Vec<f64>>();
+        assert_approx_array_eq(&distances, &expected_distance);
     }
 }
