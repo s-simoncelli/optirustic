@@ -21,7 +21,7 @@ pub trait Mutation {
 }
 
 /// Input arguments for [`PolynomialMutation`].
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PolynomialMutationArgs {
     /// A user-defined parameter to control the mutation. This is eta_m in the paper, and it is
     /// suggested its value to be in the [20, 100] range.

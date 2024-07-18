@@ -22,7 +22,7 @@ use crate::utils::{argsort, fast_non_dominated_sort, Sort, vector_max, vector_mi
 const CROWDING_DIST_KEY: &str = "crowding_distance";
 
 /// Input arguments for the NSGA2 algorithm.
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NSGA2Arg {
     /// The number of individuals to use in the population. This must be a multiple of `2`.
     pub number_of_individuals: usize,

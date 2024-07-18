@@ -34,7 +34,7 @@ pub trait Crossover {
 }
 
 /// Input arguments for [`SimulatedBinaryCrossover`].
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SimulatedBinaryCrossoverArgs {
     /// The distribution index for crossover (this is the eta_c in the paper). This directly
     /// control the spread of children. If a large value is selected, the resulting children will
