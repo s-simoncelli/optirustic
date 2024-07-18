@@ -82,21 +82,21 @@ impl PartialEq for Individual {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IndividualExport {
     /// The value of the constraints.
-    constraint_values: HashMap<String, f64>,
+    pub constraint_values: HashMap<String, f64>,
     /// The values of the objectives.
-    objective_values: HashMap<String, f64>,
+    pub objective_values: HashMap<String, f64>,
     /// The overall amount of violation of the solution constraints.
-    constraint_violation: f64,
+    pub constraint_violation: f64,
     /// The value of the problem variables for the individual.
-    variable_values: HashMap<String, VariableValue>,
+    pub variable_values: HashMap<String, VariableValue>,
     /// Whether the solution meets all the problem constraints.
-    is_feasible: bool,
+    pub is_feasible: bool,
     /// Whether the individual has been evaluated and the problem constraint and objective values
     /// are available.
-    evaluated: bool,
+    pub evaluated: bool,
     /// Additional numeric data to store for the individuals (such as crowding distance or rank)
     /// depending on the algorithm the individuals are derived from.
-    data: HashMap<String, DataValue>,
+    pub data: HashMap<String, DataValue>,
 }
 
 impl Display for Individual {
