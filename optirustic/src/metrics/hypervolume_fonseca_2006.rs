@@ -116,7 +116,7 @@ mod test {
     #[test]
     /// Reference point must be strictly larger than any objective
     fn test_wrong_ref_point() {
-        let objective_values = vec![[1.0, 2.0, 1.0], [2.0, 1.0, 1.0]];
+        let objective_values = vec![vec![1.0, 2.0, 1.0], vec![2.0, 1.0, 1.0]];
         let objective_direction = [ObjectiveDirection::Minimise; 3];
 
         let mut individuals =
@@ -132,8 +132,8 @@ mod test {
     #[test]
     /// Test avery simple front
     fn test_simple_front() {
-        let objective_values = vec![[1.0, 1.0, 1.0], [2.0, 2.0, 2.0]];
-        let objective_direction = [ObjectiveDirection::Minimise; 3];
+        let objective_values = vec![vec![1.0, 1.0, 1.0], vec![2.0, 2.0, 2.0]];
+        let objective_direction = vec![ObjectiveDirection::Minimise; 3];
         let ref_point = [3.0, 3.0, 3.0];
 
         let mut individuals = individuals_from_obj_values_dummy(
@@ -152,9 +152,10 @@ mod test {
     /// * `file`: The file name in the `test_data` folder.
     ///
     /// returns: ()
-    pub(crate) fn assert_test_file<const N: usize>(file: &str) {
-        let all_test_data = parse_pagmo_test_data_file::<N>(file).unwrap();
-        let objective_direction = [ObjectiveDirection::Minimise; N];
+    pub(crate) fn assert_test_file(file: &str) {
+        let all_test_data = parse_pagmo_test_data_file(file).unwrap();
+        let obj_count = all_test_data.first().unwrap().reference_point.len();
+        let objective_direction = vec![ObjectiveDirection::Minimise; obj_count];
 
         for (ti, test_data) in all_test_data.iter().enumerate() {
             let mut individuals = individuals_from_obj_values_dummy(
@@ -181,13 +182,13 @@ mod test {
     /// Test the `HyperVolumeFonseca2006` struct using Pagmo c_max_t100_d3_n128 test data.
     /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
     fn test_c_max_t100_d3_n128() {
-        assert_test_file::<3>("c_max_t100_d3_n128");
+        assert_test_file("c_max_t100_d3_n128");
     }
 
     #[test]
     /// Test the `HyperVolumeFonseca2006` struct using Pagmo c_max_t1_d3_n2048 test data.
     /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
     fn test_c_max_t1_d3_n2048() {
-        assert_test_file::<3>("c_max_t1_d3_n2048");
+        assert_test_file("c_max_t1_d3_n2048");
     }
 }

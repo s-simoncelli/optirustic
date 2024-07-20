@@ -341,8 +341,8 @@ mod test {
             vec![6., 1.],
             vec![10., 0.],
         ];
-        let a = [[2., 4.], [3., 3.], [4., 2.]];
-        let b = [[2., 8.], [4., 4.], [8., 2.]];
+        let a = [vec![2., 4.], vec![3., 3.], vec![4., 2.]];
+        let b = [vec![2., 8.], vec![4., 4.], vec![8., 2.]];
         let directions = [ObjectiveDirection::Minimise; 2];
 
         // Column I(A)
@@ -413,7 +413,7 @@ mod test {
             vec![0.3, 10.1],
             vec![9.123, 8.1],
         ];
-        let objective_1 = vec![[4.1, 1.1], [0.3, 9.1], [2.54, 4.67]];
+        let objective_1 = vec![vec![4.1, 1.1], vec![0.3, 9.1], vec![2.54, 4.67]];
         let mut expected_1 = HashMap::new();
         expected_1.insert("gd", 2.048802387);
         expected_1.insert("igd", 3.924499222);
@@ -421,7 +421,7 @@ mod test {
         expected_1.insert("igd+", 0.9219999);
         expected_1.insert("hausdorff", 3.9244992221);
 
-        let objective_2 = vec![[8.11, 7.1], [5.67, 5.67], [0.45, 9.1]];
+        let objective_2 = vec![vec![8.11, 7.1], vec![5.67, 5.67], vec![0.45, 9.1]];
         let mut expected_2 = HashMap::new();
         expected_2.insert("gd", 2.218985866);
         expected_2.insert("igd", 3.627049929);

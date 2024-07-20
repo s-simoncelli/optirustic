@@ -55,15 +55,20 @@ pub fn dummy_evaluator() -> Box<dyn Evaluator> {
 ///
 /// * `objective_values`: The objective values to set on the individuals. A number of individuals
 /// equal to this vector size will be created.
-/// * `objective_direction`: The direction of each objective.
+/// * `objective_direction`: The `N` directions for each objective.
 ///
 /// returns: `Vec<Individual>`
 #[cfg(test)]
-pub(crate) fn individuals_from_obj_values_dummy<const N: usize>(
-    objective_values: &[[f64; N]],
-    objective_direction: &[ObjectiveDirection; N],
+pub(crate) fn individuals_from_obj_values_dummy(
+    objective_values: &[Vec<f64>],
+    objective_direction: &[ObjectiveDirection],
     variable_values: Option<&[Vec<f64>]>,
 ) -> Vec<Individual> {
+    // check lengths
+    if objective_values.first().unwrap().len() != objective_direction.len() {
+        panic!("The objective values must match the direction vector length")
+    }
+
     let mut objectives = Vec::new();
     for (i, direction) in objective_direction.iter().enumerate() {
         objectives.push(Objective::new(format!("obj{i}").as_str(), *direction));

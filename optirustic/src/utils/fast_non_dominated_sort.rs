@@ -169,17 +169,17 @@ mod test {
     /// plotting the objective values.
     fn test_sorting_2obj() {
         let objectives = vec![
-            [1.1, 8.1],
-            [2.1, 6.1],
-            [3.1, 4.1],
-            [3.1, 7.1],
-            [5.1, 3.1],
-            [5.1, 5.1],
-            [7.1, 7.1],
-            [8.1, 2.1],
-            [10.1, 6.1],
-            [11.1, 1.1],
-            [11.1, 3.1],
+            vec![1.1, 8.1],
+            vec![2.1, 6.1],
+            vec![3.1, 4.1],
+            vec![3.1, 7.1],
+            vec![5.1, 3.1],
+            vec![5.1, 5.1],
+            vec![7.1, 7.1],
+            vec![8.1, 2.1],
+            vec![10.1, 6.1],
+            vec![11.1, 1.1],
+            vec![11.1, 3.1],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
@@ -235,13 +235,13 @@ mod test {
     /// Test the non-dominated sorting when objective #1 is maximised.
     fn test_sorting_2obj_max_obj1() {
         let objectives = vec![
-            [11.1, 8.1],
-            [8.1, 6.1],
-            [5.1, 4.1],
-            [3.1, 3.1],
-            [2.1, 2.1],
-            [1.1, 1.1],
-            [0.0, 5.1],
+            vec![11.1, 8.1],
+            vec![8.1, 6.1],
+            vec![5.1, 4.1],
+            vec![3.1, 3.1],
+            vec![2.1, 2.1],
+            vec![1.1, 1.1],
+            vec![0.0, 5.1],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
@@ -271,13 +271,13 @@ mod test {
     /// Test the non-dominated sorting when objective #2 is maximised.
     fn test_sorting_2obj_max_obj2() {
         let objectives = vec![
-            [11.1, 8.1],
-            [8.1, 6.1],
-            [5.1, 4.1],
-            [3.1, 3.1],
-            [2.1, 2.1],
-            [1.1, 1.1],
-            [0.0, 5.1],
+            vec![11.1, 8.1],
+            vec![8.1, 6.1],
+            vec![5.1, 4.1],
+            vec![3.1, 3.1],
+            vec![2.1, 2.1],
+            vec![1.1, 1.1],
+            vec![0.0, 5.1],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
@@ -308,10 +308,10 @@ mod test {
     /// plotting the objective values.
     fn test_sorting_3obj() {
         let objectives = vec![
-            [2.1, 3.1, 4.1],
-            [-1.1, 4.1, 8.1],
-            [0.1, -1.1, -2.1],
-            [0.1, 0.1, 0.1],
+            vec![2.1, 3.1, 4.1],
+            vec![-1.1, 4.1, 8.1],
+            vec![0.1, -1.1, -2.1],
+            vec![0.1, 0.1, 0.1],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,

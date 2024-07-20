@@ -448,7 +448,7 @@ mod test_sorting {
     #[test]
     /// Test the crowding distance algorithm (not enough points).
     fn test_crowding_distance_not_enough_points() {
-        let objectives = vec![[0.0, 0.0], [50.0, 50.0]];
+        let objectives = vec![vec![0.0, 0.0], vec![50.0, 50.0]];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
@@ -466,7 +466,12 @@ mod test_sorting {
     #[test]
     /// Test the crowding distance algorithm (min and max of objective is equal).
     fn test_crowding_distance_min_max_range() {
-        let objectives = vec![[10.0, 20.0], [10.0, 20.0], [10.0, 20.0], [10.0, 20.0]];
+        let objectives = vec![
+            vec![10.0, 20.0],
+            vec![10.0, 20.0],
+            vec![10.0, 20.0],
+            vec![10.0, 20.0],
+        ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
@@ -486,8 +491,8 @@ mod test_sorting {
     fn test_crowding_distance_3_points() {
         // 3 points
         let scenarios = vec![
-            vec![[0.0, 0.0], [-100.0, 100.0], [200.0, -200.0]],
-            vec![[25.0, 25.0], [-100.0, 100.0], [200.0, -200.0]],
+            vec![vec![0.0, 0.0], vec![-100.0, 100.0], vec![200.0, -200.0]],
+            vec![vec![25.0, 25.0], vec![-100.0, 100.0], vec![200.0, -200.0]],
         ];
         for objectives in scenarios {
             let mut individuals = individuals_from_obj_values_dummy(
@@ -531,7 +536,11 @@ mod test_sorting {
     #[test]
     /// Test the crowding distance algorithm (3 objectives).
     fn test_crowding_distance_3_obj() {
-        let objectives = vec![[0.0, 0.0, 0.0], [-1.0, 1.0, 2.0], [2.0, -2.0, -2.0]];
+        let objectives = vec![
+            vec![0.0, 0.0, 0.0],
+            vec![-1.0, 1.0, 2.0],
+            vec![2.0, -2.0, -2.0],
+        ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
             &[
@@ -576,10 +585,10 @@ mod test_sorting {
     /// Test the crowding distance algorithm (4 points).
     fn test_crowding_distance_4points() {
         let objectives = vec![
-            [0.0, 0.0],
-            [100.0, -100.0],
-            [200.0, -200.0],
-            [400.0, -400.0],
+            vec![0.0, 0.0],
+            vec![100.0, -100.0],
+            vec![200.0, -200.0],
+            vec![400.0, -400.0],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
@@ -630,12 +639,12 @@ mod test_sorting {
     /// Test the crowding distance algorithm (6 points).
     fn test_crowding_distance_6points() {
         let objectives = vec![
-            [1.1, 8.1],
-            [2.1, 6.1],
-            [3.1, 4.1],
-            [5.1, 3.1],
-            [8.1, 2.1],
-            [11.1, 1.1],
+            vec![1.1, 8.1],
+            vec![2.1, 6.1],
+            vec![3.1, 4.1],
+            vec![5.1, 3.1],
+            vec![8.1, 2.1],
+            vec![11.1, 1.1],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,

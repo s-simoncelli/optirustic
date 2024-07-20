@@ -114,9 +114,10 @@ mod test {
     /// * `file`: The file name in the `test_data` folder.
     ///
     /// returns: ()
-    pub(crate) fn assert_test_file<const N: usize>(file: &str) {
-        let all_test_data = parse_pagmo_test_data_file::<N>(file).unwrap();
-        let objective_direction = [ObjectiveDirection::Minimise; N];
+    pub(crate) fn assert_test_file(file: &str) {
+        let all_test_data = parse_pagmo_test_data_file(file).unwrap();
+        let obj_count = all_test_data.first().unwrap().reference_point.len();
+        let objective_direction = vec![ObjectiveDirection::Minimise; obj_count];
 
         for (ti, test_data) in all_test_data.iter().enumerate() {
             let mut individuals = individuals_from_obj_values_dummy(
@@ -144,20 +145,20 @@ mod test {
     /// Test the `HyperVolumeWhile2012` struct using Pagmo c_max_t1_d5_n1024 test data.
     /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
     fn test_c_max_t1_d5_n1024() {
-        assert_test_file::<5>("c_max_t1_d5_n1024");
+        assert_test_file("c_max_t1_d5_n1024");
     }
 
     #[test]
     /// Test the `HyperVolumeWhile2012` struct using Pagmo c_max_t100_d3_n128 test data.
     /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
     fn test_c_max_t100_d3_n128() {
-        assert_test_file::<3>("c_max_t100_d3_n128");
+        assert_test_file("c_max_t100_d3_n128");
     }
 
     #[test]
     /// Test the `HyperVolumeWhile2012` struct using Pagmo c_max_t1_d3_n2048 test data.
     /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
     fn test_c_max_t1_d3_n2048() {
-        assert_test_file::<3>("c_max_t1_d3_n2048");
+        assert_test_file("c_max_t1_d3_n2048");
     }
 }
