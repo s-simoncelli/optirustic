@@ -1,5 +1,9 @@
 #[cfg(test)]
+use std::fs::read_to_string;
+#[cfg(test)]
 use std::ops::Range;
+#[cfg(test)]
+use std::path::PathBuf;
 
 #[cfg(test)]
 use float_cmp::{approx_eq, F64Margin};
@@ -70,4 +74,23 @@ pub(crate) fn check_exact_value(
         let v_loose_outside = check_value_in_range(&v_outside, loose_range);
         (v_loose_outside, loose_range.clone(), "loose".to_string())
     }
+}
+
+#[cfg(test)]
+/// Read a CSV file with objectives or variables
+pub(crate) fn read_csv_test_file(file_name: &PathBuf) -> Vec<Vec<f64>> {
+    let mut values: Vec<Vec<f64>> = vec![];
+    for (li, line) in read_to_string(file_name).unwrap().lines().enumerate() {
+        if li == 0 {
+            continue;
+        }
+        let point = line
+            .split(',')
+            .skip(1)
+            .map(|v| v.to_string().parse::<f64>())
+            .collect::<Result<Vec<f64>, _>>()
+            .unwrap();
+        values.push(point);
+    }
+    values
 }

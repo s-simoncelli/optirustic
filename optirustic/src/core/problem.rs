@@ -802,7 +802,6 @@ pub mod builtin_problems {
 #[cfg(test)]
 mod test {
     use std::env;
-    use std::fs::read_to_string;
     use std::path::Path;
     use std::sync::Arc;
 
@@ -813,6 +812,7 @@ mod test {
         RelationalOperator, VariableType, VariableValue,
     };
     use crate::core::builtin_problems::dtlz1;
+    use crate::core::test_utils::read_csv_test_file;
     use crate::core::utils::dummy_evaluator;
 
     #[test]
@@ -874,41 +874,19 @@ mod test {
         );
     }
 
-    /// Read problem data
-    fn read_test_file(file_name: &str) -> Vec<Vec<f64>> {
+    #[test]
+    /// Test the DTLZ1 problem with random individuals
+    fn test_dtlz1_random_solutions() {
         let test_path = Path::new(&env::current_dir().unwrap())
             .join("src")
             .join("core")
             .join("test_data");
+        let var_file = test_path.join("DTLZ1_variables.csv");
+        let obj_file = test_path.join("DTLZ1_variables.csv");
 
-        // data for one test
-        let mut values: Vec<Vec<f64>> = vec![];
-
-        for (li, line) in read_to_string(test_path.join(file_name))
-            .unwrap()
-            .lines()
-            .enumerate()
-        {
-            if li == 0 {
-                continue;
-            }
-            let point = line
-                .split(',')
-                .skip(1)
-                .map(|v| v.to_string().parse::<f64>())
-                .collect::<Result<Vec<f64>, _>>()
-                .unwrap();
-            values.push(point);
-        }
-        values
-    }
-
-    #[test]
-    /// Test the DTLZ1 problem with random individuals
-    fn test_dtlz1_random_solutions() {
         // randomly generated variables
-        let all_vars = read_test_file("DTLZ1_variables.csv");
-        let all_expected_objectives = read_test_file("DTLZ1_objectives.csv");
+        let all_vars = read_csv_test_file(&var_file);
+        let all_expected_objectives = read_csv_test_file(&obj_file);
 
         for (expected_objectives, vars) in all_expected_objectives.iter().zip(all_vars) {
             let problem = Arc::new(dtlz1(vars.len(), 3).unwrap());
