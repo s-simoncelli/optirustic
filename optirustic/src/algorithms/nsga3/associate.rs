@@ -112,12 +112,19 @@ impl<'a> AssociateToRefPoint<'a> {
 
 #[cfg(test)]
 mod test {
-    use float_cmp::assert_approx_eq;
+    use std::env;
+    use std::path::Path;
 
-    use crate::algorithms::AssociateToRefPoint;
-    use crate::algorithms::nsga3::{MIN_DISTANCE, NORMALISED_OBJECTIVE_KEY, REF_POINT};
+    use float_cmp::{approx_eq, assert_approx_eq};
+
+    use crate::algorithms::{AssociateToRefPoint, Normalise};
+    use crate::algorithms::nsga3::{
+        MIN_DISTANCE, NORMALISED_OBJECTIVE_KEY, REF_POINT, REF_POINT_INDEX,
+    };
     use crate::core::{DataValue, ObjectiveDirection};
-    use crate::core::test_utils::{assert_approx_array_eq, individuals_from_obj_values_dummy};
+    use crate::core::test_utils::{
+        assert_approx_array_eq, individuals_from_obj_values_dummy, read_csv_test_file,
+    };
     use crate::utils::{DasDarren1998, NumberOfPartitions};
 
     #[test]
@@ -185,5 +192,69 @@ mod test {
             0.1414213562,
             epsilon = 0.0001
         );
+    }
+
+    #[test]
+    /// Test association with DTLZ1 problem from randomly-generated objectives.
+    fn test_dtlz1_problem() {
+        let test_path = Path::new(&env::current_dir().unwrap())
+            .join("src")
+            .join("algorithms")
+            .join("nsga3")
+            .join("test_data");
+
+        // Raw objectives
+        let obj_file = test_path.join("Normalise_objectives.csv");
+        let objectives = read_csv_test_file(&obj_file, None);
+        let directions = vec![ObjectiveDirection::Minimise; objectives[0].len()];
+
+        // Ref points
+        let ref_point_file = test_path.join("Associate_ref_points.csv");
+        let ref_points = read_csv_test_file(&ref_point_file, None);
+
+        // Expected associations
+        let ind_file = test_path.join("Associate_individuals.csv");
+        let expected_ind_assoc = read_csv_test_file(&ind_file, Some(false));
+
+        let mut individuals = individuals_from_obj_values_dummy(&objectives, &directions, None);
+        let mut ideal_point = vec![f64::INFINITY; 3];
+        let mut n = Normalise::new(&mut ideal_point, &mut individuals).unwrap();
+        n.calculate().unwrap();
+
+        // associate
+        let mut a = AssociateToRefPoint::new(&mut individuals, &ref_points).unwrap();
+        a.calculate().unwrap();
+
+        // test association with selected and potential individuals (from S_t)
+        for obj_data in expected_ind_assoc {
+            let expected_ref_point_index = obj_data[0] as usize;
+            let expected_objective = &obj_data[1..];
+
+            // find corresponding objective
+            let mut found_any = false;
+            for ind in individuals.iter() {
+                let found_ref_point_index =
+                    ind.get_data(REF_POINT_INDEX).unwrap().as_usize().unwrap();
+                let data = ind.get_data(NORMALISED_OBJECTIVE_KEY).unwrap();
+                let found_objective = data.as_f64_vec().unwrap();
+
+                let found = expected_objective
+                    .iter()
+                    .zip(found_objective)
+                    .all(|(o, io)| approx_eq!(f64, *o, *io, epsilon = 0.00001));
+                // check index
+                if found {
+                    found_any = true;
+                    assert_eq!(expected_ref_point_index, found_ref_point_index, "Expected reference point index {expected_ref_point_index} for {:?} but found {found_ref_point_index}", found_objective);
+                    break;
+                }
+            }
+            if !found_any {
+                panic!(
+                    "Cannot find objective {:?} in any individuals",
+                    expected_objective
+                );
+            }
+        }
     }
 }

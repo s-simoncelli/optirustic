@@ -256,7 +256,8 @@ mod test {
     }
 
     #[test]
-    fn test_normalisation() {
+    /// Test association with DTLZ1 problem from randomly-generated objectives.
+    fn test_normalisation_dtlz1() {
         let test_path = Path::new(&env::current_dir().unwrap())
             .join("src")
             .join("algorithms")

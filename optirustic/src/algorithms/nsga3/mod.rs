@@ -20,8 +20,7 @@ use crate::operators::{
     Selector, SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
 };
 use crate::utils::{
-    DasDarren1998, fast_non_dominated_sort, NumberOfPartitions, perpendicular_distance, solve_linear_system,
-    vector_max, vector_min,
+    DasDarren1998, fast_non_dominated_sort, NumberOfPartitions, vector_max, vector_min,
 };
 
 mod associate;
