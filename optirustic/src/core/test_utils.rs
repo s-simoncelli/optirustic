@@ -52,7 +52,8 @@ pub(crate) fn check_value_in_range(vector: &[f64], range: &Range<f64>) -> Vec<f6
 /// * `loose_range`: The loose bound.
 /// * `max_outside_strict_range`: The maximum item numbers that can be outside the `strict_range`.
 ///
-/// returns: `(Vec<f64>, Range<f64>)` The values outside the range in the tuple second item.
+/// returns: `(Vec<f64>, Range<f64>, String)` The values outside the range, the breached range
+/// bounds and the name of the breached range.
 
 pub(crate) fn check_exact_value(
     vector: &[f64],
