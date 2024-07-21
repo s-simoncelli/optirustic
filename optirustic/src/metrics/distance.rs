@@ -328,7 +328,7 @@ mod test {
     use float_cmp::assert_approx_eq;
 
     use crate::core::ObjectiveDirection;
-    use crate::core::utils::individuals_from_obj_values_dummy;
+    use crate::core::test_utils::individuals_from_obj_values_dummy;
     use crate::metrics::Distance;
 
     #[test]

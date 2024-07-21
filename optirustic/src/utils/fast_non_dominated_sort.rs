@@ -160,7 +160,7 @@ pub fn fast_non_dominated_sort(
 #[cfg(test)]
 mod test {
     use crate::core::{DataValue, ObjectiveDirection};
-    use crate::core::utils::individuals_from_obj_values_dummy;
+    use crate::core::test_utils::individuals_from_obj_values_dummy;
     use crate::utils::fast_non_dominated_sort;
     use crate::utils::fast_non_dominated_sort::RANK_KEY;
 

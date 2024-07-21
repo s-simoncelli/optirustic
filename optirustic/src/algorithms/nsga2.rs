@@ -443,7 +443,7 @@ mod test_sorting {
     use crate::algorithms::NSGA2;
     use crate::algorithms::nsga2::CROWDING_DIST_KEY;
     use crate::core::{DataValue, Individuals, ObjectiveDirection};
-    use crate::core::utils::individuals_from_obj_values_dummy;
+    use crate::core::test_utils::individuals_from_obj_values_dummy;
 
     #[test]
     /// Test the crowding distance algorithm (not enough points).

@@ -1,22 +1,19 @@
-#[cfg(test)]
 use std::fs::read_to_string;
-#[cfg(test)]
 use std::ops::Range;
-#[cfg(test)]
 use std::path::PathBuf;
+use std::sync::Arc;
 
-#[cfg(test)]
-use float_cmp::{approx_eq, F64Margin};
+use float_cmp::approx_eq;
 
-#[cfg(test)]
+use crate::core::{
+    BoundedNumber, Individual, Objective, ObjectiveDirection, Problem, utils, VariableType,
+};
+use crate::core::VariableValue::Real;
+
 /// Compare two arrays of f64
 pub(crate) fn assert_approx_array_eq(calculated_values: &[f64], expected_values: &[f64]) {
-    let margins = F64Margin {
-        epsilon: 2.0,
-        ulps: (f64::EPSILON * 2.0) as i64,
-    };
     for (i, (calculated, expected)) in calculated_values.iter().zip(expected_values).enumerate() {
-        if !approx_eq!(f64, *calculated, *expected, margins) {
+        if !approx_eq!(f64, *calculated, *expected, epsilon = 0.00001) {
             panic!(
                 r#"assertion failed on item #{i:?}
                     actual: `{calculated:?}`,
@@ -34,7 +31,7 @@ pub(crate) fn assert_approx_array_eq(calculated_values: &[f64], expected_values:
 /// * `range`: The range.
 ///
 /// returns: `Vec<f64>` The values outside the range.
-#[cfg(test)]
+
 pub(crate) fn check_value_in_range(vector: &[f64], range: &Range<f64>) -> Vec<f64> {
     vector
         .iter()
@@ -56,7 +53,7 @@ pub(crate) fn check_value_in_range(vector: &[f64], range: &Range<f64>) -> Vec<f6
 /// * `max_outside_strict_range`: The maximum item numbers that can be outside the `strict_range`.
 ///
 /// returns: `(Vec<f64>, Range<f64>)` The values outside the range in the tuple second item.
-#[cfg(test)]
+
 pub(crate) fn check_exact_value(
     vector: &[f64],
     strict_range: &Range<f64>,
@@ -76,21 +73,90 @@ pub(crate) fn check_exact_value(
     }
 }
 
-#[cfg(test)]
 /// Read a CSV file with objectives or variables
-pub(crate) fn read_csv_test_file(file_name: &PathBuf) -> Vec<Vec<f64>> {
+pub(crate) fn read_csv_test_file(
+    file_name: &PathBuf,
+    skip_first_col: Option<bool>,
+) -> Vec<Vec<f64>> {
+    let skip_first_col = skip_first_col.unwrap_or(true);
     let mut values: Vec<Vec<f64>> = vec![];
-    for (li, line) in read_to_string(file_name).unwrap().lines().enumerate() {
+    for (li, line) in read_to_string(file_name)
+        .unwrap_or_else(|_| panic!("Cannot find {:?}", file_name))
+        .lines()
+        .enumerate()
+    {
         if li == 0 {
             continue;
         }
         let point = line
             .split(',')
-            .skip(1)
+            .skip(if skip_first_col { 1 } else { 0 })
             .map(|v| v.to_string().parse::<f64>())
             .collect::<Result<Vec<f64>, _>>()
             .unwrap();
         values.push(point);
     }
     values
+}
+
+/// Create the individuals for a `N`-objective dummy problem, where `N` is the number of items in
+/// the arrays of `objective_values`.
+///
+/// # Arguments
+///
+/// * `objective_values`: The objective values to set on the individuals. A number of individuals
+/// equal to this vector size will be created.
+/// * `objective_direction`: The `N` directions for each objective.
+///
+/// returns: `Vec<Individual>`
+
+pub(crate) fn individuals_from_obj_values_dummy(
+    objective_values: &[Vec<f64>],
+    objective_direction: &[ObjectiveDirection],
+    variable_values: Option<&[Vec<f64>]>,
+) -> Vec<Individual> {
+    // check lengths
+    if objective_values.first().unwrap().len() != objective_direction.len() {
+        panic!("The objective values must match the direction vector length")
+    }
+
+    let mut objectives = Vec::new();
+    for (i, direction) in objective_direction.iter().enumerate() {
+        objectives.push(Objective::new(format!("obj{i}").as_str(), *direction));
+    }
+    let variables = if let Some(variable_values) = variable_values {
+        (0..variable_values.len())
+            .map(|i| {
+                VariableType::Real(BoundedNumber::new(format!("X{i}").as_str(), 0.0, 2.0).unwrap())
+            })
+            .collect()
+    } else {
+        vec![VariableType::Real(
+            BoundedNumber::new("X", 0.0, 2.0).unwrap(),
+        )]
+    };
+    let problem =
+        Arc::new(Problem::new(objectives, variables, None, utils::dummy_evaluator()).unwrap());
+
+    // create the individuals
+    let mut individuals: Vec<Individual> = Vec::new();
+    for (ind_idx, data) in objective_values.iter().enumerate() {
+        let mut individual = Individual::new(problem.clone());
+        for (oi, obj_value) in data.iter().enumerate() {
+            individual
+                .update_objective(format!("obj{oi}").as_str(), *obj_value)
+                .unwrap();
+        }
+        if let Some(variable_values) = variable_values {
+            for (vi, var_value) in variable_values[ind_idx].iter().enumerate() {
+                individual
+                    .update_variable(format!("X{vi}").as_str(), Real(*var_value))
+                    .unwrap();
+            }
+        }
+
+        individuals.push(individual);
+    }
+
+    individuals
 }

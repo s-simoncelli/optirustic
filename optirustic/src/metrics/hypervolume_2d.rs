@@ -139,9 +139,8 @@ mod test {
         BoundedNumber, Constraint, Individual, Objective, ObjectiveDirection, Problem,
         RelationalOperator, VariableType, VariableValue,
     };
-    use crate::core::utils::{
-        dummy_evaluator, individuals_from_obj_values_dummy, individuals_from_obj_values_ztd1,
-    };
+    use crate::core::test_utils::individuals_from_obj_values_dummy;
+    use crate::core::utils::{dummy_evaluator, individuals_from_obj_values_ztd1};
     use crate::metrics::hypervolume_2d::HyperVolume2D;
     use crate::metrics::test_utils::parse_pagmo_test_data_file;
 

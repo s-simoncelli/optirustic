@@ -103,7 +103,7 @@ mod test {
     use float_cmp::approx_eq;
 
     use crate::core::ObjectiveDirection;
-    use crate::core::utils::individuals_from_obj_values_dummy;
+    use crate::core::test_utils::individuals_from_obj_values_dummy;
     use crate::metrics::hypervolume_while_2012::HyperVolumeWhile2012;
     use crate::metrics::test_utils::parse_pagmo_test_data_file;
 

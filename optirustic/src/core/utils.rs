@@ -5,13 +5,9 @@ use std::sync::Arc;
 use rand::{RngCore, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-#[cfg(test)]
-use crate::core::{BoundedNumber, Objective, ObjectiveDirection, Problem, VariableType};
 use crate::core::{EvaluationResult, Evaluator, Individual};
 #[cfg(test)]
 use crate::core::problem::builtin_problems::ztd1;
-#[cfg(test)]
-use crate::core::VariableValue::Real;
 
 /// Get the random number generator. If no seed is provided, this randomly generated.
 ///
@@ -46,67 +42,6 @@ pub fn dummy_evaluator() -> Box<dyn Evaluator> {
     }
 
     Box::new(UserEvaluator)
-}
-
-/// Create the individuals for a `N`-objective dummy problem, where `N` is the number of items in
-/// the arrays of `objective_values`.
-///
-/// # Arguments
-///
-/// * `objective_values`: The objective values to set on the individuals. A number of individuals
-/// equal to this vector size will be created.
-/// * `objective_direction`: The `N` directions for each objective.
-///
-/// returns: `Vec<Individual>`
-#[cfg(test)]
-pub(crate) fn individuals_from_obj_values_dummy(
-    objective_values: &[Vec<f64>],
-    objective_direction: &[ObjectiveDirection],
-    variable_values: Option<&[Vec<f64>]>,
-) -> Vec<Individual> {
-    // check lengths
-    if objective_values.first().unwrap().len() != objective_direction.len() {
-        panic!("The objective values must match the direction vector length")
-    }
-
-    let mut objectives = Vec::new();
-    for (i, direction) in objective_direction.iter().enumerate() {
-        objectives.push(Objective::new(format!("obj{i}").as_str(), *direction));
-    }
-    let variables = if let Some(variable_values) = variable_values {
-        (0..variable_values.len())
-            .map(|i| {
-                VariableType::Real(BoundedNumber::new(format!("X{i}").as_str(), 0.0, 2.0).unwrap())
-            })
-            .collect()
-    } else {
-        vec![VariableType::Real(
-            BoundedNumber::new("X", 0.0, 2.0).unwrap(),
-        )]
-    };
-    let problem = Arc::new(Problem::new(objectives, variables, None, dummy_evaluator()).unwrap());
-
-    // create the individuals
-    let mut individuals: Vec<Individual> = Vec::new();
-    for (ind_idx, data) in objective_values.iter().enumerate() {
-        let mut individual = Individual::new(problem.clone());
-        for (oi, obj_value) in data.iter().enumerate() {
-            individual
-                .update_objective(format!("obj{oi}").as_str(), *obj_value)
-                .unwrap();
-        }
-        if let Some(variable_values) = variable_values {
-            for (vi, var_value) in variable_values[ind_idx].iter().enumerate() {
-                individual
-                    .update_variable(format!("X{vi}").as_str(), Real(*var_value))
-                    .unwrap();
-            }
-        }
-
-        individuals.push(individual);
-    }
-
-    individuals
 }
 
 /// Build the vectors with the individuals and assign the objective values for a ZTD1 problem
