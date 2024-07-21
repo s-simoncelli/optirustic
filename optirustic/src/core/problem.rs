@@ -5,6 +5,7 @@ use std::fmt::{Debug, Display, Formatter};
 use serde::{Deserialize, Serialize};
 
 use crate::core::{Constraint, Individual, Objective, ObjectiveDirection, OError, VariableType};
+use crate::utils::has_unique_elements_by_key;
 
 /// The struct containing the results of the evaluation function. This is the output of
 /// [`Evaluator::evaluate`], the user-defined function should produce. When the algorithm generates
@@ -175,10 +176,21 @@ impl Problem {
         if objectives.is_empty() {
             return Err(OError::NoObjective);
         }
+        if !has_unique_elements_by_key(&objectives, |o| o.name()) {
+            return Err(OError::DuplicatedName("objective".to_string()));
+        }
+
         if variable_types.is_empty() {
             return Err(OError::NoVariables);
         }
+        if !has_unique_elements_by_key(&variable_types, |v| v.name()) {
+            return Err(OError::DuplicatedName("variable".to_string()));
+        }
+
         let constraints = constraints.unwrap_or_default();
+        if !has_unique_elements_by_key(&constraints, |c| c.name()) {
+            return Err(OError::DuplicatedName("constraint".to_string()));
+        }
 
         Ok(Self {
             variables: variable_types,
@@ -882,11 +894,11 @@ mod test {
             .join("core")
             .join("test_data");
         let var_file = test_path.join("DTLZ1_variables.csv");
-        let obj_file = test_path.join("DTLZ1_variables.csv");
+        let obj_file = test_path.join("DTLZ1_objectives.csv");
 
         // randomly generated variables
-        let all_vars = read_csv_test_file(&var_file);
-        let all_expected_objectives = read_csv_test_file(&obj_file);
+        let all_vars = read_csv_test_file(&var_file, None);
+        let all_expected_objectives = read_csv_test_file(&obj_file, None);
 
         for (expected_objectives, vars) in all_expected_objectives.iter().zip(all_vars) {
             let problem = Arc::new(dtlz1(vars.len(), 3).unwrap());

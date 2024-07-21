@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::hash::{BuildHasher, Hash};
 
 pub use algebra::{
@@ -159,6 +159,27 @@ where
 
     let (_, (index, x)) = vector.iter().enumerate().map(key(f)).min_by(compare)?;
     Some((index, x))
+}
+
+/// Search for an element in an iterator, returning its index.
+///
+/// # Arguments
+///
+/// * `vector`: The vector.
+/// * `item`: The item to look for.
+///
+/// returns: `Option<usize>`
+pub fn index_of<I: Sized + PartialEq>(vector: &[I], item: &I) -> Option<usize> {
+    vector.iter().position(|i| i == item)
+}
+
+pub fn has_unique_elements_by_key<I: Sized, J: Sized + Ord, F: Fn(&I) -> J>(
+    vector: &[I],
+    f: F,
+) -> bool {
+    let values: Vec<J> = vector.iter().map(f).collect();
+    let mut unique = BTreeSet::new();
+    values.iter().all(move |x| unique.insert(x))
 }
 
 #[cfg(test)]
