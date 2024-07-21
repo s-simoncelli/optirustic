@@ -16,8 +16,7 @@ use crate::utils::{LinearSolverTolerance, solve_linear_system, vector_max, vecto
 ///    evolution.
 ///  - store the normalised objective in the objective space, with respect to the new ideal point
 ///    and hyper-plane intercepts, in the "translated_objective" data key in each [`Individual`].
-///    To retrieve those, use [`NSGA3::get_normalised_objectives()`].
-pub struct Normalise<'a> {
+pub(crate) struct Normalise<'a> {
     /// The coordinate of the ideal point from the previous evolution.
     ideal_point: &'a mut Vec<f64>,
     /// The individuals that need normalisation.

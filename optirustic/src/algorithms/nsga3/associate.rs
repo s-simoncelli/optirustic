@@ -9,7 +9,7 @@ use crate::utils::{argmin, perpendicular_distance};
 
 /// This implements "Algorithm 3" in the paper which associates each individual's normalised
 /// objectives to a reference point.
-pub struct AssociateToRefPoint<'a> {
+pub(crate) struct AssociateToRefPoint<'a> {
     /// The individuals containing the normalised objectives.
     individuals: &'a mut [Individual],
     /// The reference points
@@ -117,9 +117,9 @@ mod test {
 
     use float_cmp::{approx_eq, assert_approx_eq};
 
-    use crate::algorithms::{AssociateToRefPoint, Normalise};
     use crate::algorithms::nsga3::{
-        MIN_DISTANCE, NORMALISED_OBJECTIVE_KEY, REF_POINT, REF_POINT_INDEX,
+        AssociateToRefPoint, MIN_DISTANCE, Normalise, NORMALISED_OBJECTIVE_KEY, REF_POINT,
+        REF_POINT_INDEX,
     };
     use crate::core::{DataValue, ObjectiveDirection};
     use crate::core::test_utils::{

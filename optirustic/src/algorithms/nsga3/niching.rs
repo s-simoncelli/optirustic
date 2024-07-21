@@ -12,7 +12,7 @@ use crate::utils::{argmin_by, index_of};
 
 /// This implements "Algorithm 4" in the paper which adds individuals from the last front to the new
 /// population based on the reference point association and minimum distance.
-pub struct Niching<'a> {
+pub(crate) struct Niching<'a> {
     /// The population being created at the current evolution with the new selected individuals.
     /// This is `$P_{t+1}$` from the paper and is populated with individuals from [`self.potential_individuals`].
     selected_individuals: &'a mut Population,

@@ -8,11 +8,10 @@ use log::{debug, info, warn};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 
-pub use associate::AssociateToRefPoint;
-pub use niching::Niching;
-pub use normalise::Normalise;
-
 use crate::algorithms::{Algorithm, ExportHistory, NSGA2, StoppingConditionType};
+use crate::algorithms::nsga3::associate::AssociateToRefPoint;
+use crate::algorithms::nsga3::niching::Niching;
+use crate::algorithms::nsga3::normalise::Normalise;
 use crate::core::{DataValue, Individual, OError, Population, Problem};
 use crate::core::utils::get_rng;
 use crate::operators::{

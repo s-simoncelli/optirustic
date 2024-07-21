@@ -115,7 +115,7 @@ impl BinaryComparisonOperator for ParetoConstrainedDominance {
 ///    ${distance}_i > {distance}_j$
 /// where `rank_x` is the rank from the fast non-dominated sort algorithm (see
 /// [`crate::utils::fast_non_dominated_sort()`]) and `{distance}_x` is the crowding distance using
-/// neighboring solutions (see [`crate::algorithms::NSGA2::set_crowding_distance`]).
+/// neighboring solutions.
 ///
 /// Implemented based on:
 /// > K. Deb, A. Pratap, S. Agarwal and T. Meyarivan, "A fast and elitist multi-objective genetic
