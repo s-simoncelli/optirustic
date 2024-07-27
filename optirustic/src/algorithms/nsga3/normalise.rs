@@ -23,6 +23,15 @@ pub(crate) struct Normalise<'a> {
     individuals: &'a mut [Individual],
 }
 
+/// Calculated points used in the NSGA3 normalisation algorithm.
+#[allow(dead_code)]
+pub(crate) struct NormalisationPoints {
+    /// The extreme points used to calculate the hyper-plane intercepts.
+    pub(crate) extreme_points: Vec<Vec<f64>>,
+    /// The objective intercepts of the plane.
+    pub(crate) intercepts: Vec<f64>,
+}
+
 impl<'a> Normalise<'a> {
     /// Build the [`Normalise`] struct.
     ///
@@ -53,13 +62,15 @@ impl<'a> Normalise<'a> {
     /// translated with respect to the new ideal point and then scaled using the intercepts of the
     /// linear hyper-plane passing through the extreme points.
     ///
+    /// This updates the ideal point and stores the normalised objective in the [`Individual`]'s
+    /// data.
+    ///
     /// # Arguments
     ///
     /// * `individuals`: The individuals with the objectives
     ///
-    /// returns: `()`: this only updates the ideal point and stores the normalised objective in the
-    /// [`Individual`]'s data.
-    pub fn calculate(&mut self) -> Result<(), OError> {
+    /// returns: `NormalisationPoints`: The points calculated in the normalisation.
+    pub(crate) fn calculate(&mut self) -> Result<NormalisationPoints, OError> {
         // Step 2 - calculate the new ideal point (based on paragraph IV-C), as the minimum value
         // for each objective from the start of the algorithm evolution up to the current evolution
         // step.
@@ -143,7 +154,10 @@ impl<'a> Normalise<'a> {
             individual.set_data(NORMALISED_OBJECTIVE_KEY, DataValue::Vector(new_o));
         }
 
-        Ok(())
+        Ok(NormalisationPoints {
+            extreme_points,
+            intercepts,
+        })
     }
 
     /// Use the least square method to calculate the coefficients of the equation of the plane
@@ -251,7 +265,7 @@ mod test {
         let intercepts = Normalise::calculate_plane_intercepts(&points)
             .unwrap()
             .unwrap();
-        assert_approx_array_eq(&intercepts, &[3.38096778, 1.61009025, 7.58962871]);
+        assert_approx_array_eq(&intercepts, &[3.38096778, 1.61009025, 7.58962871], None);
     }
 
     #[test]
@@ -271,21 +285,31 @@ mod test {
         // Expected objectives
         let n_obj_file = test_path.join("Normalise_normalised_objectives.csv");
         let expected_objectives = read_csv_test_file(&n_obj_file, None);
-        let expected_ideal_point = [6.442876, 1.481285, 17.219842];
+        let expected_ideal_point = [1.346989, 0.391142, 2.169983];
+        let expected_extreme_points = [
+            [203.1664, 2.5232, 4.4077],
+            [29.6926, 60.5373, 29.7112],
+            [1.7476, 2.7393, 107.6637],
+        ];
 
         let mut individuals = individuals_from_obj_values_dummy(&objectives, &directions, None);
         let mut ideal_point = vec![f64::INFINITY; 3];
         let mut n = Normalise::new(&mut ideal_point, &mut individuals).unwrap();
-        n.calculate().unwrap();
+        let tmp_points = n.calculate().unwrap();
+
+        // check extreme points
+        for (vi, vec) in tmp_points.extreme_points.iter().enumerate() {
+            assert_approx_array_eq(vec, expected_extreme_points.get(vi).unwrap(), Some(0.001));
+        }
 
         // check ideal point calculation
-        assert_approx_array_eq(&ideal_point, &expected_ideal_point);
+        assert_approx_array_eq(&ideal_point, &expected_ideal_point, None);
 
         // check normalised objectives
         for (ind, expected) in individuals.iter().zip(expected_objectives) {
             let data = ind.get_data(NORMALISED_OBJECTIVE_KEY).unwrap();
             let calculated = data.as_f64_vec().unwrap();
-            assert_approx_array_eq(calculated, &expected);
+            assert_approx_array_eq(calculated, &expected, None);
         }
     }
 }
