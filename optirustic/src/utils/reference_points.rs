@@ -464,7 +464,7 @@ mod test {
         assert_eq!(expected_weights.len(), weights.len());
 
         for (wi, exp_weight_coordinates) in expected_weights.iter().enumerate() {
-            assert_approx_array_eq(&weights[wi], exp_weight_coordinates);
+            assert_approx_array_eq(&weights[wi], exp_weight_coordinates, None);
         }
     }
 
@@ -535,7 +535,7 @@ mod test {
         assert_eq!(expected_weights.len(), weights.len());
 
         for (wi, exp_weight_coordinates) in expected_weights.iter().enumerate() {
-            assert_approx_array_eq(&weights[wi], exp_weight_coordinates);
+            assert_approx_array_eq(&weights[wi], exp_weight_coordinates, None);
         }
     }
 
@@ -580,7 +580,7 @@ mod test {
         assert_eq!(expected_weights.len(), weights.len());
 
         for (wi, exp_weight_coordinates) in expected_weights.iter().enumerate() {
-            assert_approx_array_eq(&weights[wi], exp_weight_coordinates);
+            assert_approx_array_eq(&weights[wi], exp_weight_coordinates, None);
         }
     }
 }

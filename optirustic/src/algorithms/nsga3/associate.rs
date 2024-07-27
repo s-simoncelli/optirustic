@@ -161,6 +161,7 @@ mod test {
                 .as_f64_vec()
                 .unwrap(),
             &[1.0, 0.0, 0.0],
+            None,
         );
         assert_approx_eq!(
             f64,
@@ -181,6 +182,7 @@ mod test {
                 .as_f64_vec()
                 .unwrap(),
             &[0.0, 1.0, 0.0],
+            None,
         );
         assert_approx_eq!(
             f64,

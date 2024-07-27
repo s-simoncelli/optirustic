@@ -176,7 +176,7 @@ mod tests {
         let x = solve_linear_system(&a, &b, Some(LinearSolverTolerance::default())).unwrap();
 
         let expected = vec![5.0, -3.0, 2.0];
-        assert_approx_array_eq(&x, &expected);
+        assert_approx_array_eq(&x, &expected, None);
     }
 
     #[test]
@@ -230,6 +230,6 @@ mod tests {
             .iter()
             .map(|l| perpendicular_distance(l, &point).unwrap())
             .collect::<Vec<f64>>();
-        assert_approx_array_eq(&distances, &expected_distance);
+        assert_approx_array_eq(&distances, &expected_distance, None);
     }
 }

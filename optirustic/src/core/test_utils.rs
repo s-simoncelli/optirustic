@@ -11,9 +11,14 @@ use crate::core::{
 use crate::core::VariableValue::Real;
 
 /// Compare two arrays of f64
-pub(crate) fn assert_approx_array_eq(calculated_values: &[f64], expected_values: &[f64]) {
+pub(crate) fn assert_approx_array_eq(
+    calculated_values: &[f64],
+    expected_values: &[f64],
+    epsilon: Option<f64>,
+) {
+    let epsilon = epsilon.unwrap_or(0.00001);
     for (i, (calculated, expected)) in calculated_values.iter().zip(expected_values).enumerate() {
-        if !approx_eq!(f64, *calculated, *expected, epsilon = 0.00001) {
+        if !approx_eq!(f64, *calculated, *expected, epsilon = epsilon) {
             panic!(
                 r#"assertion failed on item #{i:?}
                     actual: `{calculated:?}`,
