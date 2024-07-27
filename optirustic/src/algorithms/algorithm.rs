@@ -1,7 +1,8 @@
 use std::{fmt, fs};
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
-use std::path::PathBuf;
+use std::ffi::OsStr;
+use std::fmt::{Debug, Display, Formatter};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -31,7 +32,7 @@ pub struct Elapsed {
 /// The struct used to export an algorithm serialised data.
 pub struct AlgorithmSerialisedExport<T>
 where
-    T: Serialize + Clone + DeserializeOwned,
+    T: Serialize + Clone + DeserializeOwned + Debug,
 {
     /// Specific options for an algorithm.
     pub options: T,
@@ -85,7 +86,7 @@ impl AlgorithmExport {
 /// an algorithm to save objectives, constraints and solutions to a file each time the generation
 /// counter in [`Algorithm::generation`] increases by a certain step provided in `generation_step`.
 /// Exporting history may be useful to track convergence and inspect an algorithm evolution.
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ExportHistory {
     /// Export the algorithm data each time the generation counter in [`Algorithm::generation`]
     /// increases by the provided step.
@@ -132,7 +133,7 @@ impl Display for AlgorithmExport {
 }
 
 /// The trait to use to implement an algorithm.
-pub trait Algorithm<T: Serialize + Clone + DeserializeOwned>: Display {
+pub trait Algorithm<T: Serialize + Clone + DeserializeOwned + Debug>: Display {
     /// Initialise the algorithm.
     ///
     /// return: `Result<(), OError>`
@@ -358,7 +359,7 @@ pub trait Algorithm<T: Serialize + Clone + DeserializeOwned>: Display {
         let [hours, minutes, seconds] = self.elapsed();
         AlgorithmExport {
             problem: self.problem(),
-            individuals: self.population().0.clone(),
+            individuals: self.population().individuals().to_vec(),
             generation: self.generation(),
             algorithm: self.name(),
             took: Elapsed {
@@ -402,12 +403,14 @@ pub trait Algorithm<T: Serialize + Clone + DeserializeOwned>: Display {
         })?;
 
         let mut file = destination.to_owned();
+
         file.push(format!(
             "{}_{}_gen{}.json",
             file_prefix,
             self.name(),
             self.generation()
         ));
+        info!("Saving JSON file {:?}", file);
         fs::write(file, data).map_err(|e| {
             OError::AlgorithmExport(format!(
                 "The following error occurred while exporting the history JSON file: {e}",
@@ -423,17 +426,60 @@ pub trait Algorithm<T: Serialize + Clone + DeserializeOwned>: Display {
     /// * `file`: The path to the JSON file.
     ///
     /// returns: `Result<AlgorithmSerialisedExport<T>, OError>`
-    fn read_results(file: &str) -> Result<AlgorithmSerialisedExport<T>, OError> {
+    fn read_results(file: &Path) -> Result<AlgorithmSerialisedExport<T>, OError> {
         let file_path = PathBuf::from(file);
+        let file_str = file.to_str().unwrap();
         if !file_path.exists() {
-            return Err(OError::Generic(format!("The file '{file}' does not exist")));
+            return Err(OError::Generic(format!(
+                "The file '{file_str}' does not exist"
+            )));
         }
-        let data = fs::File::open(file_path)
-            .map_err(|e| OError::Generic(format!("Cannot read the file '{file}' because: {e}")))?;
+        let data = fs::File::open(file_path).map_err(|e| {
+            OError::Generic(format!("Cannot read the file '{file_str}' because: {e}"))
+        })?;
 
         let history: AlgorithmSerialisedExport<T> = serde_json::from_reader(data).map_err(|e| {
-            OError::Generic(format!("Cannot parse the JSON file '{file}' because: {e}"))
+            OError::Generic(format!(
+                "Cannot parse the JSON file '{file_str}' because: {e}"
+            ))
         })?;
         Ok(history)
+    }
+
+    /// Generate and save a chart with the individual's objectives at the last generation.
+    ///
+    /// # Arguments
+    ///
+    /// * `_destination`: The folder where to save the image or images.
+    /// * `_image_name`: The name of the file(s).
+    ///
+    /// returns: `Result<(), OError>`
+    #[cfg(feature = "plot")]
+    fn plot_objectives<P: AsRef<OsStr>>(
+        &self,
+        _destination: P,
+        _image_name: &str,
+    ) -> Result<(), OError> {
+        Err(OError::Generic("Not available".to_string()))
+    }
+
+    /// Generate and save a chart with the individual's objectives taken from a JSOn file previously
+    /// exported with [`Self::save_to_json`].
+    ///
+    /// # Arguments
+    ///
+    /// * `_file`: The path to the JSON file.
+    /// * `_destination`: The folder where to save the image or images. If `None` the file is saved
+    /// in the same folder as the JSON file.
+    /// * `_image_name`: The name of the file(s).
+    ///
+    /// returns: `Result<(), OError>`
+    #[cfg(feature = "plot")]
+    fn plot_from_result_file(
+        _file: &Path,
+        _destination: Option<&Path>,
+        _image_name: &str,
+    ) -> Result<(), OError> {
+        Err(OError::Generic("Not available".to_string()))
     }
 }

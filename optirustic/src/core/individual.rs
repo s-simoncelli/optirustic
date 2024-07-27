@@ -483,7 +483,7 @@ impl Individual {
 
 /// The population with the solutions.
 #[derive(Clone, Default, Debug)]
-pub struct Population(pub Vec<Individual>);
+pub struct Population(Vec<Individual>);
 
 impl Population {
     /// Initialise a population with no individuals.
