@@ -18,9 +18,7 @@ use crate::operators::{
     Crossover, Mutation, ParetoConstrainedDominance, PolynomialMutation, PolynomialMutationArgs,
     Selector, SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
 };
-use crate::utils::{
-    DasDarren1998, fast_non_dominated_sort, NumberOfPartitions, vector_max, vector_min,
-};
+use crate::utils::{DasDarren1998, fast_non_dominated_sort, NumberOfPartitions};
 
 mod associate;
 mod niching;
@@ -80,7 +78,7 @@ pub struct NSGA3Arg {
     /// a given step. This is useful to track convergence and inspect an algorithm evolution.
     pub export_history: Option<ExportHistory>,
     /// The seed used in the random number generator (RNG). You can specify a seed in case you want
-    /// to try to reproduce results. NSGA2 is a stochastic algorithm that relies on a RNG at
+    /// to try to reproduce results. NSGA2 is a stochastic algorithm that relies on an RNG at
     /// different steps (when population is initially generated, during selection, crossover and
     /// mutation) and, as such, may lead to slightly different solutions. The seed is randomly
     /// picked if this is `None`.
@@ -375,7 +373,7 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
                     new_population.len()
                 );
                 // this is F_l
-                last_front = Some(front.clone());
+                last_front = Some(front);
                 break;
             }
         }
@@ -475,6 +473,10 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
         data.insert(
             "reference_points".to_string(),
             DataValue::DataVector(points),
+        );
+        data.insert(
+            "ideal_point".to_string(),
+            DataValue::Vector(self.ideal_point.clone()),
         );
         Some(data)
     }
