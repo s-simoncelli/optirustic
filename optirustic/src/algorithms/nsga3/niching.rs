@@ -50,15 +50,16 @@ impl<'a> Niching<'a> {
         rho_j: &'a mut HashMap<usize, usize>,
         rng: &'a mut Box<dyn RngCore>,
     ) -> Result<Self, OError> {
+        let name = "NSGA3-Niching".to_string();
         if rho_j.is_empty() {
             return Err(OError::AlgorithmRun(
-                "NSGA3-Niching".to_string(),
+                name,
                 "The rho_j set is empty".to_string(),
             ));
         }
         if potential_individuals.len() < number_of_individuals_to_add {
             return Err(OError::AlgorithmRun(
-                "NSGA3-Niching".to_string(),
+                name,
                 format!("The number of individuals to add ({number_of_individuals_to_add}) is larger than the number of potential individuals ({})", potential_individuals.len()),
             ));
         }
@@ -117,12 +118,7 @@ impl<'a> Niching<'a> {
 
             // step 4 - get reference point with minimum association counter
             let j_hat = match j_min_set.len() {
-                0 => {
-                    return Err(OError::AlgorithmRun(
-                        name.clone(),
-                        "Empty j_min_set set".to_string(),
-                    ))
-                }
+                0 => return Err(OError::AlgorithmRun(name, "Empty j_min_set".to_string())),
                 1 => *j_min_set.first().unwrap(),
                 // select point randomly when set size is > 1
                 _ => *j_min_set.choose(self.rng.as_mut()).unwrap(),
@@ -142,23 +138,31 @@ impl<'a> Niching<'a> {
 
             // step 6 - select points from front F_l
             if !i_j.is_empty() {
-                let (new_ind_index, method) = if min_rho_j == 0 {
-                    // step 7 - no point from P_{t+1} is associated with the selected reference point
-                    // j_hat. There's at least one point from F_l that can be linked (I_j is not empty)
+                let (_, ind) = argmin_by(&i_j, |(_, ind)| {
+                    ind.get_data(MIN_DISTANCE).unwrap().as_real().unwrap()
+                })
+                .unwrap();
+                let new_ind_index = index_of(self.potential_individuals, ind);
+                let method = "min_distance";
 
-                    // step 8 - find individual in F_l with the shortest distance
-                    let (ij_ind_index, _) = argmin_by(&i_j, |(_, ind)| {
-                        ind.get_data(MIN_DISTANCE).unwrap().as_real().unwrap()
-                    })
-                    .unwrap();
-                    let new_ind_index = index_of(self.potential_individuals, i_j[ij_ind_index]);
-                    (new_ind_index, "min_distance")
-                } else {
-                    // step 10 - choose random point from F_l
-                    let ind = i_j.choose(self.rng).unwrap();
-                    let new_ind_index = index_of(self.potential_individuals, ind);
-                    (new_ind_index, "random")
-                };
+                // let (new_ind_index, method) = if min_rho_j == 0 {
+                //     // step 7 - no point from P_{t+1} is associated with the selected reference point
+                //     // j_hat. There's at least one point from F_l that can be linked (I_j is not empty)
+                //
+                //     // step 8 - find individual in F_l with the shortest distance
+                //     let (_, ind) = argmin_by(&i_j, |(_, ind)| {
+                //         ind.get_data(MIN_DISTANCE).unwrap().as_real().unwrap()
+                //     })
+                //     .unwrap();
+                //     let new_ind_index = index_of(self.potential_individuals, ind);
+                //     (new_ind_index, "min_distance")
+                // } else {
+                //     // step 10 - choose random point from F_l
+                //     let ind = i_j.choose(self.rng).unwrap();
+                //     let new_ind_index = index_of(self.potential_individuals, ind);
+                //     (new_ind_index, "random")
+                // };
+
                 // step 12a - mark reference point as associated to a new F_l's individual
                 *self.rho_j.get_mut(&j_hat).unwrap() += 1;
 

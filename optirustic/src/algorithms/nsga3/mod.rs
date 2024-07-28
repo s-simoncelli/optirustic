@@ -176,7 +176,7 @@ impl NSGA3 {
                             concat!(
                             "The number of individuals ({}) must be larger than the number of ",
                             "reference points ({}) to prevent unexpected behaviours. It is always ",
-                            "advised to associate at least one individual to a reference point"),
+                            "suggested to associate at least one individual to a reference point"),
                             count,
                             das_darren.number_of_points()
                         ),
@@ -235,7 +235,7 @@ impl NSGA3 {
         })
     }
 
-    /// Get the normalised objective data stored in the `individual`
+    /// Get the normalised objective data stored in the `individual`.
     ///
     /// # Arguments
     ///
@@ -257,7 +257,7 @@ impl NSGA3 {
     /// * `reference_points`: The reference points.
     ///
     /// returns: `Result<HashMap<usize, usize>, OError>`
-    pub fn get_association_map(
+    fn get_association_map(
         selected_individuals: &Population,
         reference_points: &[Vec<f64>],
     ) -> Result<HashMap<usize, usize>, OError> {
@@ -308,7 +308,7 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
     }
 
     /// Evolve the population. The first part of this code comes from NSGA2::evolve(). NSGA3 mainly
-    /// differs in the selection method.
+    /// differs in the survival method.
     fn evolve(&mut self) -> Result<(), OError> {
         // Create the new population, based on the population at the previous time-step, of size
         // self.number_of_individuals. The loop adds two individuals at the time.
