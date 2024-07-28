@@ -60,7 +60,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 /// Draw the expected objective functions and the solutions from the algorithm.
 fn plot(individuals: &[Individual]) -> Result<(), Box<dyn Error>> {
     let root = BitMapBackend::new(
-        "optirustic/examples/results/SCH_2_obj_NSGA3_solutions.png",
+        "optirustic/examples/results/SCH_2_obj_NSGA2_solutions.png",
         (1024, 768),
     )
     .into_drawing_area();
