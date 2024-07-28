@@ -365,32 +365,46 @@ pub mod builtin_problems {
     };
 
     /// The Schaffer’s study (SCH) problem.
-    pub fn sch() -> Result<Problem, OError> {
-        let objectives = vec![
-            Objective::new("x^2", ObjectiveDirection::Minimise),
-            Objective::new("(x-2)^2", ObjectiveDirection::Minimise),
-        ];
-        let variables = vec![VariableType::Real(BoundedNumber::new(
-            "x", -1000.0, 1000.0,
-        )?)];
+    #[derive(Debug)]
+    pub struct SCHProblem;
 
-        #[derive(Debug)]
-        struct UserEvaluator;
-        impl Evaluator for UserEvaluator {
-            fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
-                let x = i.get_variable_value("x")?.as_real()?;
-                let mut objectives = HashMap::new();
-                objectives.insert("x^2".to_string(), x.powi(2));
-                objectives.insert("(x-2)^2".to_string(), (x - 2.0).powi(2));
-                Ok(EvaluationResult {
-                    constraints: None,
-                    objectives,
-                })
-            }
+    impl SCHProblem {
+        /// Create the problem for the optimisation.
+        pub fn create() -> Result<Problem, OError> {
+            let objectives = vec![
+                Objective::new("x^2", ObjectiveDirection::Minimise),
+                Objective::new("(x-2)^2", ObjectiveDirection::Minimise),
+            ];
+            let variables = vec![VariableType::Real(BoundedNumber::new(
+                "x", -1000.0, 1000.0,
+            )?)];
+
+            let e = Box::new(SCHProblem);
+            Problem::new(objectives, variables, None, e)
         }
 
-        let e = Box::new(UserEvaluator);
-        Problem::new(objectives, variables, None, e)
+        /// The first objective function
+        pub fn f1(x: f64) -> f64 {
+            x.powi(2)
+        }
+
+        /// The second objective function
+        pub fn f2(x: f64) -> f64 {
+            (x - 2.0).powi(2)
+        }
+    }
+
+    impl Evaluator for SCHProblem {
+        fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+            let x = i.get_variable_value("x")?.as_real()?;
+            let mut objectives = HashMap::new();
+            objectives.insert("x^2".to_string(), SCHProblem::f1(x));
+            objectives.insert("(x-2)^2".to_string(), SCHProblem::f2(x));
+            Ok(EvaluationResult {
+                constraints: None,
+                objectives,
+            })
+        }
     }
 
     /// The Fonseca and Fleming’s study (FON) problem.
