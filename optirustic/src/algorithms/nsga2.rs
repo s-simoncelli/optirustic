@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::ops::Rem;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -22,7 +23,7 @@ use crate::utils::{argsort, fast_non_dominated_sort, Sort, vector_max, vector_mi
 const CROWDING_DIST_KEY: &str = "crowding_distance";
 
 /// Input arguments for the NSGA2 algorithm.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct NSGA2Arg {
     /// The number of individuals to use in the population. This must be a multiple of `2`.
     pub number_of_individuals: usize,
@@ -46,6 +47,11 @@ pub struct NSGA2Arg {
     /// save objectives, constraints and solutions to a file each time the generation increases by
     /// a given step. This is useful to track convergence and inspect an algorithm evolution.
     pub export_history: Option<ExportHistory>,
+    /// Instead of initialising the population with random variables, see the initial population
+    /// with  the variable values from a JSON files exported with this tool. This option lets you
+    /// restart the evolution from a previous generation; you can use any history file (exported
+    /// when the field `export_history`) or the file exported when the stopping condition was reached.  
+    pub resume_from_file: Option<PathBuf>,
     /// The seed used in the random number generator (RNG). You can specify a seed in case you want
     /// to try to reproduce results. NSGA2 is a stochastic algorithm that relies on a RNG at
     /// different steps (when population is initially generated, during selection, crossover and
@@ -109,9 +115,10 @@ impl NSGA2 {
     ///
     /// returns: `NSGA2`.
     pub fn new(problem: Problem, options: NSGA2Arg) -> Result<Self, OError> {
+        let name = "NSGA2".to_string();
         if options.number_of_individuals < 3 {
             return Err(OError::AlgorithmInit(
-                "NSGA2".to_string(),
+                name,
                 "The population size must have at least 3 individuals".to_string(),
             ));
         }
@@ -119,15 +126,25 @@ impl NSGA2 {
         // matches `number_of_individuals`
         if options.number_of_individuals.rem(2) != 0 {
             return Err(OError::AlgorithmInit(
-                "NSGA2".to_string(),
+                name,
                 "The population size must be a multiple of 2".to_string(),
             ));
         }
 
         let nsga2_args = options.clone();
         let problem = Arc::new(problem);
-        let population = Population::init(problem.clone(), options.number_of_individuals);
-        info!("Created initial random population");
+        let population = if let Some(init_file) = options.resume_from_file {
+            info!("Loading initial population from {:?}", init_file);
+            NSGA2::seed_population_from_file(
+                problem.clone(),
+                &name,
+                options.number_of_individuals,
+                &init_file,
+            )?
+        } else {
+            info!("Created initial random population");
+            Population::init(problem.clone(), options.number_of_individuals)
+        };
 
         let mutation_options = match options.mutation_operator_options {
             Some(o) => o,
@@ -682,15 +699,18 @@ mod test_sorting {
 #[cfg(test)]
 mod test_problems {
     use crate::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
-    use crate::core::builtin_problems::{sch, ztd1, ztd2, ztd3, ztd4};
+    use crate::core::builtin_problems::{
+        SCHProblem, ZTD1Problem, ZTD2Problem, ZTD3Problem, ZTD4Problem,
+    };
     use crate::core::test_utils::{check_exact_value, check_value_in_range};
 
     const BOUND_TOL: f64 = 1.0 / 1000.0;
     const LOOSE_BOUND_TOL: f64 = 0.1;
+
     #[test]
     /// Test problem 1 from Deb et al. (2002). Optional solution x in [0; 2]
     fn test_sch_problem() {
-        let problem = sch().unwrap();
+        let problem = SCHProblem::create().unwrap();
         let args = NSGA2Arg {
             number_of_individuals: 10,
             stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
@@ -698,6 +718,7 @@ mod test_problems {
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            resume_from_file: None,
             seed: Some(10),
         };
         let mut algo = NSGA2::new(problem, args).unwrap();
@@ -717,14 +738,15 @@ mod test_problems {
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd1_problem() {
         let number_of_individuals: usize = 30;
-        let problem = ztd1(number_of_individuals).unwrap();
+        let problem = ZTD1Problem::create(number_of_individuals).unwrap();
         let args = NSGA2Arg {
             number_of_individuals,
-            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(2500)),
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            resume_from_file: None,
             seed: Some(1),
         };
         let mut algo = NSGA2::new(problem, args).unwrap();
@@ -763,14 +785,15 @@ mod test_problems {
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd2_problem() {
         let number_of_individuals: usize = 30;
-        let problem = ztd2(number_of_individuals).unwrap();
+        let problem = ZTD2Problem::create(number_of_individuals).unwrap();
         let args = NSGA2Arg {
             number_of_individuals,
-            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(2500)),
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            resume_from_file: None,
             seed: Some(1),
         };
         let mut algo = NSGA2::new(problem, args).unwrap();
@@ -814,14 +837,15 @@ mod test_problems {
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd3_problem() {
         let number_of_individuals: usize = 30;
-        let problem = ztd3(number_of_individuals).unwrap();
+        let problem = ZTD3Problem::create(number_of_individuals).unwrap();
         let args = NSGA2Arg {
             number_of_individuals,
-            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(2500)),
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            resume_from_file: None,
             seed: Some(1),
         };
         let mut algo = NSGA2::new(problem, args).unwrap();
@@ -865,7 +889,7 @@ mod test_problems {
     /// x2 to x10 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd4_problem() {
         let number_of_individuals: usize = 10;
-        let problem = ztd4(number_of_individuals).unwrap();
+        let problem = ZTD4Problem::create(number_of_individuals).unwrap();
         let args = NSGA2Arg {
             number_of_individuals,
             // this may take longer to converge
@@ -874,6 +898,7 @@ mod test_problems {
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            resume_from_file: None,
             seed: Some(1),
         };
         let mut algo = NSGA2::new(problem, args).unwrap();
@@ -918,7 +943,7 @@ mod test_problems {
     /// x2 to x10 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd6_problem() {
         let number_of_individuals: usize = 10;
-        let problem = ztd4(number_of_individuals).unwrap();
+        let problem = ZTD4Problem::create(number_of_individuals).unwrap();
         let args = NSGA2Arg {
             number_of_individuals,
             stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
@@ -926,6 +951,7 @@ mod test_problems {
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            resume_from_file: None,
             seed: Some(1),
         };
         let mut algo = NSGA2::new(problem, args).unwrap();

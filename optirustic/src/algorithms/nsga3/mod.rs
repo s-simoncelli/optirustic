@@ -47,7 +47,7 @@ pub enum Nsga3NumberOfIndividuals {
 }
 
 /// Input arguments for the NSGA3 algorithm.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct NSGA3Arg {
     /// The number of individuals in the population.
     pub number_of_individuals: Nsga3NumberOfIndividuals,
