@@ -1,11 +1,12 @@
 use std::fmt::{Display, Formatter};
 use std::ops::Rem;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 
 use log::{debug, info};
 use rand::RngCore;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::algorithms::{Algorithm, ExportHistory, StoppingConditionType};
 use crate::core::{
@@ -19,7 +20,7 @@ use crate::operators::{
 use crate::utils::fast_non_dominated_sort;
 
 /// Input arguments for the NSGA2 algorithm.
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct NSGA2Arg {
     /// The number of individuals to use in the population. This must be a multiple of `2`.
     pub number_of_individuals: usize,
@@ -43,6 +44,11 @@ pub struct NSGA2Arg {
     /// save objectives, constraints and solutions to a file each time the generation increases by
     /// a given step. This is useful to track convergence and inspect an algorithm evolution.
     pub export_history: Option<ExportHistory>,
+    /// Instead of initialising the population with random variables, see the initial population
+    /// with  the variable values from a JSON files exported with this tool. This option lets you
+    /// restart the evolution from a previous generation; you can use any history file (exported
+    /// when the field `export_history`) or the file exported when the stopping condition was reached.  
+    pub resume_from_file: Option<PathBuf>,
     /// The seed used in the random number generator (RNG). You can specify a seed in case you want
     /// to try to reproduce results. NSGA2 is a stochastic algorithm that relies on a RNG at
     /// different steps (when population is initially generated, during selection, crossover and
@@ -106,9 +112,10 @@ impl NSGA2 {
     ///
     /// returns: `NSGA2`.
     pub fn new(problem: Problem, options: NSGA2Arg) -> Result<Self, OError> {
+        let name = "NSGA2".to_string();
         if options.number_of_individuals < 3 {
             return Err(OError::AlgorithmInit(
-                "NSGA2".to_string(),
+                name,
                 "The population size must have at least 3 individuals".to_string(),
             ));
         }
@@ -116,15 +123,25 @@ impl NSGA2 {
         // matches `number_of_individuals`
         if options.number_of_individuals.rem(2) != 0 {
             return Err(OError::AlgorithmInit(
-                "NSGA2".to_string(),
+                name,
                 "The population size must be a multiple of 2".to_string(),
             ));
         }
 
         let nsga2_args = options.clone();
         let problem = Arc::new(problem);
-        info!("Created initial random population");
-        let population = Population::init(problem.clone(), options.number_of_individuals);
+        let population = if let Some(init_file) = options.resume_from_file {
+            info!("Loading initial population from {:?}", init_file);
+            NSGA2::seed_population_from_file(
+                problem.clone(),
+                &name,
+                options.number_of_individuals,
+                &init_file,
+            )?
+        } else {
+            info!("Created initial random population");
+            Population::init(problem.clone(), options.number_of_individuals)
+        };
 
         let mutation_options = match options.mutation_operator_options {
             Some(o) => o,
@@ -661,6 +678,7 @@ mod test_problems {
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            resume_from_file: None,
             seed: Some(10),
         };
         let mut algo = NSGA2::new(problem, args).unwrap();
@@ -688,6 +706,7 @@ mod test_problems {
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            resume_from_file: None,
             seed: Some(1),
         };
         let mut algo = NSGA2::new(problem, args).unwrap();
@@ -734,6 +753,7 @@ mod test_problems {
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            resume_from_file: None,
             seed: Some(1),
         };
         let mut algo = NSGA2::new(problem, args).unwrap();
@@ -785,6 +805,7 @@ mod test_problems {
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            resume_from_file: None,
             seed: Some(1),
         };
         let mut algo = NSGA2::new(problem, args).unwrap();
@@ -837,6 +858,7 @@ mod test_problems {
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            resume_from_file: None,
             seed: Some(1),
         };
         let mut algo = NSGA2::new(problem, args).unwrap();
@@ -889,6 +911,7 @@ mod test_problems {
             mutation_operator_options: None,
             parallel: Some(false),
             export_history: None,
+            resume_from_file: None,
             seed: Some(1),
         };
         let mut algo = NSGA2::new(problem, args).unwrap();

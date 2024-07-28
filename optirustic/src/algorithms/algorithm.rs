@@ -1,5 +1,5 @@
 use std::{fmt, fs};
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
@@ -7,6 +7,7 @@ use std::time::Instant;
 use log::{debug, info};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 
 use crate::algorithms::{StoppingCondition, StoppingConditionType};
 use crate::core::{Individual, IndividualExport, OError, Population, Problem, ProblemExport};
@@ -69,7 +70,7 @@ impl AlgorithmExport {
 /// an algorithm to save objectives, constraints and solutions to a file each time the generation
 /// counter in [`Algorithm::generation`] increases by a certain step provided in `generation_step`.
 /// Exporting history may be useful to track convergence and inspect an algorithm evolution.
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ExportHistory {
     /// Export the algorithm data each time the generation counter in [`Algorithm::generation`]
     /// increases by the provided step.
@@ -80,7 +81,7 @@ pub struct ExportHistory {
 
 impl ExportHistory {
     /// Initialise the export history configuration. This returns an error if the destination folder
-    /// does not exists.
+    /// does not exist.
     ///
     /// # Arguments
     ///
@@ -115,7 +116,7 @@ impl Display for AlgorithmExport {
 }
 
 /// The trait to use to implement an algorithm.
-pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
+pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
     /// Initialise the algorithm.
     ///
     /// return: `Result<(), OError>`
@@ -373,5 +374,137 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
 
         fs::write(file, data).map_err(|e| OError::AlgorithmExport(e.to_string()))?;
         Ok(())
+    }
+
+    /// Import serialized results from a JSON file.
+    ///
+    /// # Arguments
+    ///
+    /// * `file`: The path to the JSON file exported from this library.
+    ///
+    /// returns: `Result<AlgorithmSerialisedExport<AlgorithmOptions?>, OError>`
+    fn import_results(
+        file: &PathBuf,
+    ) -> Result<AlgorithmSerialisedExport<AlgorithmOptions>, OError> {
+        if !file.exists() {
+            return Err(OError::Generic(format!(
+                "The file {:?} does not exist",
+                file
+            )));
+        }
+        let data = fs::read_to_string(file)
+            .map_err(|e| OError::Generic(format!("Cannot read the JSON file because: {e}")))?;
+        let res: AlgorithmSerialisedExport<AlgorithmOptions> = serde_json::from_str(&data)
+            .map_err(|e| OError::Generic(format!("Cannot parse the JSON file because: {e}")))?;
+
+        // println!("{:?}", res);
+        Ok(res)
+    }
+
+    /// Seed the population using the values of variables, objectives and constraints exported
+    /// to a JSON file.
+    ///
+    /// # Arguments
+    ///
+    /// * `problem`: The problem.
+    /// * `name`: The algorithm name.
+    /// * `expected_individuals`: The number of individuals to expect in the file. If this does not
+    /// match the population size, being used in the algorithm, an error is thrown.
+    /// * `file`: The path to the JSON file exported from this library.
+    ///
+    /// returns: `Result<Population, OError>`
+    fn seed_population_from_file(
+        problem: Arc<Problem>,
+        name: &str,
+        expected_individuals: usize,
+        file: &PathBuf,
+    ) -> Result<Population, OError> {
+        let data = Self::import_results(file)?;
+
+        // check number of variables
+        if problem.number_of_variables() != data.problem.variables.len() {
+            return Err(OError::AlgorithmInit(
+                name.to_string(),
+                format!(
+                    "The number of variables from the history file ({}) does not \
+                    match the number of variables ({}) defined in the problem",
+                    data.problem.variables.len(),
+                    problem.number_of_variables()
+                ),
+            ));
+        }
+
+        // check individuals
+        if expected_individuals != data.individuals.len() {
+            return Err(OError::AlgorithmInit(
+                name.to_string(),
+                format!(
+                    "The number of individuals from the history file ({}) does not \
+                    match the population size ({}) used in the algorithm",
+                    data.problem.variables.len(),
+                    problem.number_of_variables()
+                ),
+            ));
+        }
+
+        Population::deserialise(&data.individuals, problem.clone())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::env;
+    use std::path::Path;
+    use std::sync::Arc;
+
+    use crate::algorithms::{Algorithm, NSGA2};
+    use crate::core::builtin_problems::{SCHProblem, ZTD1Problem};
+
+    #[test]
+    /// Test seed_population_from_file
+    fn test_load_from_file() {
+        let file = Path::new(&env::current_dir().unwrap())
+            .join("examples")
+            .join("results")
+            .join("SCH_2obj_NSGA2_gen250.json");
+
+        let problem = SCHProblem::create().unwrap();
+        let pop = NSGA2::seed_population_from_file(Arc::new(problem), "NSGA2", 100, &file);
+        assert!(pop.is_ok());
+    }
+
+    #[test]
+    /// Test seed_population_from_file when the number of individuals is wrong.
+    fn test_load_from_file_error() {
+        let file = Path::new(&env::current_dir().unwrap())
+            .join("examples")
+            .join("results")
+            .join("SCH_2obj_NSGA2_gen250.json");
+
+        let problem = SCHProblem::create().unwrap();
+        let pop = NSGA2::seed_population_from_file(Arc::new(problem), "NSGA2", 10, &file);
+        assert!(pop
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("number of individuals from the history file"));
+    }
+
+    #[test]
+    /// Test seed_population_from_file when the wrong problem is used.
+    fn test_load_from_file_wrong_problem() {
+        let file = Path::new(&env::current_dir().unwrap())
+            .join("examples")
+            .join("results")
+            .join("SCH_2obj_NSGA2_gen250.json");
+
+        let problem = ZTD1Problem::create(30).unwrap();
+        let pop = NSGA2::seed_population_from_file(Arc::new(problem), "NSGA2", 10, &file);
+
+        assert!(pop
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("number of variables from the history file"));
     }
 }
