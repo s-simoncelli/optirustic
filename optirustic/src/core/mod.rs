@@ -10,6 +10,7 @@ mod error;
 mod individual;
 mod objective;
 mod problem;
+#[cfg(test)]
 pub(crate) mod test_utils;
 pub mod utils;
 mod variable;
