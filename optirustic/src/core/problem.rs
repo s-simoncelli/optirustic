@@ -408,289 +408,363 @@ pub mod builtin_problems {
     }
 
     /// The Fonseca and Fleming’s study (FON) problem.
-    pub fn fon() -> Result<Problem, OError> {
-        let objectives = vec![
-            Objective::new("f1", ObjectiveDirection::Minimise),
-            Objective::new("f2", ObjectiveDirection::Minimise),
-        ];
-        let variables = vec![
-            VariableType::Real(BoundedNumber::new("x1", -4.0, 4.0)?),
-            VariableType::Real(BoundedNumber::new("x2", -4.0, 4.0)?),
-            VariableType::Real(BoundedNumber::new("x3", -4.0, 4.0)?),
-        ];
+    #[derive(Debug)]
+    pub struct FonProblem;
 
-        #[derive(Debug)]
-        struct UserEvaluator;
-        impl Evaluator for UserEvaluator {
-            fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
-                let mut x: Vec<f64> = Vec::new();
-                for var_name in ["x1", "x2", "x3"] {
-                    x.push(i.get_variable_value(var_name)?.as_real()?);
-                }
-                let mut objectives = HashMap::new();
+    impl FonProblem {
+        /// Create the problem for the optimisation.
+        pub fn create() -> Result<Problem, OError> {
+            let objectives = vec![
+                Objective::new("f1", ObjectiveDirection::Minimise),
+                Objective::new("f2", ObjectiveDirection::Minimise),
+            ];
+            let variables = vec![
+                VariableType::Real(BoundedNumber::new("x1", -4.0, 4.0)?),
+                VariableType::Real(BoundedNumber::new("x2", -4.0, 4.0)?),
+                VariableType::Real(BoundedNumber::new("x3", -4.0, 4.0)?),
+            ];
 
-                let mut exp_arg1 = 0.0;
-                let mut exp_arg2 = 0.0;
-                for x_val in x {
-                    exp_arg1 += (x_val - 1.0 / 3.0_f64.sqrt()).powi(2);
-                    exp_arg2 += (x_val + 1.0 / 3.0_f64.sqrt()).powi(2);
-                }
-                objectives.insert("f1".to_string(), 1.0 - f64::exp(-exp_arg1));
-                objectives.insert("f2".to_string(), 1.0 - f64::exp(-exp_arg2));
-                Ok(EvaluationResult {
-                    constraints: None,
-                    objectives,
-                })
-            }
+            let e = Box::new(FonProblem);
+            Problem::new(objectives, variables, None, e)
         }
+    }
 
-        let e = Box::new(UserEvaluator);
-        Problem::new(objectives, variables, None, e)
+    impl Evaluator for FonProblem {
+        fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+            let mut x: Vec<f64> = Vec::new();
+            for var_name in ["x1", "x2", "x3"] {
+                x.push(i.get_variable_value(var_name)?.as_real()?);
+            }
+            let mut objectives = HashMap::new();
+
+            let mut exp_arg1 = 0.0;
+            let mut exp_arg2 = 0.0;
+            for x_val in x {
+                exp_arg1 += (x_val - 1.0 / 3.0_f64.sqrt()).powi(2);
+                exp_arg2 += (x_val + 1.0 / 3.0_f64.sqrt()).powi(2);
+            }
+            objectives.insert("f1".to_string(), 1.0 - f64::exp(-exp_arg1));
+            objectives.insert("f2".to_string(), 1.0 - f64::exp(-exp_arg2));
+            Ok(EvaluationResult {
+                constraints: None,
+                objectives,
+            })
+        }
     }
 
     /// Problem #1 from Zitzler et al. (2000).
-    ///
-    /// # Arguments:
-    ///
-    /// * `n`: The number of variables.
-    pub fn ztd1(n: usize) -> Result<Problem, OError> {
-        let objectives = vec![
-            Objective::new("f1", ObjectiveDirection::Minimise),
-            Objective::new("f2", ObjectiveDirection::Minimise),
-        ];
-        let mut variables: Vec<VariableType> = Vec::new();
-        for i in 1..=n {
-            variables.push(VariableType::Real(BoundedNumber::new(
-                format!("x{i}").as_str(),
-                0.0,
-                1.0,
-            )?));
-        }
+    #[derive(Debug)]
+    pub struct ZTD1Problem {
+        /// The number of variables.
+        n: usize,
+    }
 
-        #[derive(Debug)]
-        struct UserEvaluator {
-            /// The number of variables with n > 1
-            n: usize,
-        }
-        impl Evaluator for UserEvaluator {
-            fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
-                let x1 = i.get_variable_value("x1")?.as_real()?;
-
-                let a = (2..=self.n)
-                    .map(|xi| i.get_variable_value(format!("x{xi}").as_str())?.as_real())
-                    .sum::<Result<f64, _>>()?;
-                let g = 1.0 + 9.0 * a / (self.n as f64 - 1.0);
-
-                let mut objectives = HashMap::new();
-                objectives.insert("f1".to_string(), x1);
-                objectives.insert("f2".to_string(), g * (1.0 - f64::sqrt(x1 / g)));
-                Ok(EvaluationResult {
-                    constraints: None,
-                    objectives,
-                })
+    impl ZTD1Problem {
+        /// Create the problem for the optimisation.
+        ///
+        /// # Arguments:
+        ///
+        /// * `n`: The number of variables.
+        pub fn create(n: usize) -> Result<Problem, OError> {
+            let objectives = vec![
+                Objective::new("f1", ObjectiveDirection::Minimise),
+                Objective::new("f2", ObjectiveDirection::Minimise),
+            ];
+            let mut variables: Vec<VariableType> = Vec::new();
+            for i in 1..=n {
+                variables.push(VariableType::Real(BoundedNumber::new(
+                    format!("x{i}").as_str(),
+                    0.0,
+                    1.0,
+                )?));
             }
+
+            let e = Box::new(ZTD1Problem { n });
+            Problem::new(objectives, variables, None, e)
         }
 
-        let e = Box::new(UserEvaluator { n });
-        Problem::new(objectives, variables, None, e)
+        /// The first objective function.
+        pub fn f1(x: &[f64]) -> f64 {
+            x[0]
+        }
+
+        /// The second objective function.
+        pub fn f2(&self, x: &[f64]) -> f64 {
+            let a: f64 = (1..self.n).map(|xi| x[xi]).sum();
+            let g = 1.0 + 9.0 * a / (self.n as f64 - 1.0);
+            g * (1.0 - f64::sqrt(x[0] / g))
+        }
+    }
+    impl Evaluator for ZTD1Problem {
+        fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+            let x: Vec<f64> = i
+                .get_variable_values()?
+                .iter()
+                .map(|v| v.as_real())
+                .collect::<Result<Vec<f64>, _>>()?;
+
+            let mut objectives = HashMap::new();
+            objectives.insert("f1".to_string(), ZTD1Problem::f1(&x));
+            objectives.insert("f2".to_string(), self.f2(&x));
+            Ok(EvaluationResult {
+                constraints: None,
+                objectives,
+            })
+        }
     }
 
     /// Problem #2 from Zitzler et al. (2000)
-    ///
-    /// # Arguments:
-    ///
-    /// * `n`: The number of variables.
-    pub fn ztd2(n: usize) -> Result<Problem, OError> {
-        let objectives = vec![
-            Objective::new("f1", ObjectiveDirection::Minimise),
-            Objective::new("f2", ObjectiveDirection::Minimise),
-        ];
-        let mut variables: Vec<VariableType> = Vec::new();
-        for i in 1..=n {
-            variables.push(VariableType::Real(BoundedNumber::new(
-                format!("x{i}").as_str(),
-                0.0,
-                1.0,
-            )?));
-        }
+    #[derive(Debug)]
+    pub struct ZTD2Problem {
+        /// The number of variables.
+        n: usize,
+    }
 
-        #[derive(Debug)]
-        struct UserEvaluator {
-            /// The number of variables with n > 1
-            n: usize,
-        }
-        impl Evaluator for UserEvaluator {
-            fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
-                let x1 = i.get_variable_value("x1")?.as_real()?;
-
-                let a = (2..=self.n)
-                    .map(|xi| i.get_variable_value(format!("x{xi}").as_str())?.as_real())
-                    .sum::<Result<f64, _>>()?;
-                let g = 1.0 + 9.0 * a / (self.n as f64 - 1.0);
-
-                let mut objectives = HashMap::new();
-                objectives.insert("f1".to_string(), x1);
-                objectives.insert("f2".to_string(), g * (1.0 - (x1 / g).powi(2)));
-                Ok(EvaluationResult {
-                    constraints: None,
-                    objectives,
-                })
+    impl ZTD2Problem {
+        /// Create the problem for the optimisation.
+        ///
+        /// # Arguments:
+        ///
+        /// * `n`: The number of variables.
+        pub fn create(n: usize) -> Result<Problem, OError> {
+            let objectives = vec![
+                Objective::new("f1", ObjectiveDirection::Minimise),
+                Objective::new("f2", ObjectiveDirection::Minimise),
+            ];
+            let mut variables: Vec<VariableType> = Vec::new();
+            for i in 1..=n {
+                variables.push(VariableType::Real(BoundedNumber::new(
+                    format!("x{i}").as_str(),
+                    0.0,
+                    1.0,
+                )?));
             }
+
+            let e = Box::new(ZTD2Problem { n });
+            Problem::new(objectives, variables, None, e)
         }
 
-        let e = Box::new(UserEvaluator { n });
-        Problem::new(objectives, variables, None, e)
+        /// The first objective function.
+        pub fn f1(x: &[f64]) -> f64 {
+            x[0]
+        }
+
+        /// The second objective function.
+        pub fn f2(&self, x: &[f64]) -> f64 {
+            let a: f64 = (1..self.n).map(|xi| x[xi]).sum();
+            let g = 1.0 + 9.0 * a / (self.n as f64 - 1.0);
+            g * (1.0 - (x[0] / g).powi(2))
+        }
+    }
+
+    impl Evaluator for ZTD2Problem {
+        fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+            let x: Vec<f64> = i
+                .get_variable_values()?
+                .iter()
+                .map(|v| v.as_real())
+                .collect::<Result<Vec<f64>, _>>()?;
+
+            let mut objectives = HashMap::new();
+            objectives.insert("f1".to_string(), ZTD2Problem::f1(&x));
+            objectives.insert("f2".to_string(), self.f2(&x));
+            Ok(EvaluationResult {
+                constraints: None,
+                objectives,
+            })
+        }
     }
 
     /// Problem #3 from Zitzler et al. (2000)
-    ///
-    /// # Arguments:
-    ///
-    /// * `n`: The number of variables.
-    pub fn ztd3(n: usize) -> Result<Problem, OError> {
-        let objectives = vec![
-            Objective::new("f1", ObjectiveDirection::Minimise),
-            Objective::new("f2", ObjectiveDirection::Minimise),
-        ];
-        let mut variables: Vec<VariableType> = Vec::new();
-        for i in 1..=n {
-            variables.push(VariableType::Real(BoundedNumber::new(
-                format!("x{i}").as_str(),
-                0.0,
-                1.0,
-            )?));
-        }
+    #[derive(Debug)]
+    pub struct ZTD3Problem {
+        /// The number of variables.
+        n: usize,
+    }
 
-        #[derive(Debug)]
-        struct UserEvaluator {
-            /// The number of variables with n > 1
-            n: usize,
-        }
-        impl Evaluator for UserEvaluator {
-            fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
-                let x1 = i.get_variable_value("x1")?.as_real()?;
-
-                let a = (2..=self.n)
-                    .map(|xi| i.get_variable_value(format!("x{xi}").as_str())?.as_real())
-                    .sum::<Result<f64, _>>()?;
-                let g = 1.0 + 9.0 * a / (self.n as f64 - 1.0);
-
-                let mut objectives = HashMap::new();
-                objectives.insert("f1".to_string(), x1);
-                objectives.insert(
-                    "f2".to_string(),
-                    g * (1.0 - (x1 / g).powi(2) - x1 / g * f64::sin(10.0 * PI * x1)),
-                );
-                Ok(EvaluationResult {
-                    constraints: None,
-                    objectives,
-                })
+    impl ZTD3Problem {
+        /// Create the problem for the optimisation.
+        ///
+        /// # Arguments:
+        ///
+        /// * `n`: The number of variables.
+        pub fn create(n: usize) -> Result<Problem, OError> {
+            let objectives = vec![
+                Objective::new("f1", ObjectiveDirection::Minimise),
+                Objective::new("f2", ObjectiveDirection::Minimise),
+            ];
+            let mut variables: Vec<VariableType> = Vec::new();
+            for i in 1..=n {
+                variables.push(VariableType::Real(BoundedNumber::new(
+                    format!("x{i}").as_str(),
+                    0.0,
+                    1.0,
+                )?));
             }
+
+            let e = Box::new(ZTD3Problem { n });
+            Problem::new(objectives, variables, None, e)
         }
 
-        let e = Box::new(UserEvaluator { n });
-        Problem::new(objectives, variables, None, e)
+        /// The first objective function.
+        pub fn f1(x: &[f64]) -> f64 {
+            x[0]
+        }
+
+        /// The second objective function.
+        pub fn f2(&self, x: &[f64]) -> f64 {
+            let a: f64 = (1..self.n).map(|xi| x[xi]).sum();
+            let g = 1.0 + 9.0 * a / (self.n as f64 - 1.0);
+            g * (1.0 - (x[0] / g).powi(2) - x[0] / g * f64::sin(10.0 * PI * x[0]))
+        }
+    }
+
+    impl Evaluator for ZTD3Problem {
+        fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+            let x: Vec<f64> = i
+                .get_variable_values()?
+                .iter()
+                .map(|v| v.as_real())
+                .collect::<Result<Vec<f64>, _>>()?;
+
+            let mut objectives = HashMap::new();
+            objectives.insert("f1".to_string(), ZTD3Problem::f1(&x));
+            objectives.insert("f2".to_string(), self.f2(&x));
+            Ok(EvaluationResult {
+                constraints: None,
+                objectives,
+            })
+        }
     }
 
     /// Problem #4 from Zitzler et al. (2000)
-    ///
-    /// # Arguments:
-    ///
-    /// * `n`: The number of variables.
-    pub fn ztd4(n: usize) -> Result<Problem, OError> {
-        let objectives = vec![
-            Objective::new("f1", ObjectiveDirection::Minimise),
-            Objective::new("f2", ObjectiveDirection::Minimise),
-        ];
-        let mut variables: Vec<VariableType> = Vec::new();
-        variables.push(VariableType::Real(BoundedNumber::new("x1", 0.0, 1.0)?));
+    #[derive(Debug)]
+    pub struct ZTD4Problem {
+        /// The number of variables.
+        n: usize,
+    }
 
-        for i in 2..=n {
-            variables.push(VariableType::Real(BoundedNumber::new(
-                format!("x{i}").as_str(),
-                -5.0,
-                5.0,
-            )?));
-        }
-
-        #[derive(Debug)]
-        struct UserEvaluator {
-            /// The number of variables with n > 1
-            n: usize,
-        }
-        impl Evaluator for UserEvaluator {
-            fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
-                let x1 = i.get_variable_value("x1")?.as_real()?;
-
-                let a = (2..=self.n)
-                    .map(|xi| {
-                        let xi = i.get_variable_value(format!("x{xi}").as_str())?.as_real()?;
-                        Ok::<f64, OError>(xi.powi(2) - 10.0 * f64::cos(4.0 * PI * xi))
-                    })
-                    .sum::<Result<f64, _>>()?;
-                let g = 1.0 + 10.0 * (self.n as f64 - 1.0) + a;
-
-                let mut objectives = HashMap::new();
-                objectives.insert("f1".to_string(), x1);
-                objectives.insert("f2".to_string(), g * (1.0 - (x1 / g).sqrt()));
-                Ok(EvaluationResult {
-                    constraints: None,
-                    objectives,
-                })
+    impl ZTD4Problem {
+        /// Create the problem for the optimisation.
+        ///
+        /// # Arguments:
+        ///
+        /// * `n`: The number of variables.
+        pub fn create(n: usize) -> Result<Problem, OError> {
+            let objectives = vec![
+                Objective::new("f1", ObjectiveDirection::Minimise),
+                Objective::new("f2", ObjectiveDirection::Minimise),
+            ];
+            let mut variables: Vec<VariableType> = Vec::new();
+            variables.push(VariableType::Real(BoundedNumber::new("x1", 0.0, 1.0)?));
+            for i in 2..=n {
+                variables.push(VariableType::Real(BoundedNumber::new(
+                    format!("x{i}").as_str(),
+                    -5.0,
+                    5.0,
+                )?));
             }
+            let e = Box::new(ZTD4Problem { n });
+            Problem::new(objectives, variables, None, e)
         }
 
-        let e = Box::new(UserEvaluator { n });
-        Problem::new(objectives, variables, None, e)
+        /// The first objective function.
+        pub fn f1(x: &[f64]) -> f64 {
+            x[0]
+        }
+
+        /// The second objective function.
+        pub fn f2(&self, x: &[f64]) -> f64 {
+            let a: f64 = (1..self.n)
+                .map(|xi| {
+                    let xi = x[xi];
+                    xi.powi(2) - 10.0 * f64::cos(4.0 * PI * xi)
+                })
+                .sum();
+            let g: f64 = 1.0 + 10.0 * (self.n as f64 - 1.0) + a;
+
+            g * (1.0 - (x[0] / g).sqrt())
+        }
+    }
+
+    impl Evaluator for ZTD4Problem {
+        fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+            let x: Vec<f64> = i
+                .get_variable_values()?
+                .iter()
+                .map(|v| v.as_real())
+                .collect::<Result<Vec<f64>, _>>()?;
+
+            let mut objectives = HashMap::new();
+            objectives.insert("f1".to_string(), ZTD4Problem::f1(&x));
+            objectives.insert("f2".to_string(), self.f2(&x));
+            Ok(EvaluationResult {
+                constraints: None,
+                objectives,
+            })
+        }
     }
 
     /// Problem #6 from Zitzler et al. (2000)
-    ///
-    /// # Arguments:
-    ///
-    /// * `n`: The number of variables.
-    pub fn ztd6(n: usize) -> Result<Problem, OError> {
-        let objectives = vec![
-            Objective::new("f1", ObjectiveDirection::Minimise),
-            Objective::new("f2", ObjectiveDirection::Minimise),
-        ];
-        let mut variables: Vec<VariableType> = Vec::new();
-        for i in 1..=n {
-            variables.push(VariableType::Real(BoundedNumber::new(
-                format!("x{i}").as_str(),
-                0.0,
-                1.0,
-            )?));
-        }
+    #[derive(Debug)]
+    pub struct ZTD6Problem {
+        /// The number of variables.
+        n: usize,
+    }
 
-        #[derive(Debug)]
-        struct UserEvaluator {
-            /// The number of variables with n > 1
-            n: usize,
-        }
-        impl Evaluator for UserEvaluator {
-            fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
-                let x1 = i.get_variable_value("x1")?.as_real()?;
-
-                let a = (2..=self.n)
-                    .map(|xi| i.get_variable_value(format!("x{xi}").as_str())?.as_real())
-                    .sum::<Result<f64, _>>()?
-                    / (self.n as f64 - 1.0);
-                let g = 1.0 + 9.0 * f64::powf(a, 0.25);
-
-                let mut objectives = HashMap::new();
-                let f1 = 1.0 - f64::exp(-4.0 * x1) * f64::powi(f64::sin(6.0 * PI * x1), 6);
-                objectives.insert("f1".to_string(), f1);
-                objectives.insert("f2".to_string(), g * (1.0 - (f1 / g).powi(2)));
-                Ok(EvaluationResult {
-                    constraints: None,
-                    objectives,
-                })
+    impl ZTD6Problem {
+        /// Create the problem for the optimisation.
+        ///
+        /// # Arguments:
+        ///
+        /// * `n`: The number of variables.
+        pub fn create(n: usize) -> Result<Problem, OError> {
+            let objectives = vec![
+                Objective::new("f1", ObjectiveDirection::Minimise),
+                Objective::new("f2", ObjectiveDirection::Minimise),
+            ];
+            let mut variables: Vec<VariableType> = Vec::new();
+            for i in 1..=n {
+                variables.push(VariableType::Real(BoundedNumber::new(
+                    format!("x{i}").as_str(),
+                    0.0,
+                    1.0,
+                )?));
             }
+
+            let e = Box::new(ZTD6Problem { n });
+            Problem::new(objectives, variables, None, e)
         }
 
-        let e = Box::new(UserEvaluator { n });
-        Problem::new(objectives, variables, None, e)
+        /// The first objective function.
+        pub fn f1(x: &[f64]) -> f64 {
+            1.0 - f64::exp(-4.0 * x[0]) * f64::powi(f64::sin(6.0 * PI * x[0]), 6)
+        }
+
+        /// The second objective function.
+        pub fn f2(&self, x: &[f64]) -> f64 {
+            let a = (1..self.n).map(|xi| x[xi]).sum::<f64>() / (self.n as f64 - 1.0);
+            let g = 1.0 + 9.0 * f64::powf(a, 0.25);
+            g * (1.0 - (ZTD6Problem::f1(&x) / g).powi(2))
+        }
+    }
+
+    impl Evaluator for ZTD6Problem {
+        fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+            let x: Vec<f64> = i
+                .get_variable_values()?
+                .iter()
+                .map(|v| v.as_real())
+                .collect::<Result<Vec<f64>, _>>()?;
+
+            let mut objectives = HashMap::new();
+            objectives.insert("f1".to_string(), ZTD6Problem::f1(&x));
+            objectives.insert("f2".to_string(), self.f2(&x));
+            Ok(EvaluationResult {
+                constraints: None,
+                objectives,
+            })
+        }
     }
 }
 
