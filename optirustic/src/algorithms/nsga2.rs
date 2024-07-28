@@ -65,6 +65,16 @@ pub struct NSGA2Arg {
 /// > 182-197, April 2002, doi: 10.1109/4235.996017.
 ///
 /// See: <https://doi.org/10.1109/4235.996017>.
+///
+/// # Examples
+/// ## Solve the Schaffer’s problem
+/// ```rust
+#[doc = include_str!("../../examples/nsga2_sch.rs")]
+/// ```
+/// ## Solve the ZDT1 problem
+/// ```rust
+#[doc = include_str!("../../examples/nsga2_zdt1.rs")]
+/// ```
 pub struct NSGA2 {
     /// The number of individuals to use in the population.
     number_of_individuals: usize,

@@ -39,26 +39,8 @@ fn binomial_coefficient(mut n: u64, k: u64) -> u64 {
 /// > 1998 8:3, 631-657. <https://doi.org/10.1137/S1052623496307510>
 ///
 /// # Example
-/// ```
-/// use optirustic::utils::DasDarren1998;
-/// use optirustic::core::OError;
-///
-/// fn main() -> Result<(), OError> {
-///     // Consider the case of a 3D hyperplane with 3 objectives
-///     let number_of_objectives = 3;
-///     // Each objective axis is split into 5 gaps of equal size.
-///     let number_of_partitions = 5;
-///
-///     let m = DasDarren1998::new(number_of_objectives, number_of_partitions);
-///     // This returns the coordinates of the reference points between 0 and 1
-///     println!("Total pints = {:?}", m.number_of_points());
-///
-///     let weights = m.get_weights();
-///     println!("Weights = {:?}", weights);
-///
-///     // Save the charts of points to inspect them
-///     m.plot("ref_points_3obj_5gaps.png")
-/// }
+/// ```rust
+#[doc = include_str!("../../examples/reference_points.rs")]
 /// ```
 pub struct DasDarren1998 {
     /// The number of problem objectives.
