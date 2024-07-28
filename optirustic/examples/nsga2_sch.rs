@@ -40,6 +40,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // do not export intermediate solutions
         export_history: None,
         // to reproduce results
+        resume_from_file: None,
         seed: Some(10),
     };
     let mut algo = NSGA2::new(problem, args)?;

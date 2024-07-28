@@ -35,6 +35,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // no need to evaluate the objective in parallel
         parallel: Some(false),
         // do not export intermediate solutions
+        resume_from_file: None,
         export_history: None,
         // to reproduce results
         seed: Some(10),
