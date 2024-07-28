@@ -1,0 +1,1253 @@
+{
+  "options": {
+    "number_of_individuals": 100,
+    "crossover_operator_options": null,
+    "mutation_operator_options": null,
+    "stopping_condition": {
+      "MaxGeneration": 250
+    },
+    "parallel": false,
+    "export_history": null,
+    "seed": 10
+  },
+  "problem": {
+    "objectives": {
+      "x^2": {
+        "name": "x^2",
+        "direction": "Minimise"
+      },
+      "(x-2)^2": {
+        "name": "(x-2)^2",
+        "direction": "Minimise"
+      }
+    },
+    "constraints": {},
+    "variables": {
+      "x": {
+        "name": "x",
+        "min_value": -1000.0,
+        "max_value": 1000.0
+      }
+    },
+    "constraint_names": [],
+    "variable_names": [
+      "x"
+    ],
+    "objective_names": [
+      "x^2",
+      "(x-2)^2"
+    ],
+    "number_of_objectives": 2,
+    "number_of_constraints": 0,
+    "number_of_variables": 1
+  },
+  "individuals": [
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 6.771751182309434e-7,
+        "x^2": 3.9967090511496264
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.999177093493627
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 4.013608406922388,
+        "x^2": 0.00001155464948319912
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": -0.0033992130682261035
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 3.3010922817156323,
+        "(x-2)^2": 0.03352896878535436
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.8168908282325695
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 1.6652941397853256,
+        "x^2": 0.5034430922864529
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.7095372381252818
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 2.0260315510948224,
+        "(x-2)^2": 0.3324821469430364
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.4233873510379464
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 2.59122199526175,
+        "(x-2)^2": 0.1523127767536959
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.6097273046270135
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.08844087600164953,
+        "(x-2)^2": 2.898880446251907
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.29739010743743566
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 3.55564385442166,
+        "(x-2)^2": 0.013077867256114492
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.8856414967913864
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.09616748275244506,
+        "x^2": 2.85573218656037
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.6898911759519812
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.07220034945469374,
+        "x^2": 2.997395440982882
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.731298772882047
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 1.5721634858116222,
+        "x^2": 0.556725740909792
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.7461405637745424
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.10597422019582231,
+        "(x-2)^2": 2.8038269462159713
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.32553681849496274
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 3.199691659877028,
+        "(x-2)^2": 0.04461887492001902
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.7887681962392523
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 2.2933434813518834,
+        "(x-2)^2": 0.23582784359822312
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.514378909438415
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 3.122364046890892,
+        "x^2": 0.05427910468382537
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.2329787644482333
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 3.646372550950302,
+        "(x-2)^2": 0.008181612304893128
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.9095477346613523
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.002108563473601142,
+        "x^2": 3.8184321752860657
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.954080902953116
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.3127031270132133,
+        "(x-2)^2": 2.0759085382743603
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.5591986471847131
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 1.8094128895879449,
+        "(x-2)^2": 0.42883613301183243
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.3451441891440281
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 2.708787855622091,
+        "(x-2)^2": 0.12542961761366134
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.6458395595021074
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 3.474111504468775,
+        "x^2": 0.01852406473604794
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.13610314006681823
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.005078811077241491,
+        "(x-2)^2": 3.7200157001072953
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.07126577774248655
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.9857488703967816,
+        "(x-2)^2": 1.0143534070428102
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.9928488658384929
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 1.2157746749886218,
+        "(x-2)^2": 0.8052877631139308
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.1026217279686727
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 2.139044463188242,
+        "x^2": 0.2888554567533325
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.5374527483912726
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.12139996820887472,
+        "(x-2)^2": 2.727700039478879
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.34842498218249895
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 1.0756373551361622,
+        "(x-2)^2": 0.9271198268884394
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.0371293820619307
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.001084621166250361,
+        "(x-2)^2": 3.869350272342545
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.03293358720592643
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 2.3282559611321725,
+        "x^2": 0.22480649561558153
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.47413763362085226
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 3.930751072650706,
+        "(x-2)^2": 0.00030233614081692973
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.9826121841274722
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 3.1198676494211237,
+        "(x-2)^2": 0.054608815469038466
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.7663147084880213
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 3.74175361714789,
+        "(x-2)^2": 0.004308439677083529
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.9343612943677015
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 1.139254509553618,
+        "(x-2)^2": 0.8698198686605305
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.0673586602232719
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 1.024892086124139,
+        "(x-2)^2": 0.9754139249302519
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.0123695402984718
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 2.5847731635651168,
+        "x^2": 0.15388126453261414
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.39227702524187436
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 2.001234225036414,
+        "x^2": 0.3426347869614212
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.5853501404812518
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.6116098875900287,
+        "(x-2)^2": 1.4833902339466887
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.782054913410835
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 2.6522258858587406,
+        "x^2": 0.13796351980839475
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.3714344084874135
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 2.397639730872014,
+        "x^2": 0.2039142208132882
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.4515686224853186
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.36447878276359297,
+        "x^2": 1.9495956542835648
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.396279217879993
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.29857384941406356,
+        "x^2": 2.1128973887673794
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.453580884838329
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 2.994447545534058,
+        "x^2": 0.07265870676232558
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.2695527903070669
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.009432887501117955,
+        "(x-2)^2": 3.620940673913912
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.0971230533968015
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.783415740243608,
+        "(x-2)^2": 1.2429847150861162
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.885107756289373
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 1.0691753248855747,
+        "x^2": 0.9331379461655522
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.9659906553199944
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.46706873829110207,
+        "x^2": 1.7333716422949796
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.3165757260009694
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 2.2103639642688253,
+        "x^2": 0.26344682777690975
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.5132707158770211
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.7051602886824255,
+        "(x-2)^2": 1.3462073835468373
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.839738226283897
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 2.380692691479082,
+        "(x-2)^2": 0.2088952982017142
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.542949348319342
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.02544371802784114,
+        "(x-2)^2": 3.387400233267235
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.15951087119015162
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 2.2586831724805587,
+        "x^2": 0.24711675766911295
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.49710839629713854
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.012595639175139658,
+        "(x-2)^2": 3.563674458117446
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.11223029526442341
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.1727711434834558,
+        "(x-2)^2": 2.5101412099939577
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.4156574833723745
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 2.414890015478211,
+        "(x-2)^2": 0.19892345768115544
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.5539916394492639
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 3.8031379806818526,
+        "x^2": 0.0024836689648129536
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.04983642207074013
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 1.4292875002211969,
+        "x^2": 0.6471749959466319
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.8044718739313587
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 1.2839922733241962,
+        "(x-2)^2": 0.7514569592657234
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.1331338285146182
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 3.2173045841713037,
+        "x^2": 0.04256602818608518
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.20631536100369546
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.821620422411431,
+        "(x-2)^2": 1.1958892191114818
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.9064328008249872
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 3.4261755498075344,
+        "(x-2)^2": 0.022203048715937954
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.850993125272899
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.2864425466233071,
+        "x^2": 2.1456294426899176
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.4647967240166526
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 1.8529182631824146,
+        "x^2": 0.4080406510667268
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.638780596971078
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 1.3261723503328853,
+        "(x-2)^2": 0.7197900816402224
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.1515955671731657
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 3.0417668612942745,
+        "x^2": 0.06550211712720753
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.2559338139582332
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 3.983470188950056,
+        "x^2": 0.000017112542523434524
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.004136730898116836
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.47387723017578,
+        "(x-2)^2": 1.7203275787599062
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.6883874128539684
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.4041343609648617,
+        "x^2": 1.8612718449334136
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.364284370992138
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.5785239486102869,
+        "(x-2)^2": 1.5360934764770962
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.7606076180332977
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.18584432527803357,
+        "(x-2)^2": 2.4614577084056637
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.43109665421809246
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 2.500221386415583,
+        "(x-2)^2": 0.17538603815161993
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.5812088370659907
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 1.9028153720491332,
+        "x^2": 0.38511241223096887
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.6205742600454589
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.6728108632397659,
+        "(x-2)^2": 1.3918089108117804
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.8202504881069964
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.030914962761271883,
+        "(x-2)^2": 3.3276089097656003
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.17582651324891785
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 1.9506572978603025,
+        "x^2": 0.36401995812141086
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.6033406650652771
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.5614408939407736,
+        "x^2": 1.5642665074473254
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.250706403376638
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 3.0418955032279604,
+        "(x-2)^2": 0.06548324106574163
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.7441030655405547
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 1.6153503925793256,
+        "(x-2)^2": 0.5314929711650301
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.2709643553535739
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.6891169473776526,
+        "x^2": 1.3685942237628237
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.1698693190962928
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.02126139897327924,
+        "x^2": 3.43800983783309
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.8541871097149527
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 1.8026415313339863,
+        "x^2": 0.4321420665408111
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.6573751338017062
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.6129172232593788,
+        "x^2": 1.4813560196182842
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.2171096990897263
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.5103551062473319,
+        "x^2": 1.652789411471915
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.2856085763061458
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.5838520555623101,
+        "x^2": 1.5274435604496293
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.2358978762218298
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.10490499359664242,
+        "x^2": 2.8093433788726347
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.676109596318998
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.3830727350430508,
+        "x^2": 1.907357937113206
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.3810713005175388
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 1.407655107230885,
+        "(x-2)^2": 0.6618694277364813
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.1864464198736009
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.45330278951297437,
+        "(x-2)^2": 1.7601922028107517
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.6732776466755557
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 1.7022345557790368,
+        "(x-2)^2": 0.48344610514563435
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.3046971126583506
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 1.444387819240175,
+        "(x-2)^2": 0.6370803495808024
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.2018268674148431
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.7859004865339179,
+        "x^2": 1.23985934400008
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.1134897143665405
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 3.2586797876447235,
+        "x^2": 0.037954297618421694
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.1948186274934245
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 2.745529841058126,
+        "(x-2)^2": 0.1176736675333854
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.6569640433811852
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.8871896503908646,
+        "x^2": 1.1195598375969067
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.0580925468015105
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 1.1597097901183167,
+        "x^2": 0.8521168843421607
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.923101773555961
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.9068383888894296,
+        "(x-2)^2": 1.097715888597417
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.9522806250730032
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.8770817666377618,
+        "(x-2)^2": 1.1309760198382686
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.9365264366998733
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "(x-2)^2": 0.16853999516405724,
+        "x^2": 2.5263950799312647
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.5894637711918018
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 2.2223617101230366,
+        "(x-2)^2": 0.2593266304032648
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 1.490758769929943
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.7401601840427786,
+        "(x-2)^2": 1.2988576770427827
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.860325626749999
+      },
+      "is_feasible": true
+    },
+    {
+      "constraint_values": {},
+      "objective_values": {
+        "x^2": 0.7493497135501054,
+        "(x-2)^2": 1.2867501963085162
+      },
+      "constraint_violation": 0.0,
+      "variable_values": {
+        "x": 0.8656498793103973
+      },
+      "is_feasible": true
+    }
+  ],
+  "generation": 250,
+  "algorithm": "NSGA2",
+  "took": {
+    "hours": 0,
+    "minutes": 0,
+    "seconds": 1
+  }
+}

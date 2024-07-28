@@ -2,3 +2,7 @@
 resolver = "2"
 members = ["optirustic", "hv-fonseca-et-al-2006-sys", "hv-wfg-sys"]
 default-members = ["optirustic", "hv-fonseca-et-al-2006-sys", "hv-wfg-sys"]
+
+# Run test with optimisation to speed up tests solving optimisation problems.
+[profile.test]
+opt-level = 3

@@ -292,7 +292,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
             // Export history
             if let Some(export) = self.export_history() {
                 if history_gen_step >= export.generation_step {
-                    self.save_to_json(&export.destination)?;
+                    self.save_to_json(&export.destination, None)?;
                     history_gen_step = 0;
                 } else {
                     history_gen_step += 1;
@@ -343,7 +343,9 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
     /// * `destination`: The path to the JSON file.
     ///
     /// return `Result<(), OError>`
-    fn save_to_json(&self, destination: &PathBuf) -> Result<(), OError> {
+    fn save_to_json(&self, destination: &PathBuf, file_prefix: Option<&str>) -> Result<(), OError> {
+        let file_prefix = file_prefix.unwrap_or("History");
+
         let [hours, minutes, seconds] = self.elapsed();
         let export = AlgorithmSerialisedExport {
             options: self.algorithm_options(),
@@ -360,7 +362,16 @@ pub trait Algorithm<AlgorithmOptions: Serialize>: Display {
         let data = serde_json::to_string_pretty(&export)
             .map_err(|e| OError::AlgorithmExport(e.to_string()))?;
 
-        fs::write(destination, data).map_err(|e| OError::AlgorithmExport(e.to_string()))?;
+        let mut file = destination.to_owned();
+
+        file.push(format!(
+            "{}_{}_gen{}.json",
+            file_prefix,
+            self.name(),
+            self.generation()
+        ));
+
+        fs::write(file, data).map_err(|e| OError::AlgorithmExport(e.to_string()))?;
         Ok(())
     }
 }
