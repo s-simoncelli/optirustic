@@ -66,23 +66,23 @@ pub trait Evaluator: Sync + Send + Debug {
 /// Serialised data of a problem.
 pub struct ProblemExport {
     /// The problem objectives.
-    objectives: HashMap<String, Objective>,
+    pub objectives: HashMap<String, Objective>,
     /// The problem constraints.
-    constraints: HashMap<String, Constraint>,
+    pub constraints: HashMap<String, Constraint>,
     /// The problem variables.
-    variables: HashMap<String, VariableType>,
+    pub variables: HashMap<String, VariableType>,
     /// The constraint names.
-    constraint_names: Vec<String>,
+    pub constraint_names: Vec<String>,
     /// The variable names.
-    variable_names: Vec<String>,
+    pub variable_names: Vec<String>,
     /// The objective names.
-    objective_names: Vec<String>,
+    pub objective_names: Vec<String>,
     /// The number of objectives
-    number_of_objectives: usize,
+    pub number_of_objectives: usize,
     /// The number of constraints
-    number_of_constraints: usize,
+    pub number_of_constraints: usize,
     /// The number of variables
-    number_of_variables: usize,
+    pub number_of_variables: usize,
 }
 
 /// Define a new problem to optimise as:
@@ -274,6 +274,17 @@ impl Problem {
             )),
             Some(p) => Ok(self.variables[p].clone()),
         }
+    }
+
+    /// Check if a variable name exists.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The name of the variable to check.
+    ///
+    /// return `bool`
+    pub fn does_variable_exist(&self, name: &str) -> bool {
+        self.variables.iter().any(|o| o.name() == name)
     }
 
     /// Get a constraint by name. This returns an error if the constraint does not exist.
@@ -745,7 +756,7 @@ pub mod builtin_problems {
         pub fn f2(&self, x: &[f64]) -> f64 {
             let a = (1..self.n).map(|xi| x[xi]).sum::<f64>() / (self.n as f64 - 1.0);
             let g = 1.0 + 9.0 * f64::powf(a, 0.25);
-            g * (1.0 - (ZTD6Problem::f1(&x) / g).powi(2))
+            g * (1.0 - (ZTD6Problem::f1(x) / g).powi(2))
         }
     }
 
