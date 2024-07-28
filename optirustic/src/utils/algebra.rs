@@ -88,7 +88,11 @@ pub fn solve_linear_system(
             Some(tolerances.relative),
             Some(tolerances.absolute),
         ) {
-            return Err("The solution is outside the tolerance limits".to_string());
+            return Err(format!(
+                "The solution is outside the tolerance limits. b is {:?} instead of {:?}",
+                found_b.data.as_slice(),
+                b.data.as_slice()
+            ));
         }
     }
     Ok(solution.data.as_vec().clone())

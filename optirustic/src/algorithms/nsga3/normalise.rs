@@ -112,6 +112,7 @@ impl<'a> Normalise<'a> {
             for (x_idx, ind) in self.individuals.iter().enumerate() {
                 let f_j = NSGA3::get_normalised_objectives(ind)?;
                 let value = self.asf(f_j.as_f64_vec()?, &weights)?;
+
                 if value < min_value {
                     min_value = value;
                     ind_index = x_idx;

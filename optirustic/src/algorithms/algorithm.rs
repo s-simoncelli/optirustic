@@ -373,11 +373,12 @@ pub trait Algorithm<T: Serialize + Clone + DeserializeOwned + Debug>: Display {
     fn algorithm_options(&self) -> T;
 
     /// Save the algorithm data (individuals' objective, variables and constraints, the problem,
-    /// ...) to a JSON file.
+    /// ...) to a JSON file. This returns an error if the file cannot be saved.
     ///
     /// # Arguments
     ///
     /// * `destination`: The path to the JSON file.
+    /// * `file_prefix`: A prefix to prepend at the beginning of the file name. Empty when `None`.
     ///
     /// return `Result<(), OError>`
     fn save_to_json(&self, destination: &PathBuf, file_prefix: Option<&str>) -> Result<(), OError> {
