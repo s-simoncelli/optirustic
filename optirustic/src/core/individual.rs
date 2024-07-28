@@ -277,6 +277,17 @@ impl Individual {
         Ok(&self.variable_values[name])
     }
 
+    /// Get the vector with the variable values for the individual.
+    ///
+    /// returns: `Result<Vec<&VariableValue>, OError>`
+    pub fn get_variable_values(&self) -> Result<Vec<&VariableValue>, OError> {
+        self.problem
+            .variable_names()
+            .iter()
+            .map(|var_name| self.get_variable_value(var_name))
+            .collect()
+    }
+
     /// Get the number stored in a real variable by name. This returns an error if the variable
     /// name does not exist or the variable is not of type real.
     ///
