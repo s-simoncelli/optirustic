@@ -64,15 +64,15 @@ pub struct Individual {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IndividualExport {
     /// The value of the constraints.
-    constraint_values: HashMap<String, f64>,
+    pub constraint_values: HashMap<String, f64>,
     /// The values of the objectives.
-    objective_values: HashMap<String, f64>,
+    pub objective_values: HashMap<String, f64>,
     /// The overall amount of violation of the solution constraints.
-    constraint_violation: f64,
+    pub constraint_violation: f64,
     /// The value of the problem variables for the individual.
-    variable_values: HashMap<String, VariableValue>,
+    pub variable_values: HashMap<String, VariableValue>,
     /// Whether the solution meets all the problem constraints.
-    is_feasible: bool,
+    pub is_feasible: bool,
 }
 
 impl Display for Individual {
@@ -432,6 +432,30 @@ impl Individual {
             is_feasible: self.is_feasible(),
         }
     }
+
+    /// Import the individual's objectives, variables and constraints.
+    ///
+    /// # Arguments
+    ///
+    /// * `data`: The data.
+    /// * `problem`: The problem being solved.
+    ///
+    /// returns: `Result<Individual, OError>`
+    pub fn deserialise(data: &IndividualExport, problem: Arc<Problem>) -> Result<Self, OError> {
+        let mut ind = Individual::new(problem.clone());
+
+        for (var_name, var_value) in data.variable_values.iter() {
+            ind.update_variable(var_name, var_value.clone())?;
+        }
+        for (obj_name, obj_value) in data.objective_values.iter() {
+            ind.update_objective(obj_name, *obj_value)?;
+        }
+        for (const_name, const_value) in data.constraint_values.iter() {
+            ind.update_constraint(const_name, *const_value)?;
+        }
+        ind.set_evaluated();
+        Ok(ind)
+    }
 }
 
 /// The population with the solutions.
@@ -512,6 +536,27 @@ impl Population {
     /// return: `Vec<IndividualExport>`
     pub fn serialise(&self) -> Vec<IndividualExport> {
         self.0.iter().map(|i| i.serialise()).collect()
+    }
+
+    /// Import the population exported to a JSON file.
+    ///
+    /// # Arguments
+    ///
+    /// * `data`: The vector of [`IndividualExport`].
+    /// * `problem`: The problem.
+    ///
+    /// returns: `Result<Population, OError>`
+    pub fn deserialise(
+        data: &[IndividualExport],
+
+        problem: Arc<Problem>,
+    ) -> Result<Population, OError> {
+        // Import data
+        let individuals = data
+            .iter()
+            .map(|d| Individual::deserialise(d, problem.clone()))
+            .collect::<Result<Vec<Individual>, OError>>()?;
+        Ok(Population::new_with(individuals))
     }
 }
 
