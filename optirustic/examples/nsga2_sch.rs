@@ -11,7 +11,7 @@ use optirustic::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, Stopping
 use optirustic::core::builtin_problems::SCHProblem;
 use optirustic::core::Individual;
 
-/// Test the Schaffer’s problem (SCH) where the following 2 objectives are minimised:
+/// Solve the Schaffer’s problem (SCH) where the following 2 objectives are minimised:
 /// - `f_1(x) = x^2`
 /// - `f-2(x) = (x - 2)^2`
 /// The problem has 1 variable (`x`) bounded to -0.001 and 0.001. The optional solution is expected
