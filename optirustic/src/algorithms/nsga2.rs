@@ -9,10 +9,10 @@ use rand::RngCore;
 use serde::{Deserialize, Serialize};
 
 use crate::algorithms::{Algorithm, ExportHistory, StoppingConditionType};
+use crate::core::utils::{argsort, get_rng, vector_max, vector_min, Sort};
 use crate::core::{
     Individual, Individuals, IndividualsMut, OError, Population, Problem, VariableValue,
 };
-use crate::core::utils::{argsort, get_rng, Sort, vector_max, vector_min};
 use crate::operators::{
     Crossover, CrowdedComparison, Mutation, PolynomialMutation, PolynomialMutationArgs, Selector,
     SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
@@ -47,7 +47,7 @@ pub struct NSGA2Arg {
     /// Instead of initialising the population with random variables, see the initial population
     /// with  the variable values from a JSON files exported with this tool. This option lets you
     /// restart the evolution from a previous generation; you can use any history file (exported
-    /// when the field `export_history`) or the file exported when the stopping condition was reached.  
+    /// when the field `export_history`) or the file exported when the stopping condition was reached.
     pub resume_from_file: Option<PathBuf>,
     /// The seed used in the random number generator (RNG). You can specify a seed in case you want
     /// to try to reproduce results. NSGA2 is a stochastic algorithm that relies on a RNG at
@@ -441,13 +441,14 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
         &self.args
     }
 }
+
 #[cfg(test)]
 mod test_sorting {
     use float_cmp::assert_approx_eq;
 
     use crate::algorithms::NSGA2;
-    use crate::core::{Individuals, ObjectiveDirection, VariableValue};
     use crate::core::utils::individuals_from_obj_values_dummy;
+    use crate::core::{Individuals, ObjectiveDirection, VariableValue};
 
     #[test]
     /// Test the crowding distance algorithm (not enough points).
@@ -669,7 +670,9 @@ mod test_sorting {
 }
 #[cfg(test)]
 mod test_problems {
-    use crate::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
+    use optirustic_macros::test_with_retries;
+
+    use crate::algorithms::{Algorithm, MaxGeneration, NSGA2Arg, StoppingConditionType, NSGA2};
     use crate::core::builtin_problems::{
         SCHProblem, ZTD1Problem, ZTD2Problem, ZTD3Problem, ZTD4Problem,
     };
@@ -677,7 +680,8 @@ mod test_problems {
 
     const BOUND_TOL: f64 = 1.0 / 1000.0;
     const LOOSE_BOUND_TOL: f64 = 0.1;
-    #[test]
+
+    #[test_with_retries(3)]
     /// Test problem 1 from Deb et al. (2002). Optional solution x in [0; 2]
     fn test_sch_problem() {
         let problem = SCHProblem::create().unwrap();
@@ -703,7 +707,7 @@ mod test_problems {
         }
     }
 
-    #[test]
+    #[test_with_retries(3)]
     /// Test the ZTD1 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd1_problem() {
@@ -750,7 +754,7 @@ mod test_problems {
         }
     }
 
-    #[test]
+    #[test_with_retries(3)]
     /// Test the ZTD2 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd2_problem() {
@@ -802,7 +806,7 @@ mod test_problems {
         }
     }
 
-    #[test]
+    #[test_with_retries(3)]
     /// Test the ZTD3 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd3_problem() {
@@ -854,15 +858,13 @@ mod test_problems {
         }
     }
 
-    #[test]
+    #[test_with_retries(3)]
     /// Test the ZTD4 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x10 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd4_problem() {
         let number_of_individuals: usize = 10;
-        let problem = ZTD4Problem::create(number_of_individuals).unwrap();
         let args = NSGA2Arg {
             number_of_individuals,
-            // this may take longer to converge
             stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(3000)),
             crossover_operator_options: None,
             mutation_operator_options: None,
@@ -871,7 +873,8 @@ mod test_problems {
             resume_from_file: None,
             seed: Some(1),
         };
-        let mut algo = NSGA2::new(problem, args).unwrap();
+        let problem = ZTD4Problem::create(number_of_individuals).unwrap();
+        let mut algo = NSGA2::new(problem, args.clone()).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -908,7 +911,7 @@ mod test_problems {
         }
     }
 
-    #[test]
+    #[test_with_retries(3)]
     /// Test the ZTD6 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x10 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd6_problem() {

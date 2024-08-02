@@ -724,6 +724,7 @@ dependencies = [
  "hv-fonseca-et-al-2006-sys",
  "hv-wfg-sys",
  "log",
+ "optirustic-macros",
  "ordered-float",
  "plotters",
  "rand",
@@ -732,6 +733,15 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "optirustic-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
