@@ -1,7 +1,8 @@
 use proc_macro::TokenStream;
+
 use quote::quote;
+use syn::{DeriveInput, ItemFn, parse_macro_input};
 use syn::parse::Parser;
-use syn::{parse_macro_input, DeriveInput, ItemFn};
 
 /// An attribute macro to repeat a test `n` times until the test passes. The test passes if it does
 /// not panic at least once, it fails if it panics `n` times.
@@ -95,9 +96,13 @@ pub fn as_algorithm_args(_attrs: TokenStream, input: TokenStream) -> TokenStream
 /// It also implements the `Display` trait.
 ///
 #[proc_macro_attribute]
-pub fn as_algorithm(_attrs: TokenStream, input: TokenStream) -> TokenStream {
+pub fn as_algorithm(attrs: TokenStream, input: TokenStream) -> TokenStream {
     let mut ast = parse_macro_input!(input as DeriveInput);
     let name = &ast.ident;
+
+    let arg_type = syn::punctuated::Punctuated::<syn::Path, syn::Token![,]>::parse_terminated
+        .parse(attrs)
+        .expect("Cannot parse argument type");
 
     match &mut ast.data {
         syn::Data::Struct(ref mut struct_data) => {
@@ -141,6 +146,14 @@ pub fn as_algorithm(_attrs: TokenStream, input: TokenStream) -> TokenStream {
                             stopping_condition: StoppingConditionType
                         })
                         .expect("Cannot add `stopping_condition` field"),
+                );
+                fields.named.push(
+                    syn::Field::parse_named
+                        .parse2(quote! {
+                            /// The algorithm options
+                            args: #arg_type
+                        })
+                        .expect("Cannot add `args` field"),
                 );
                 fields.named.push(
                     syn::Field::parse_named
@@ -270,8 +283,8 @@ pub fn impl_algorithm_trait_items(attrs: TokenStream, input: TokenStream) -> Tok
         .expect("Failed to parse `export_history` item"),
         syn::parse::<syn::ImplItem>(
             quote!(
-                fn algorithm_options(&self) -> &#arg_type {
-                    &self.args
+                fn algorithm_options(&self) -> #arg_type {
+                    self.args.clone()
                 }
             )
             .into(),

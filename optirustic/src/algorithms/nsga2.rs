@@ -65,7 +65,7 @@ pub struct NSGA2Arg {
 /// ```rust
 #[doc = include_str!("../../examples/nsga2_zdt1.rs")]
 /// ```
-#[as_algorithm]
+#[as_algorithm(NSGA2Arg)]
 pub struct NSGA2 {
     /// The operator to use to select the individuals for reproduction. This is a binary tournament
     /// selector ([`TournamentSelector`]) with the [`CrowdedComparison`] comparison operator.
@@ -77,8 +77,6 @@ pub struct NSGA2 {
     mutation_operator: PolynomialMutation,
     /// The seed to use.
     rng: Box<dyn RngCore>,
-    /// The algorithm options
-    args: NSGA2Arg,
 }
 
 impl NSGA2 {

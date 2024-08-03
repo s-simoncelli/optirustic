@@ -1,18 +1,17 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::ops::Rem;
-use std::sync::Arc;
-use std::time::Instant;
 
 use log::{debug, info, warn};
 use rand::RngCore;
-use serde::{Deserialize, Serialize};
 
-use crate::algorithms::{Algorithm, ExportHistory, NSGA2, StoppingConditionType};
+use optirustic_macros::{as_algorithm, as_algorithm_args, impl_algorithm_trait_items};
+
+use crate::algorithms::{Algorithm, NSGA2};
 use crate::algorithms::nsga3::associate::AssociateToRefPoint;
 use crate::algorithms::nsga3::niching::Niching;
 use crate::algorithms::nsga3::normalise::Normalise;
-use crate::core::{DataValue, Individual, OError, Population, Problem};
+use crate::core::{DataValue, Individual, OError};
 use crate::core::utils::get_rng;
 use crate::operators::{
     Crossover, Mutation, ParetoConstrainedDominance, PolynomialMutation, PolynomialMutationArgs,
@@ -47,7 +46,7 @@ pub enum Nsga3NumberOfIndividuals {
 }
 
 /// Input arguments for the NSGA3 algorithm.
-#[derive(Serialize, Deserialize, Clone)]
+#[as_algorithm_args]
 pub struct NSGA3Arg {
     /// The number of individuals in the population.
     pub number_of_individuals: Nsga3NumberOfIndividuals,
@@ -67,16 +66,6 @@ pub struct NSGA3Arg {
     /// divided by the number of real variables in the problem (i.e., each variable will have the
     /// same probability of being mutated).
     pub mutation_operator_options: Option<PolynomialMutationArgs>,
-    /// The condition to use when to terminate the algorithm.
-    pub stopping_condition: StoppingConditionType,
-    /// Whether the objective and constraint evaluation in [`Problem::evaluator`] should run
-    /// using threads. If the evaluation function takes a long time to run and return the updated
-    /// values, it is advisable to set this to `true`. This defaults to `true`.
-    pub parallel: Option<bool>,
-    /// The options to configure the individual's history export. When provided, the algorithm will
-    /// save objectives, constraints and solutions to a file each time the generation increases by
-    /// a given step. This is useful to track convergence and inspect an algorithm evolution.
-    pub export_history: Option<ExportHistory>,
     /// The seed used in the random number generator (RNG). You can specify a seed in case you want
     /// to try to reproduce results. NSGA2 is a stochastic algorithm that relies on an RNG at
     /// different steps (when population is initially generated, during selection, crossover and
@@ -89,22 +78,17 @@ pub struct NSGA3Arg {
 ///
 /// Implemented based on:
 /// > K. Deb and H. Jain, "An Evolutionary Many-Objective Optimization Algorithm Using
-/// Reference-Point-Based Non-dominated Sorting Approach, Part I: Solving Problems With Box
-/// Constraints," in IEEE Transactions on Evolutionary Computation, vol. 18, no. 4, pp. 577-601,
-/// Aug. 2014, doi: 10.1109/TEVC.2013.2281535
+/// > Reference-Point-Based Non-dominated Sorting Approach, Part I: Solving Problems With Box
+/// > Constraints," in IEEE Transactions on Evolutionary Computation, vol. 18, no. 4, pp. 577-601,
+/// > Aug. 2014, doi: 10.1109/TEVC.2013.2281535
 ///
 /// See: <https://10.1109/TEVC.2013.2281535>.
+#[as_algorithm(NSGA3Arg)]
 pub struct NSGA3 {
-    /// The number of individuals to use in the population.
-    number_of_individuals: usize,
     /// The vector of reference points
     reference_points: Vec<Vec<f64>>,
     /// The ideal point coordinates when the algorithm starts up to the current evolution
     ideal_point: Vec<f64>,
-    /// The population with the solutions.
-    population: Population,
-    /// The problem being solved.
-    problem: Arc<Problem>,
     /// The operator to use to select the individuals for reproduction. This is a binary tournament
     /// selector ([`TournamentSelector`]) with the [`ParetoConstrainedDominance`] comparison operator.
     selector_operator: TournamentSelector<ParetoConstrainedDominance>,
@@ -113,26 +97,8 @@ pub struct NSGA3 {
     crossover_operator: SimulatedBinaryCrossover,
     /// The PM operator to use to mutate the variables of an individual.
     mutation_operator: PolynomialMutation,
-    /// The evolution step.
-    generation: usize,
-    /// The stopping condition.
-    stopping_condition: StoppingConditionType,
-    /// The time when the algorithm started.
-    start_time: Instant,
-    /// The configuration struct to export the algorithm history.
-    export_history: Option<ExportHistory>,
-    /// Whether the evaluation should run using threads
-    parallel: bool,
     /// The seed to use.
     rng: Box<dyn RngCore>,
-    /// The algorithm options
-    args: NSGA3Arg,
-}
-
-impl Display for NSGA3 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.name().as_str())
-    }
 }
 
 impl NSGA3 {
@@ -253,7 +219,7 @@ impl NSGA3 {
     /// # Arguments
     ///
     /// * `selected_individuals`: The individuals to use to count the association to the reference
-    /// points.
+    ///    points.
     /// * `reference_points`: The reference points.
     ///
     /// returns: `Result<HashMap<usize, usize>, OError>`
@@ -289,6 +255,7 @@ impl NSGA3 {
 }
 
 /// Implementation of Section IV of the paper.
+#[impl_algorithm_trait_items(NSGA3Arg)]
 impl Algorithm<NSGA3Arg> for NSGA3 {
     /// This assesses the initial random population.
     ///
@@ -436,34 +403,6 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
         Ok(())
     }
 
-    fn generation(&self) -> usize {
-        self.generation
-    }
-
-    fn name(&self) -> String {
-        "NSGA3".to_string()
-    }
-
-    fn start_time(&self) -> &Instant {
-        &self.start_time
-    }
-
-    fn stopping_condition(&self) -> &StoppingConditionType {
-        &self.stopping_condition
-    }
-
-    fn population(&self) -> &Population {
-        &self.population
-    }
-
-    fn problem(&self) -> Arc<Problem> {
-        self.problem.clone()
-    }
-
-    fn export_history(&self) -> Option<&ExportHistory> {
-        self.export_history.as_ref()
-    }
-
     fn additional_export_data(&self) -> Option<HashMap<String, DataValue>> {
         let mut data = HashMap::new();
         let mut points: Vec<DataValue> = Vec::new();
@@ -479,10 +418,6 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
             DataValue::Vector(self.ideal_point.clone()),
         );
         Some(data)
-    }
-
-    fn algorithm_options(&self) -> NSGA3Arg {
-        self.args.clone()
     }
 }
 
