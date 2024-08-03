@@ -189,6 +189,7 @@ impl NSGA2 {
         );
         log_opts
     }
+
     /// Calculate the crowding distance (with complexity $O(M * log(N))$, where `M` is the number of
     /// objectives and `N` the number of individuals). This set the distance on the individual's data,
     /// to retrieve it, use `Individual::set_data("crowding_distance").unwrap()`.

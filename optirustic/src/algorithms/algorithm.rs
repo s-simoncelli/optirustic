@@ -470,7 +470,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
     ///
     /// * `_file`: The path to the JSON file.
     /// * `_destination`: The folder where to save the image or images. If `None` the file is saved
-    /// in the same folder as the JSON file.
+    ///   in the same folder as the JSON file.
     /// * `_image_name`: The name of the file(s).
     ///
     /// returns: `Result<(), OError>`
@@ -504,7 +504,6 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
         let res: AlgorithmSerialisedExport<AlgorithmOptions> = serde_json::from_str(&data)
             .map_err(|e| OError::Generic(format!("Cannot parse the JSON file because: {e}")))?;
 
-        // println!("{:?}", res);
         Ok(res)
     }
 
