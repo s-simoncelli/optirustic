@@ -14,6 +14,7 @@ rayon = "1.10.0"
 env_logger = "0.11.3"
 chrono = { version = "0.4.38", features = ["serde"] }
 ordered-float = "4.2.0"
+optirustic-macros = { path = "../optirustic-macros" }
 hv-fonseca-et-al-2006-sys = { path = "../hv-fonseca-et-al-2006-sys" }
 hv-wfg-sys = { path = "../hv-wfg-sys" }
 plotters = { version = "0.3.6", optional = true }
