@@ -100,7 +100,7 @@ impl ExportHistory {
     /// * `generation_step`: export the algorithm data each time the generation counter in a genetic
     //  algorithm increases by the provided step.
     /// * `destination`: serialise the algorithm history and export the results to a JSON file in
-    /// the given folder.
+    ///    the given folder.
     ///
     /// returns: `Result<ExportHistory, OError>`
     pub fn new(generation_step: usize, destination: &str) -> Result<Self, OError> {
@@ -516,7 +516,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
     /// * `problem`: The problem.
     /// * `name`: The algorithm name.
     /// * `expected_individuals`: The number of individuals to expect in the file. If this does not
-    /// match the population size, being used in the algorithm, an error is thrown.
+    ///     match the population size, being used in the algorithm, an error is thrown.
     /// * `file`: The path to the JSON file exported from this library.
     ///
     /// returns: `Result<Population, OError>`

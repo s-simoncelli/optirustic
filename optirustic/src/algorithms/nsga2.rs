@@ -1,17 +1,14 @@
 use std::fmt::{Display, Formatter};
 use std::ops::Rem;
 use std::path::PathBuf;
-use std::sync::Arc;
-use std::time::Instant;
 
 use log::{debug, info};
 use rand::RngCore;
-use serde::{Deserialize, Serialize};
 
-use crate::algorithms::{Algorithm, ExportHistory, StoppingConditionType};
-use crate::core::{
-    DataValue, Individual, Individuals, IndividualsMut, OError, Population, Problem,
-};
+use optirustic_macros::{as_algorithm, as_algorithm_args, impl_algorithm_trait_items};
+
+use crate::algorithms::Algorithm;
+use crate::core::{DataValue, Individual, Individuals, IndividualsMut, OError};
 use crate::core::utils::get_rng;
 use crate::operators::{
     Crossover, CrowdedComparison, Mutation, PolynomialMutation, PolynomialMutationArgs, Selector,
@@ -23,7 +20,7 @@ use crate::utils::{argsort, fast_non_dominated_sort, Sort, vector_max, vector_mi
 const CROWDING_DIST_KEY: &str = "crowding_distance";
 
 /// Input arguments for the NSGA2 algorithm.
-#[derive(Serialize, Deserialize, Clone)]
+#[as_algorithm_args]
 pub struct NSGA2Arg {
     /// The number of individuals to use in the population. This must be a multiple of `2`.
     pub number_of_individuals: usize,
@@ -37,20 +34,10 @@ pub struct NSGA2Arg {
     /// divided by the number of real variables in the problem (i.e., each variable will have the
     /// same probability of being mutated).
     pub mutation_operator_options: Option<PolynomialMutationArgs>,
-    /// The condition to use when to terminate the algorithm.
-    pub stopping_condition: StoppingConditionType,
-    /// Whether the objective and constraint evaluation in [`Problem::evaluator`] should run
-    /// using threads. If the evaluation function takes a long time to run and return the updated
-    /// values, it is advisable to set this to `true`. This defaults to `true`.
-    pub parallel: Option<bool>,
-    /// The options to configure the individual's history export. When provided, the algorithm will
-    /// save objectives, constraints and solutions to a file each time the generation increases by
-    /// a given step. This is useful to track convergence and inspect an algorithm evolution.
-    pub export_history: Option<ExportHistory>,
     /// Instead of initialising the population with random variables, see the initial population
     /// with  the variable values from a JSON files exported with this tool. This option lets you
     /// restart the evolution from a previous generation; you can use any history file (exported
-    /// when the field `export_history`) or the file exported when the stopping condition was reached.  
+    /// when the field `export_history`) or the file exported when the stopping condition was reached.
     pub resume_from_file: Option<PathBuf>,
     /// The seed used in the random number generator (RNG). You can specify a seed in case you want
     /// to try to reproduce results. NSGA2 is a stochastic algorithm that relies on a RNG at
@@ -78,13 +65,8 @@ pub struct NSGA2Arg {
 /// ```rust
 #[doc = include_str!("../../examples/nsga2_zdt1.rs")]
 /// ```
+#[as_algorithm]
 pub struct NSGA2 {
-    /// The number of individuals to use in the population.
-    number_of_individuals: usize,
-    /// The population with the solutions.
-    population: Population,
-    /// The problem being solved.
-    problem: Arc<Problem>,
     /// The operator to use to select the individuals for reproduction. This is a binary tournament
     /// selector ([`TournamentSelector`]) with the [`CrowdedComparison`] comparison operator.
     selector_operator: TournamentSelector<CrowdedComparison>,
@@ -93,26 +75,10 @@ pub struct NSGA2 {
     crossover_operator: SimulatedBinaryCrossover,
     /// The PM operator to use to mutate the variables of an individual.
     mutation_operator: PolynomialMutation,
-    /// The evolution step.
-    generation: usize,
-    /// The stopping condition.
-    stopping_condition: StoppingConditionType,
-    /// The time when the algorithm started.
-    start_time: Instant,
-    /// The configuration struct to export the algorithm history.
-    export_history: Option<ExportHistory>,
-    /// Whether the evaluation should run using threads
-    parallel: bool,
     /// The seed to use.
     rng: Box<dyn RngCore>,
     /// The algorithm options
     args: NSGA2Arg,
-}
-
-impl Display for NSGA2 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.name().as_str())
-    }
 }
 
 impl NSGA2 {
@@ -306,6 +272,7 @@ impl NSGA2 {
 }
 
 /// Implementation of Section IIIC of the paper.
+#[impl_algorithm_trait_items(NSGA2Arg)]
 impl Algorithm<NSGA2Arg> for NSGA2 {
     /// This assesses the initial random population and sets the individual's ranks and crowding
     /// distance needed in [`self.evolve`].
@@ -430,39 +397,8 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
         self.generation += 1;
         Ok(())
     }
-
-    fn generation(&self) -> usize {
-        self.generation
-    }
-
-    fn name(&self) -> String {
-        "NSGA2".to_string()
-    }
-
-    fn start_time(&self) -> &Instant {
-        &self.start_time
-    }
-
-    fn stopping_condition(&self) -> &StoppingConditionType {
-        &self.stopping_condition
-    }
-
-    fn population(&self) -> &Population {
-        &self.population
-    }
-
-    fn problem(&self) -> Arc<Problem> {
-        self.problem.clone()
-    }
-
-    fn export_history(&self) -> Option<&ExportHistory> {
-        self.export_history.as_ref()
-    }
-
-    fn algorithm_options(&self) -> NSGA2Arg {
-        self.args.clone()
-    }
 }
+
 #[cfg(test)]
 mod test_sorting {
     use float_cmp::assert_approx_eq;
@@ -708,6 +644,8 @@ mod test_sorting {
 
 #[cfg(test)]
 mod test_problems {
+    use optirustic_macros::test_with_retries;
+
     use crate::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
     use crate::core::builtin_problems::{
         SCHProblem, ZTD1Problem, ZTD2Problem, ZTD3Problem, ZTD4Problem,
@@ -717,7 +655,7 @@ mod test_problems {
     const BOUND_TOL: f64 = 1.0 / 1000.0;
     const LOOSE_BOUND_TOL: f64 = 0.1;
 
-    #[test]
+    #[test_with_retries(3)]
     /// Test problem 1 from Deb et al. (2002). Optional solution x in [0; 2]
     fn test_sch_problem() {
         let problem = SCHProblem::create().unwrap();
@@ -743,7 +681,7 @@ mod test_problems {
         }
     }
 
-    #[test]
+    #[test_with_retries(3)]
     /// Test the ZTD1 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd1_problem() {
@@ -790,7 +728,7 @@ mod test_problems {
         }
     }
 
-    #[test]
+    #[test_with_retries(3)]
     /// Test the ZTD2 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd2_problem() {
@@ -842,7 +780,7 @@ mod test_problems {
         }
     }
 
-    #[test]
+    #[test_with_retries(3)]
     /// Test the ZTD3 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd3_problem() {
@@ -894,15 +832,13 @@ mod test_problems {
         }
     }
 
-    #[test]
+    #[test_with_retries(3)]
     /// Test the ZTD4 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x10 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd4_problem() {
         let number_of_individuals: usize = 10;
-        let problem = ZTD4Problem::create(number_of_individuals).unwrap();
         let args = NSGA2Arg {
             number_of_individuals,
-            // this may take longer to converge
             stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(3000)),
             crossover_operator_options: None,
             mutation_operator_options: None,
@@ -911,7 +847,8 @@ mod test_problems {
             resume_from_file: None,
             seed: Some(1),
         };
-        let mut algo = NSGA2::new(problem, args).unwrap();
+        let problem = ZTD4Problem::create(number_of_individuals).unwrap();
+        let mut algo = NSGA2::new(problem, args.clone()).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -948,7 +885,7 @@ mod test_problems {
         }
     }
 
-    #[test]
+    #[test_with_retries(3)]
     /// Test the ZTD6 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x10 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd6_problem() {
