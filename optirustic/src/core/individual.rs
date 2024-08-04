@@ -394,7 +394,7 @@ impl Individual {
     /// # Arguments
     ///
     /// * `transform`: The function to apply to transform each objective value. This function
-    /// receives the objective value and its name.
+    ///    receives the objective value and its name.
     ///
     /// returns: `Result<Vec<f64>, OError>`
     pub fn transform_objective_values<F: Fn(f64, String) -> Result<f64, OError>>(
@@ -723,11 +723,11 @@ impl_individuals!(Vec<Individual>);
 mod test {
     use std::sync::Arc;
 
+    use crate::core::utils::dummy_evaluator;
     use crate::core::{
         BoundedNumber, Constraint, Individual, Objective, ObjectiveDirection, Problem,
         RelationalOperator, VariableType,
     };
-    use crate::core::utils::dummy_evaluator;
 
     #[test]
     /// Test when an objective does not exist

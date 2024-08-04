@@ -37,8 +37,8 @@ const RANK_KEY: &str = "rank";
 ///
 /// * `individuals`: The individuals to sort by dominance.
 /// * `first_front_only`: Return the first front only with the rank 1 (i.e. containing only
-/// non-dominated individuals). If you need only the first front set this to true to avoid
-/// ranking the remaining individuals.
+///    non-dominated individuals). If you need only the first front set this to true to avoid
+///    ranking the remaining individuals.
 ///
 /// returns: `Result<NonDominatedSortResults, OError>`.
 pub fn fast_non_dominated_sort(
@@ -159,8 +159,8 @@ pub fn fast_non_dominated_sort(
 
 #[cfg(test)]
 mod test {
-    use crate::core::{DataValue, ObjectiveDirection};
     use crate::core::test_utils::individuals_from_obj_values_dummy;
+    use crate::core::{DataValue, ObjectiveDirection};
     use crate::utils::fast_non_dominated_sort;
     use crate::utils::fast_non_dominated_sort::RANK_KEY;
 

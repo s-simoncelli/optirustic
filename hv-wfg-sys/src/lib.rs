@@ -1,6 +1,7 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
+#![allow(clippy::all)]
 
 use std::ffi::c_int;
 
@@ -12,18 +13,18 @@ include!("bindings.rs");
 ///
 /// **IMPLEMENTATION NOTES**:
 /// 1) The program assumes that all objectives are minimised (`MAXIMISATION` is set to `false`
-/// during conditional compilation ). Maximisation objectives may be multiplied by -1 to convert
-/// them to minimisation.
+///    during conditional compilation ). Maximisation objectives may be multiplied by -1 to convert
+///    them to minimisation.
 /// 2) The `opt` numeric variable is set to `2` in the conditional compilation of the `wfg.c` file.
-/// This means that some optimisations, such as dominated point exclusion when calculating the
-/// exclusive hyper-volume or reverting to simple calculation for the 2-dimensional case, are
-/// included.
+///    This means that some optimisations, such as dominated point exclusion when calculating the
+///    exclusive hyper-volume or reverting to simple calculation for the 2-dimensional case, are
+///    included.
 ///
 /// # Arguments
 ///
 /// * `objective_values`: The vector with the objective values. The size of this vector must
-/// correspond to the number of individuals `n` in the population. Each sub-vector must have size
-/// `d` equal to the number of problem objectives.
+///    correspond to the number of individuals `n` in the population. Each sub-vector must have size
+///    `d` equal to the number of problem objectives.
 /// * `ref_point`: The reference or anti-optimal point to use in the calculation of length `d`.
 ///
 /// returns: `Result<f64, String>`. The hyper-volume.

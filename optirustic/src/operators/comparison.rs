@@ -36,7 +36,7 @@ pub trait BinaryComparisonOperator {
 /// constraint-dominated if:
 /// 1) $S_1$ is feasible but $S_2$ is not.
 /// 2) Both $S_1$ and $S_2$ are infeasible and $CV(S_1) < CV(S_2)$ (where $CV$ is the constraint
-/// violation function); or
+///    violation function); or
 /// 3) both are feasible and $S_1$ Pareto-dominate $S_2$ ($ S_1 \prec S_2 $).
 ///
 ///
@@ -202,11 +202,11 @@ impl BinaryComparisonOperator for CrowdedComparison {
 mod test_pareto_constrained_dominance {
     use std::sync::Arc;
 
+    use crate::core::utils::dummy_evaluator;
     use crate::core::{
         BoundedNumber, Constraint, Individual, Objective, ObjectiveDirection, Problem,
         RelationalOperator, VariableType,
     };
-    use crate::core::utils::dummy_evaluator;
     use crate::operators::{
         BinaryComparisonOperator, ParetoConstrainedDominance, PreferredSolution,
     };
@@ -479,12 +479,12 @@ mod test_pareto_constrained_dominance {
 mod test_crowded_comparison {
     use std::sync::Arc;
 
+    use crate::core::utils::dummy_evaluator;
     use crate::core::{
         BoundedNumber, DataValue, Individual, Objective, ObjectiveDirection, Problem, VariableType,
     };
-    use crate::core::utils::dummy_evaluator;
-    use crate::operators::{BinaryComparisonOperator, PreferredSolution};
     use crate::operators::comparison::CrowdedComparison;
+    use crate::operators::{BinaryComparisonOperator, PreferredSolution};
 
     #[test]
     fn test_different_rank() {

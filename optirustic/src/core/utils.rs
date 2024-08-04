@@ -1,13 +1,9 @@
 use std::error::Error;
-#[cfg(test)]
-use std::sync::Arc;
 
 use rand::{RngCore, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
 use crate::core::{EvaluationResult, Evaluator, Individual};
-#[cfg(test)]
-use crate::core::builtin_problems::ZTD1Problem;
 
 /// Get the random number generator. If no seed is provided, this randomly generated.
 ///
@@ -42,25 +38,4 @@ pub fn dummy_evaluator() -> Box<dyn Evaluator> {
     }
 
     Box::new(UserEvaluator)
-}
-
-/// Build the vectors with the individuals and assign the objective values for a ZTD1 problem
-///
-/// # Arguments
-///
-/// * `obj_values`: The objective to use. The size of this vector corresponds to the population
-///  size and the size of the nested vector to the number of problem objectives.
-///
-/// returns: `Vec<Individual>`
-#[cfg(test)]
-pub(crate) fn individuals_from_obj_values_ztd1(obj_values: &[Vec<f64>]) -> Vec<Individual> {
-    let problem = Arc::new(ZTD1Problem::create(obj_values.len()).unwrap());
-    let mut individuals = vec![];
-    for value in obj_values {
-        let mut i = Individual::new(problem.clone());
-        i.update_objective("f1", value[0]).unwrap();
-        i.update_objective("f2", value[1]).unwrap();
-        individuals.push(i);
-    }
-    individuals
 }

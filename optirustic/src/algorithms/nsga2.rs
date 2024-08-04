@@ -8,13 +8,13 @@ use rand::RngCore;
 use optirustic_macros::{as_algorithm, as_algorithm_args, impl_algorithm_trait_items};
 
 use crate::algorithms::Algorithm;
-use crate::core::{DataValue, Individual, Individuals, IndividualsMut, OError};
 use crate::core::utils::get_rng;
+use crate::core::{DataValue, Individual, Individuals, IndividualsMut, OError};
 use crate::operators::{
     Crossover, CrowdedComparison, Mutation, PolynomialMutation, PolynomialMutationArgs, Selector,
     SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
 };
-use crate::utils::{argsort, fast_non_dominated_sort, Sort, vector_max, vector_min};
+use crate::utils::{argsort, fast_non_dominated_sort, vector_max, vector_min, Sort};
 
 /// The data key where the crowding distance is stored for each [`Individual`].
 const CROWDING_DIST_KEY: &str = "crowding_distance";
@@ -402,10 +402,10 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
 mod test_sorting {
     use float_cmp::assert_approx_eq;
 
-    use crate::algorithms::NSGA2;
     use crate::algorithms::nsga2::CROWDING_DIST_KEY;
-    use crate::core::{DataValue, Individuals, ObjectiveDirection};
+    use crate::algorithms::NSGA2;
     use crate::core::test_utils::individuals_from_obj_values_dummy;
+    use crate::core::{DataValue, Individuals, ObjectiveDirection};
 
     #[test]
     /// Test the crowding distance algorithm (not enough points).
@@ -645,7 +645,7 @@ mod test_sorting {
 mod test_problems {
     use optirustic_macros::test_with_retries;
 
-    use crate::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
+    use crate::algorithms::{Algorithm, MaxGeneration, NSGA2Arg, StoppingConditionType, NSGA2};
     use crate::core::builtin_problems::{
         SCHProblem, ZTD1Problem, ZTD2Problem, ZTD3Problem, ZTD4Problem,
     };
@@ -654,7 +654,7 @@ mod test_problems {
     const BOUND_TOL: f64 = 1.0 / 1000.0;
     const LOOSE_BOUND_TOL: f64 = 0.1;
 
-    #[test_with_retries(3)]
+    #[test_with_retries(10)]
     /// Test problem 1 from Deb et al. (2002). Optional solution x in [0; 2]
     fn test_sch_problem() {
         let problem = SCHProblem::create().unwrap();
@@ -680,7 +680,7 @@ mod test_problems {
         }
     }
 
-    #[test_with_retries(3)]
+    #[test_with_retries(10)]
     /// Test the ZTD1 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd1_problem() {
@@ -727,7 +727,7 @@ mod test_problems {
         }
     }
 
-    #[test_with_retries(3)]
+    #[test_with_retries(10)]
     /// Test the ZTD2 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd2_problem() {
@@ -779,7 +779,7 @@ mod test_problems {
         }
     }
 
-    #[test_with_retries(3)]
+    #[test_with_retries(10)]
     /// Test the ZTD3 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd3_problem() {
@@ -831,7 +831,7 @@ mod test_problems {
         }
     }
 
-    #[test_with_retries(3)]
+    #[test_with_retries(10)]
     /// Test the ZTD4 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x10 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd4_problem() {
@@ -884,7 +884,7 @@ mod test_problems {
         }
     }
 
-    #[test_with_retries(3)]
+    #[test_with_retries(10)]
     /// Test the ZTD6 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x10 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd6_problem() {

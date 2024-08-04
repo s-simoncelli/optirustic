@@ -73,7 +73,6 @@ pub enum NumberOfPartitions {
 /// ```rust
 #[doc = include_str!("../../examples/reference_points_1layer.rs")]
 /// ```
-///
 /// ## Two layers of reference points, each with a different gap
 /// ```rust
 #[doc = include_str!("../../examples/reference_points_2layers.rs")]
@@ -93,7 +92,7 @@ impl DasDarren1998 {
     ///
     /// * `number_of_objectives`: The number of problem objectives.
     /// * `number_of_partitions`: The number of uniform gaps between two consecutive points along
-    /// all objective axis on the hyperplane.
+    ///    all objective axis on the hyperplane.
     ///
     /// returns: `Result<DasDarren1998, OError>`
     pub fn new(
@@ -213,7 +212,7 @@ impl DasDarren1998 {
     ///
     /// * `final_weights`: The vector with the final weights.
     /// * `weight`: The vector for a weight or reference point. This must have a size equal to the
-    /// number of objectives.
+    ///    number of objectives.
     /// * `left_partitions`: The number of partition left to process for the objective.
     /// * `number_of_partitions`: The number of total partitions.
     /// * `obj_index`: The objective index being process.
@@ -386,8 +385,8 @@ impl DasDarren1998 {
 #[cfg(test)]
 mod test {
     use crate::core::test_utils::assert_approx_array_eq;
-    use crate::utils::{NumberOfPartitions, TwoLayerPartitions};
     use crate::utils::reference_points::{binomial_coefficient, DasDarren1998};
+    use crate::utils::{NumberOfPartitions, TwoLayerPartitions};
 
     #[test]
     /// Test the binomial coefficient using results from the Scipy package.
@@ -419,7 +418,7 @@ mod test {
         assert_eq!(expected_weights.len(), weights.len());
 
         for (wi, exp_weight_coordinates) in expected_weights.iter().enumerate() {
-            assert_approx_array_eq(&weights[wi], exp_weight_coordinates, None);
+            assert_approx_array_eq(&weights[wi], exp_weight_coordinates, Some(0.001));
         }
     }
 

@@ -13,10 +13,10 @@ use crate::utils::fast_non_dominated_sort;
 ///
 /// **IMPLEMENTATION NOTES**:
 /// 1) Dominated and unfeasible solutions are excluded using the NSGA2 [`crate::utils::fast_non_dominated_sort()`]
-/// algorithm in order to get the Pareto front. As assumed in the paper, non-dominated points do
-/// not contribute do the metric.
+///    algorithm in order to get the Pareto front. As assumed in the paper, non-dominated points do
+///    not contribute do the metric.
 /// 2) The coordinates of maximised objectives of the reference point are multiplied by -1 as the
-/// algorithm assumes all objectives are maximised.
+///    algorithm assumes all objectives are maximised.
 #[derive(Debug)]
 pub struct HyperVolumeWhile2012 {
     /// The individuals to use. The size of this vector corresponds to the individual size and the
@@ -102,8 +102,8 @@ impl HyperVolumeWhile2012 {
 mod test {
     use float_cmp::approx_eq;
 
-    use crate::core::ObjectiveDirection;
     use crate::core::test_utils::individuals_from_obj_values_dummy;
+    use crate::core::ObjectiveDirection;
     use crate::metrics::hypervolume_while_2012::HyperVolumeWhile2012;
     use crate::metrics::test_utils::parse_pagmo_test_data_file;
 

@@ -52,7 +52,7 @@ impl Constraint {
     ///
     /// * `name`: The constraint name.
     /// * `operator`: The relational operator to use to compare a value against the constraint
-    /// target value.
+    ///    target value.
     /// * `target`: The constraint target.
     ///
     /// returns: `Constraint`
@@ -71,7 +71,7 @@ impl Constraint {
     ///
     /// * `name`: The constraint name.
     /// * `operator`: The relational operator to use to compare a value against the constraint
-    /// target value.
+    ///    target value.
     /// * `target`: The constraint target.
     /// * `scale`: Apply a scaling factor to the `target`.
     /// * `offset`: Apply an offset to the `target`.
