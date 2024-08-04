@@ -1,5 +1,5 @@
-use rand::{Rng, RngCore};
 use rand::prelude::SliceRandom;
+use rand::{Rng, RngCore};
 use serde::{Deserialize, Serialize};
 
 use crate::core::{Individual, OError, VariableType, VariableValue};
@@ -73,7 +73,7 @@ impl Default for SimulatedBinaryCrossoverArgs {
 ///
 /// and
 /// > the C implementation available at <https://gist.github.com/Tiagoperes/1779d5f1c89bae0cfdb87b1960bba36d>
-/// to account for bounded variables.
+/// > to account for bounded variables.
 ///
 /// See: <https://doi.org/10.1145/1276958.1277190>,
 /// full text available at <https://content.wolfram.com/sites/13/2018/02/09-2-2.pdf>. An alternative
@@ -155,7 +155,7 @@ impl SimulatedBinaryCrossover {
     /// # Arguments
     ///
     /// * `args.`: The operator input parameters. See [`SimulatedBinaryCrossoverArgs`] for a detail
-    /// explanation of the parameters.
+    ///    explanation of the parameters.
     ///
     /// returns: `Result<SBX, OError>`
     pub fn new(args: SimulatedBinaryCrossoverArgs) -> Result<Self, OError> {
@@ -356,11 +356,11 @@ impl Crossover for SimulatedBinaryCrossover {
 mod test {
     use std::sync::Arc;
 
+    use crate::core::utils::{dummy_evaluator, get_rng};
     use crate::core::{
         BoundedNumber, Individual, Objective, ObjectiveDirection, Problem, VariableType,
         VariableValue,
     };
-    use crate::core::utils::{dummy_evaluator, get_rng};
     use crate::operators::{Crossover, SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs};
 
     #[test]

@@ -10,15 +10,15 @@ include!("bindings.rs");
 ///
 /// **IMPLEMENTATION NOTES**:
 /// 1) The reference point must dominate the values of all objectives. Dominated solutions by the
-/// reference point are automatically excluded from the calculation.
+///    reference point are automatically excluded from the calculation.
 /// 2) The program assumes that all objectives are minimised. Maximisation objectives may be
-/// multiplied by -1 to convert them to minimisation.
+///    multiplied by -1 to convert them to minimisation.
 ///
 /// # Arguments
 ///
 /// * `data`: The vector with the objective values. The size of this vector must correspond to the
-/// number of individuals `n` in the population. Each sub-vector must have size `d` equal to the
-/// number of problem objectives.
+///    number of individuals `n` in the population. Each sub-vector must have size `d` equal to the
+///    number of problem objectives.
 /// * `ref_point`: The reference or anti-optimal point to use in the calculation of length `d`.
 ///
 /// returns: `f64`. The hyper-volume.

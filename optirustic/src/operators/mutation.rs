@@ -238,11 +238,11 @@ impl Mutation for PolynomialMutation {
 mod test {
     use std::sync::Arc;
 
+    use crate::core::utils::{dummy_evaluator, get_rng};
     use crate::core::{
         BoundedNumber, Individual, Objective, ObjectiveDirection, Problem, VariableType,
         VariableValue,
     };
-    use crate::core::utils::{dummy_evaluator, get_rng};
     use crate::operators::{Mutation, PolynomialMutation, PolynomialMutationArgs};
 
     #[test]

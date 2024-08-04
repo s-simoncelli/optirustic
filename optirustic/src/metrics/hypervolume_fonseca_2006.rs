@@ -15,10 +15,10 @@ use crate::utils::fast_non_dominated_sort;
 /// **IMPLEMENTATION NOTES**:
 /// 1) Points dominated by the reference point are removed from the calculation.
 /// 2) Dominated and unfeasible solutions are excluded using the NSGA2 [`crate::utils::fast_non_dominated_sort()`]
-/// algorithm in order to get the Pareto front. As assumed in the paper, non-dominated points do
-/// not contribute do the metric.
+///    algorithm in order to get the Pareto front. As assumed in the paper, non-dominated points do
+///    not contribute do the metric.
 /// 3) The coordinates of maximised objectives of the reference point are multiplied by -1 as the
-/// algorithm assumes all objectives are maximised.
+///    algorithm assumes all objectives are maximised.
 #[derive(Debug)]
 pub struct HyperVolumeFonseca2006 {
     /// The individuals to use. The size of this vector corresponds to the individual size and the
@@ -108,10 +108,10 @@ impl HyperVolumeFonseca2006 {
 mod test {
     use float_cmp::approx_eq;
 
-    use crate::core::ObjectiveDirection;
     use crate::core::utils::individuals_from_obj_values_dummy;
-    use crate::metrics::HyperVolumeFonseca2006;
+    use crate::core::ObjectiveDirection;
     use crate::metrics::test_utils::parse_pagmo_test_data_file;
+    use crate::metrics::HyperVolumeFonseca2006;
 
     #[test]
     /// Reference point must be strictly larger than any objective

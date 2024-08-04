@@ -7,10 +7,10 @@ use plotters::backend::BitMapBackend;
 use plotters::chart::{ChartBuilder, SeriesLabelPosition};
 use plotters::drawing::IntoDrawingArea;
 use plotters::element::{Circle, PathElement, Rectangle};
-use plotters::prelude::{BLACK, Color, LineSeries, Palette, Palette99, ShapeStyle, WHITE};
 use plotters::prelude::full_palette::{GREY_A400, RED_700};
+use plotters::prelude::{Color, LineSeries, Palette, Palette99, ShapeStyle, BLACK, WHITE};
 
-use optirustic::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
+use optirustic::algorithms::{Algorithm, MaxGeneration, NSGA2Arg, StoppingConditionType, NSGA2};
 use optirustic::core::builtin_problems::SCHProblem;
 use optirustic::core::Individual;
 

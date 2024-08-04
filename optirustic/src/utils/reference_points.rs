@@ -57,7 +57,7 @@ impl DasDarren1998 {
     ///
     /// * `number_of_objectives`: The number of problem objectives.
     /// * `number_of_partitions`: The number of uniform gaps between two consecutive points along
-    /// all objective axis on the hyperplane.
+    ///    all objective axis on the hyperplane.
     ///
     /// returns: `DasDarren1998`
     pub fn new(number_of_objectives: usize, number_of_partitions: usize) -> Self {
@@ -107,7 +107,7 @@ impl DasDarren1998 {
     ///
     /// * `final_weights`: The vector with the final weights.
     /// * `weight`: The vector for a weight or reference point. This must have a size equal to the
-    /// number of objectives.
+    ///    number of objectives.
     /// * `left_partitions`: The number of partition left to process for the objective.
     /// * `obj_index`: The objective index being process.
     ///

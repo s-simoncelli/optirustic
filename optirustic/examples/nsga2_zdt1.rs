@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use log::LevelFilter;
 
-use optirustic::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
+use optirustic::algorithms::{Algorithm, MaxGeneration, NSGA2Arg, StoppingConditionType, NSGA2};
 use optirustic::core::builtin_problems::ZTD1Problem;
 
 /// Solve the ZDT1 problem (SCH) where the following 2 objectives are minimised:

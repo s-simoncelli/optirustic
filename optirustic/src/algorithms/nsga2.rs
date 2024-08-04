@@ -8,8 +8,8 @@ use rand::RngCore;
 use optirustic_macros::{as_algorithm, as_algorithm_args, impl_algorithm_trait_items};
 
 use crate::algorithms::Algorithm;
+use crate::core::utils::{argsort, get_rng, vector_max, vector_min, Sort};
 use crate::core::{Individual, Individuals, IndividualsMut, OError, VariableValue};
-use crate::core::utils::{argsort, get_rng, Sort, vector_max, vector_min};
 use crate::operators::{
     Crossover, CrowdedComparison, Mutation, PolynomialMutation, PolynomialMutationArgs, Selector,
     SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
@@ -382,8 +382,8 @@ mod test_sorting {
     use float_cmp::assert_approx_eq;
 
     use crate::algorithms::NSGA2;
-    use crate::core::{Individuals, ObjectiveDirection, VariableValue};
     use crate::core::utils::individuals_from_obj_values_dummy;
+    use crate::core::{Individuals, ObjectiveDirection, VariableValue};
 
     #[test]
     /// Test the crowding distance algorithm (not enough points).
@@ -607,7 +607,7 @@ mod test_sorting {
 mod test_problems {
     use optirustic_macros::test_with_retries;
 
-    use crate::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
+    use crate::algorithms::{Algorithm, MaxGeneration, NSGA2Arg, StoppingConditionType, NSGA2};
     use crate::core::builtin_problems::{
         SCHProblem, ZTD1Problem, ZTD2Problem, ZTD3Problem, ZTD4Problem,
     };

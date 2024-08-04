@@ -1,7 +1,7 @@
-use crate::core::{Individual, Individuals, Objective, ObjectiveDirection, OError};
 use crate::core::utils::vector_max;
-use crate::metrics::{HyperVolumeFonseca2006, HyperVolumeWhile2012};
+use crate::core::{Individual, Individuals, OError, Objective, ObjectiveDirection};
 use crate::metrics::hypervolume_2d::HyperVolume2D;
+use crate::metrics::{HyperVolumeFonseca2006, HyperVolumeWhile2012};
 
 /// Calculates a reference point by taking the maximum of each objective (or minimum if the
 /// objective is maximised) from the calculated individual's objective values, so that the point will
@@ -179,19 +179,19 @@ pub(crate) fn check_ref_point_coordinate(
 /// objectives `n`, a different method is used to ensure a correct and fast calculation:
 ///
 /// - with `2` objectives: by calculating the rectangle area of each point contributing to the
-/// hyper-volume.
+///   hyper-volume.
 /// - with `3` objectives: by using the algorithm proposed by [Fonseca et al. (2006)](http://dx.doi.org/10.1109/CEC.2006.1688440)
-/// in [`HyperVolumeFonseca2006`].
+///   in [`HyperVolumeFonseca2006`].
 /// - with `4` or more objectives:  by using the algorithm proposed by [While et al. (2012)](http://dx.doi.org/10.1109/TEVC.2010.2077298)
-/// in [`HyperVolumeWhile2012`].
+///   in [`HyperVolumeWhile2012`].
 ///
 /// # Arguments
 ///
 /// * `individuals`: The individuals to use in the calculation. The algorithm will use the objective
-/// vales stored in each individual.
+///   vales stored in each individual.
 /// * `reference_point`: The reference or anti-optimal point to use in the calculation. If you are
-/// not sure about the point to use you could pick the worst value of each objective from the
-/// individual's values using [`estimate_reference_point`].
+///   not sure about the point to use you could pick the worst value of each objective from the
+///   individual's values using [`estimate_reference_point`].
 ///
 /// returns: `Result<f64, OError>`
 pub fn hyper_volume(
@@ -235,10 +235,10 @@ pub fn hyper_volume(
 mod test {
     use std::sync::Arc;
 
+    use crate::core::utils::{dummy_evaluator, individuals_from_obj_values_ztd1};
     use crate::core::{
         BoundedNumber, Individual, Objective, ObjectiveDirection, Problem, VariableType,
     };
-    use crate::core::utils::{dummy_evaluator, individuals_from_obj_values_ztd1};
     use crate::metrics::hypervolume::estimate_reference_point;
 
     #[test]

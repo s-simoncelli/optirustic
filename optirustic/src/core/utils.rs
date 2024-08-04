@@ -8,10 +8,10 @@ use rand::{RngCore, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
 #[cfg(test)]
+use crate::core::builtin_problems::ZTD1Problem;
+#[cfg(test)]
 use crate::core::{BoundedNumber, Objective, ObjectiveDirection, Problem, VariableType};
 use crate::core::{EvaluationResult, Evaluator, Individual, OError};
-#[cfg(test)]
-use crate::core::builtin_problems::ZTD1Problem;
 
 /// Get the random number generator. If no seed is provided, this randomly generated.
 ///

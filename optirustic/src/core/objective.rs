@@ -65,7 +65,7 @@ impl Objective {
     ///
     /// return: `ObjectiveDirection`
     pub fn direction(&self) -> ObjectiveDirection {
-        self.direction.clone()
+        self.direction
     }
 }
 
