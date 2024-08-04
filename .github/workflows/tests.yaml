@@ -1,0 +1,35 @@
+name: Build and test
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-linux:
+    name: Cargo check and test on Unix systems
+    runs-on: ubuntu-latest
+    steps:
+      # Enable this when testing with nektos/act
+      #      - uses: actions-rs/toolchain@v1
+      #        with:
+      #          toolchain: stable
+      #          override: true
+      #      - name: Install Clang
+      #        run: sudo apt update && sudo apt install --yes clang
+      - uses: actions/checkout@v4
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
+  test-windows:
+    name: Cargo check and test on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
