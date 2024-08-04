@@ -84,7 +84,10 @@ impl PolynomialMutationArgs {
 /// fn main() -> Result<(), Box<dyn Error>> {
 ///     // create a new one-variable
 ///     let objectives = vec![Objective::new("obj1", ObjectiveDirection::Minimise)];
-///     let variables = vec![VariableType::Real(BoundedNumber::new("var1", 0.0, 1000.0)?)];
+///     let variables = vec![
+///         VariableType::Real(BoundedNumber::new("var1", 0.0, 1000.0)?),
+///         VariableType::Integer(BoundedNumber::new("var2", -1, 1)?)
+///     ];
 ///     
 ///     // dummy evaluator function
 ///     #[derive(Debug)]

@@ -1,3 +1,4 @@
+use std::env;
 use std::error::Error;
 use std::path::PathBuf;
 
@@ -48,10 +49,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // Export serialised results at last generation
-    algo.save_to_json(
-        &PathBuf::from("optirustic/examples/results"),
-        Some("ZDT1_2obj"),
-    )?;
+    let out_path = PathBuf::from(&env::current_dir().unwrap())
+        .join("examples")
+        .join("results");
+    algo.save_to_json(&out_path, Some("ZDT1_2obj"))?;
 
     Ok(())
 }

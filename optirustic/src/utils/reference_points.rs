@@ -40,7 +40,7 @@ fn binomial_coefficient(mut n: u64, k: u64) -> u64 {
 ///
 /// # Example
 /// ```rust
-#[doc = include_str!("reference_points.rs")]
+#[doc = include_str!("../../examples/reference_point.rs")]
 /// ```
 pub struct DasDarren1998 {
     /// The number of problem objectives.
