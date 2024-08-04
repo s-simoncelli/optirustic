@@ -1,4 +1,6 @@
+use std::collections::HashSet;
 use std::error::Error;
+use std::hash::Hash;
 #[cfg(test)]
 use std::sync::Arc;
 
@@ -105,6 +107,22 @@ pub fn argsort(data: &[f64], sort_type: Sort) -> Vec<usize> {
         indices.reverse();
     }
     indices
+}
+
+/// Check whether a vector contains unique items.
+///
+/// # Arguments
+///
+/// * `iter`: The iterator.
+///
+/// returns: `bool`
+pub fn has_unique_elements<T>(iter: T) -> bool
+where
+    T: IntoIterator,
+    T::Item: Eq + Hash,
+{
+    let mut uniq = HashSet::new();
+    iter.into_iter().all(move |x| uniq.insert(x))
 }
 
 /// Create the individuals for a `N`-objective dummy problem, where `N` is the number of items in
