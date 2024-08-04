@@ -118,13 +118,13 @@ mod test {
     use float_cmp::{approx_eq, assert_approx_eq};
 
     use crate::algorithms::nsga3::{
-        AssociateToRefPoint, MIN_DISTANCE, Normalise, NORMALISED_OBJECTIVE_KEY, REF_POINT,
+        AssociateToRefPoint, Normalise, MIN_DISTANCE, NORMALISED_OBJECTIVE_KEY, REF_POINT,
         REF_POINT_INDEX,
     };
-    use crate::core::{DataValue, ObjectiveDirection};
     use crate::core::test_utils::{
         assert_approx_array_eq, individuals_from_obj_values_dummy, read_csv_test_file,
     };
+    use crate::core::{DataValue, ObjectiveDirection};
     use crate::utils::{DasDarren1998, NumberOfPartitions};
 
     #[test]

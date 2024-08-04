@@ -1,8 +1,8 @@
 use proc_macro::TokenStream;
 
 use quote::quote;
-use syn::{DeriveInput, ItemFn, parse_macro_input};
 use syn::parse::Parser;
+use syn::{parse_macro_input, DeriveInput, ItemFn};
 
 /// An attribute macro to repeat a test `n` times until the test passes. The test passes if it does
 /// not panic at least once, it fails if it panics `n` times.

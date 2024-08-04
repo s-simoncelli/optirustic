@@ -5,10 +5,11 @@ use std::sync::Arc;
 
 use float_cmp::approx_eq;
 
+use crate::core::builtin_problems::ZTD1Problem;
 use crate::core::{
-    BoundedNumber, Individual, Objective, ObjectiveDirection, Problem, utils, VariableType,
+    utils, BoundedNumber, Individual, Objective, ObjectiveDirection, Problem, VariableType,
+    VariableValue,
 };
-use crate::core::VariableValue::Real;
 
 /// Compare two arrays of f64
 pub(crate) fn assert_approx_array_eq(
@@ -156,7 +157,7 @@ pub(crate) fn individuals_from_obj_values_dummy(
         if let Some(variable_values) = variable_values {
             for (vi, var_value) in variable_values[ind_idx].iter().enumerate() {
                 individual
-                    .update_variable(format!("X{vi}").as_str(), Real(*var_value))
+                    .update_variable(format!("X{vi}").as_str(), VariableValue::Real(*var_value))
                     .unwrap();
             }
         }
@@ -164,5 +165,25 @@ pub(crate) fn individuals_from_obj_values_dummy(
         individuals.push(individual);
     }
 
+    individuals
+}
+
+/// Build the vectors with the individuals and assign the objective values for a ZTD1 problem
+///
+/// # Arguments
+///
+/// * `obj_values`: The objective to use. The size of this vector corresponds to the population
+///  size and the size of the nested vector to the number of problem objectives.
+///
+/// returns: `Vec<Individual>`
+pub(crate) fn individuals_from_obj_values_ztd1(obj_values: &[Vec<f64>]) -> Vec<Individual> {
+    let problem = Arc::new(ZTD1Problem::create(obj_values.len()).unwrap());
+    let mut individuals = vec![];
+    for value in obj_values {
+        let mut i = Individual::new(problem.clone());
+        i.update_objective("f1", value[0]).unwrap();
+        i.update_objective("f2", value[1]).unwrap();
+        individuals.push(i);
+    }
     individuals
 }

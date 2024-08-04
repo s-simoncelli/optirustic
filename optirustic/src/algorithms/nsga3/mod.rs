@@ -7,17 +7,17 @@ use rand::RngCore;
 
 use optirustic_macros::{as_algorithm, as_algorithm_args, impl_algorithm_trait_items};
 
-use crate::algorithms::{Algorithm, NSGA2};
 use crate::algorithms::nsga3::associate::AssociateToRefPoint;
 use crate::algorithms::nsga3::niching::Niching;
 use crate::algorithms::nsga3::normalise::Normalise;
-use crate::core::{DataValue, Individual, OError};
+use crate::algorithms::{Algorithm, NSGA2};
 use crate::core::utils::get_rng;
+use crate::core::{DataValue, Individual, OError};
 use crate::operators::{
     Crossover, Mutation, ParetoConstrainedDominance, PolynomialMutation, PolynomialMutationArgs,
     Selector, SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
 };
-use crate::utils::{DasDarren1998, fast_non_dominated_sort, NumberOfPartitions};
+use crate::utils::{fast_non_dominated_sort, DasDarren1998, NumberOfPartitions};
 
 mod associate;
 mod niching;
@@ -424,7 +424,7 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
 #[cfg(test)]
 mod test_problems {
     use crate::algorithms::{
-        Algorithm, MaxGeneration, NSGA3, NSGA3Arg, Nsga3NumberOfIndividuals, StoppingConditionType,
+        Algorithm, MaxGeneration, NSGA3Arg, Nsga3NumberOfIndividuals, StoppingConditionType, NSGA3,
     };
     use crate::core::builtin_problems::dtlz1;
     use crate::core::test_utils::check_exact_value;

@@ -3,8 +3,8 @@ use std::collections::{BTreeSet, HashMap};
 use std::hash::{BuildHasher, Hash};
 
 pub use algebra::{
-    dot_product, LinearSolverTolerance, perpendicular_distance, solve_linear_system,
-    vector_magnitude,
+    dot_product, perpendicular_distance, solve_linear_system, vector_magnitude,
+    LinearSolverTolerance,
 };
 pub use fast_non_dominated_sort::{fast_non_dominated_sort, NonDominatedSortResults};
 pub use reference_points::{DasDarren1998, NumberOfPartitions, TwoLayerPartitions};
@@ -173,6 +173,14 @@ pub fn index_of<I: Sized + PartialEq>(vector: &[I], item: &I) -> Option<usize> {
     vector.iter().position(|i| i == item)
 }
 
+/// Check whether a vector contains unique elements.
+///
+/// # Arguments
+///
+/// * `vector`: The vector.
+/// * `f`: The function that returns the keys to check.
+///
+/// returns: `bool`
 pub fn has_unique_elements_by_key<I: Sized, J: Sized + Ord, F: Fn(&I) -> J>(
     vector: &[I],
     f: F,

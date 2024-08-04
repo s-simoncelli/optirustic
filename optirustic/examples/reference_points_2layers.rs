@@ -4,9 +4,6 @@ use optirustic::utils::{DasDarren1998, NumberOfPartitions, TwoLayerPartitions};
 fn main() -> Result<(), OError> {
     // Consider the case of a 3D hyperplane with 3 objectives
     let number_of_objectives = 3;
-    // Each objective axis is split into 5 gaps of equal size.
-    let number_of_partitions = 5;
-
     let layers = TwoLayerPartitions {
         // In the first layer points have a gap of 5
         boundary_layer: 5,

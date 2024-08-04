@@ -34,12 +34,12 @@ impl<'a> Niching<'a> {
     /// # Arguments
     ///
     /// * `selected_individuals`: The population P_{t+1} without the last front. This will be
-    /// populated with individuals from `potential_individuals`.
+    ///    populated with individuals from `potential_individuals`.
     /// * `potential_individuals`: The potential individuals from the last front.
     /// * `number_of_individuals_to_add`: The number of individuals to add to `selected_individuals`
-    /// from `potential_individuals`.
+    ///    from `potential_individuals`.
     /// * `rho_j`: The map containing the reference point indexes as keys and the number of associated
-    /// points from P_{t+1}.
+    ///    points from P_{t+1}.
     /// * `rng`: The random number generator.
     ///
     /// returns: `Result<Niching, OError>`
@@ -203,11 +203,11 @@ impl<'a> Niching<'a> {
 mod test {
     use std::collections::HashMap;
 
-    use crate::algorithms::nsga3::{MIN_DISTANCE, REF_POINT_INDEX};
     use crate::algorithms::nsga3::niching::Niching;
-    use crate::core::{DataValue, Individual, ObjectiveDirection, Population};
+    use crate::algorithms::nsga3::{MIN_DISTANCE, REF_POINT_INDEX};
     use crate::core::test_utils::individuals_from_obj_values_dummy;
     use crate::core::utils::get_rng;
+    use crate::core::{DataValue, Individual, ObjectiveDirection, Population};
 
     #[test]
     /// Check niching that (1) adds point with min distance when there reference point is not

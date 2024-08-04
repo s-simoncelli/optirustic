@@ -65,7 +65,7 @@ impl<'a> Distance<'a> {
     ///
     /// * `individuals`: The vector of individuals.
     /// * `reference_front`: The reference points to use to calculate the distance. This should be
-    /// either the true Pareto front or its good approximation. The length of each point must be `M`.
+    ///    either the true Pareto front or its good approximation. The length of each point must be `M`.
     ///
     /// returns: `Distance`
     pub fn new(
@@ -116,8 +116,8 @@ impl<'a> Distance<'a> {
     ///
     /// # Reference
     /// > David A. Van Veldhuizen, Gary B. Lamont (1998). “Evolutionary Computation and Convergence to
-    /// a Pareto Front.” In John R. Koza (ed.), Late Breaking Papers at the Genetic Programming 1998
-    /// Conference, 221-228.
+    /// > a Pareto Front.” In John R. Koza (ed.), Late Breaking Papers at the Genetic Programming 1998
+    /// > Conference, 221-228.
     ///
     /// returns: `Result<f64, OError>`
     pub fn generational_distance(&self) -> Result<f64, OError> {
@@ -135,9 +135,9 @@ impl<'a> Distance<'a> {
     ///
     /// # Reference
     /// > K. Deb and H. Jain, "An Evolutionary Many-Objective Optimization Algorithm Using
-    /// Reference-Point-Based Non-dominated Sorting Approach, Part I: Solving Problems With Box
-    /// Constraints," in IEEE Transactions on Evolutionary Computation, vol. 18, no. 4, pp. 577-601,
-    /// Aug. 2014, doi: 10.1109/TEVC.2013.2281535
+    /// > Reference-Point-Based Non-dominated Sorting Approach, Part I: Solving Problems With Box
+    /// > Constraints," in IEEE Transactions on Evolutionary Computation, vol. 18, no. 4, pp. 577-601,
+    /// > Aug. 2014, doi: 10.1109/TEVC.2013.2281535
     ///
     /// returns: `Result<f64, OError>`
     pub fn inverted_generational_distance(&self) -> Result<f64, OError> {
@@ -169,10 +169,10 @@ impl<'a> Distance<'a> {
     ///
     /// # Reference
     /// > Hisao Ishibuchi, Hiroyuki Masuda, Yuki Tanigaki, Yusuke Nojima (2015). “Modified Distance
-    /// Calculation in Generational Distance and Inverted Generational Distance.” In António
-    /// Gaspar-Cunha, Carlos Henggeler Antunes, Carlos A. Coello Coello (eds.), Evolutionary
-    /// Multi-criterion Optimization, EMO 2015 Part I, volume 9018 of Lecture Notes in Computer
-    /// Science, 110--125. Springer, Heidelberg, Germany.
+    /// > Calculation in Generational Distance and Inverted Generational Distance.” In António
+    /// > Gaspar-Cunha, Carlos Henggeler Antunes, Carlos A. Coello Coello (eds.), Evolutionary
+    /// > Multi-criterion Optimization, EMO 2015 Part I, volume 9018 of Lecture Notes in Computer
+    /// > Science, 110--125. Springer, Heidelberg, Germany.
     ///
     /// returns: `Result<f64, OError>`
     pub fn inverted_generational_distance_plus(&self) -> Result<f64, OError> {
@@ -190,8 +190,8 @@ impl<'a> Distance<'a> {
     ///
     /// # Reference
     /// > Oliver Schütze, X Esquivel, A Lara, Carlos A. Coello Coello (2012). “Using the Averaged
-    /// Hausdorff Distance as a Performance Measure in Evolutionary Multiobjective Optimization.”
-    /// IEEE Transactions on Evolutionary Computation, 16(4), 504--522.
+    /// > ausdorff Distance as a Performance Measure in Evolutionary Multiobjective Optimization.”
+    /// > IEEE Transactions on Evolutionary Computation, 16(4), 504--522.
     ///
     /// returns: `Result<f64, OError>`
     pub fn hausdorff_distance(&self) -> Result<f64, OError> {
@@ -280,7 +280,7 @@ impl<'a> Distance<'a> {
     /// * `p`: The exponent to use in the calculation. Default to 1.
     /// * `is_inverse`: Whether the distance is for the inverse metric.
     /// * `is_hausdorff`: Whether to elevate the inverse of the counter $1/|A|$ to $1/p$. This must
-    /// be `true` when calculating the Hausdorff distance, `false` otherwise.
+    ///    be `true` when calculating the Hausdorff distance, `false` otherwise.
     ///
     /// returns: `Result<f64, OError>`
     fn _generational_distance<F>(
@@ -327,8 +327,8 @@ mod test {
 
     use float_cmp::assert_approx_eq;
 
-    use crate::core::ObjectiveDirection;
     use crate::core::test_utils::individuals_from_obj_values_dummy;
+    use crate::core::ObjectiveDirection;
     use crate::metrics::Distance;
 
     #[test]
