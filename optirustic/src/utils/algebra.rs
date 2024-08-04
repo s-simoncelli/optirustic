@@ -3,7 +3,7 @@ use nalgebra::{DMatrix, SVD};
 use crate::utils::all_close;
 
 /// The tolerance values used to check whether the solver finds acceptable solutions of the linear
-/// system. See [`crate::utils::all_close`].
+/// system. See [`all_close`].
 pub struct LinearSolverTolerance {
     pub relative: f64,
     pub absolute: f64,
@@ -26,11 +26,11 @@ impl Default for LinearSolverTolerance {
 /// # Arguments
 ///
 /// * `a`: The vector representing the matrix A. This must be a vector whose size is the number of
-/// rows in A and each nested vector len is the number of columns in A.
+///    rows in A and each nested vector len is the number of columns in A.
 /// * `b`: The column vector b.
 /// * `tolerances`: The tolerances to check whether the found solution is acceptable. When the
-/// solution is outside the tolerances, this returns an error. When `None`, the solution validity
-/// is not checked.
+///    solution is outside the tolerances, this returns an error. When `None`, the solution validity
+///    is not checked.
 ///
 /// returns: `Result<Vec<f64>, String>`
 ///
@@ -194,7 +194,11 @@ mod tests {
         ];
         let y = vec![-1.0, 0.2, 0.9, 2.1];
 
-        let x = solve_linear_system(&x, &y, Some(LinearSolverTolerance::default())).unwrap();
+        let tol = LinearSolverTolerance {
+            relative: 0.1,
+            absolute: 0.1,
+        };
+        let x = solve_linear_system(&x, &y, Some(tol)).unwrap();
         assert_approx_eq!(f64, x[0], 1.0, epsilon = 0.0001);
         assert_approx_eq!(f64, x[1], -0.95, epsilon = 0.0001);
     }

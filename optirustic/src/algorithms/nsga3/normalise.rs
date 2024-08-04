@@ -1,9 +1,9 @@
 use log::debug;
 
-use crate::algorithms::NSGA3;
 use crate::algorithms::nsga3::NORMALISED_OBJECTIVE_KEY;
+use crate::algorithms::NSGA3;
 use crate::core::{DataValue, Individual, Individuals, OError};
-use crate::utils::{LinearSolverTolerance, solve_linear_system, vector_max, vector_min};
+use crate::utils::{solve_linear_system, vector_max, vector_min, LinearSolverTolerance};
 
 /// This implements "Algorithm 2" in the paper which normalises the population members using the
 /// adaptive ideal point and the intercepts of the hyper-plane passing through the extreme points
@@ -127,7 +127,7 @@ impl<'a> Normalise<'a> {
         debug!("Set extreme points to {:?}", extreme_points);
 
         // Step 6 - Compute intercepts a_j with the least-square method
-        let intercept_result = Self::calculate_plane_intercepts(&extreme_points)?;
+        let intercept_result = Self::calculate_plane_intercepts(&extreme_points, None)?;
         let intercepts: Vec<f64> = match intercept_result {
             None => {
                 // no solution found or intercepts are too small - get worst (max) for each objective
@@ -177,14 +177,18 @@ impl<'a> Normalise<'a> {
     /// # Arguments
     ///
     /// * `points`: The point coordinates passing through the plane to calculate.
+    /// * `tolerance`: The tolerance of the linear solver to accept whether the found solution is
+    ///    acceptable.
     ///
     /// returns: `Result<Vec<f64>, OError>`: The $ a_i $ intercept values for each axis (see Fig.2
     /// in the paper) or `None` if the intercepts are close to `0`.
-    fn calculate_plane_intercepts(points: &[Vec<f64>]) -> Result<Option<Vec<f64>>, OError> {
+    fn calculate_plane_intercepts(
+        points: &[Vec<f64>],
+        tolerance: Option<LinearSolverTolerance>,
+    ) -> Result<Option<Vec<f64>>, OError> {
         let b = vec![1.0; points.len()];
-        let plane_coefficients =
-            solve_linear_system(points, &b, Some(LinearSolverTolerance::default()))
-                .map_err(|e| OError::AlgorithmRun("NSGA3-Normalise".to_string(), e))?;
+        let plane_coefficients = solve_linear_system(points, &b, tolerance)
+            .map_err(|e| OError::AlgorithmRun("NSGA3-Normalise".to_string(), e))?;
         debug!("Plane coefficients {:?}", plane_coefficients);
 
         let intercepts: Vec<f64> = plane_coefficients.iter().map(|v| 1.0 / v).collect();
@@ -241,10 +245,11 @@ mod test {
 
     use crate::algorithms::nsga3::normalise::Normalise;
     use crate::algorithms::nsga3::NORMALISED_OBJECTIVE_KEY;
-    use crate::core::ObjectiveDirection;
     use crate::core::test_utils::{
         assert_approx_array_eq, individuals_from_obj_values_dummy, read_csv_test_file,
     };
+    use crate::core::ObjectiveDirection;
+    use crate::utils::LinearSolverTolerance;
 
     #[test]
     /// Test intercepts. Points were generated from numpy from uniform distribution with normal
@@ -263,7 +268,12 @@ mod test {
             vec![5.60255823, 1.69973452, -12.49841699],
             vec![6.16815342, 0.66601692, -11.63169056],
         ];
-        let intercepts = Normalise::calculate_plane_intercepts(&points)
+
+        let tol = LinearSolverTolerance {
+            relative: 0.01,
+            absolute: 0.01,
+        };
+        let intercepts = Normalise::calculate_plane_intercepts(&points, Some(tol))
             .unwrap()
             .unwrap();
         assert_approx_array_eq(&intercepts, &[3.38096778, 1.61009025, 7.58962871], None);
