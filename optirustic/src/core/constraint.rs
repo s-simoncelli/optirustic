@@ -30,7 +30,7 @@ pub enum RelationalOperator {
 /// # Example
 ///
 /// ```
-///   use optirustic::core::constraint::{Constraint, RelationalOperator};
+///   use optirustic::core::{Constraint, RelationalOperator};
 ///   let c = Constraint::new("Z>=5.2",RelationalOperator::GreaterOrEqualTo, 5.2);
 ///   assert_eq!(c.is_met(10.1), true);
 ///   assert_eq!(c.is_met(3.11), false);
@@ -52,7 +52,7 @@ impl Constraint {
     ///
     /// * `name`: The constraint name.
     /// * `operator`: The relational operator to use to compare a value against the constraint
-    /// target value.
+    ///    target value.
     /// * `target`: The constraint target.
     ///
     /// returns: `Constraint`
@@ -71,7 +71,7 @@ impl Constraint {
     ///
     /// * `name`: The constraint name.
     /// * `operator`: The relational operator to use to compare a value against the constraint
-    /// target value.
+    ///    target value.
     /// * `target`: The constraint target.
     /// * `scale`: Apply a scaling factor to the `target`.
     /// * `offset`: Apply an offset to the `target`.

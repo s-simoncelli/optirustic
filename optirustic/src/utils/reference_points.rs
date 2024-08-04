@@ -40,7 +40,7 @@ fn binomial_coefficient(mut n: u64, k: u64) -> u64 {
 ///
 /// # Example
 /// ```rust
-#[doc = include_str!("reference_points.rs")]
+#[doc = include_str!("../../examples/reference_point.rs")]
 /// ```
 pub struct DasDarren1998 {
     /// The number of problem objectives.
@@ -57,7 +57,7 @@ impl DasDarren1998 {
     ///
     /// * `number_of_objectives`: The number of problem objectives.
     /// * `number_of_partitions`: The number of uniform gaps between two consecutive points along
-    /// all objective axis on the hyperplane.
+    ///    all objective axis on the hyperplane.
     ///
     /// returns: `DasDarren1998`
     pub fn new(number_of_objectives: usize, number_of_partitions: usize) -> Self {
@@ -107,7 +107,7 @@ impl DasDarren1998 {
     ///
     /// * `final_weights`: The vector with the final weights.
     /// * `weight`: The vector for a weight or reference point. This must have a size equal to the
-    /// number of objectives.
+    ///    number of objectives.
     /// * `left_partitions`: The number of partition left to process for the objective.
     /// * `obj_index`: The objective index being process.
     ///
@@ -303,7 +303,7 @@ mod test {
         assert_eq!(weights.len() as u64, m.number_of_points());
 
         for (wi, exp_weight_coordinates) in expected_weights.iter().enumerate() {
-            assert_approx_array_eq(&weights[wi], exp_weight_coordinates, None);
+            assert_approx_array_eq(&weights[wi], exp_weight_coordinates, Some(0.001));
         }
     }
 

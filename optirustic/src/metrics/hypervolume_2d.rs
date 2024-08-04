@@ -1,6 +1,6 @@
 use std::mem;
 
-use crate::core::{Individual, Individuals, ObjectiveDirection, OError};
+use crate::core::{Individual, Individuals, OError, ObjectiveDirection};
 use crate::metrics::hypervolume::{check_args, check_ref_point_coordinate};
 use crate::utils::fast_non_dominated_sort;
 
@@ -24,22 +24,22 @@ impl HyperVolume2D {
     /// **IMPLEMENTATION NOTES**:
     /// 1) The reference point must dominate the values of all objectives.
     /// 2) For problems with at least one maximised objective, this implementation ensures that the
-    /// Pareto front shape is strictly convex and has the same orientation of minimisation problems
-    /// by inverting the sign of the objective values to maximise, and the reference point
-    /// coordinates.
+    ///    Pareto front shape is strictly convex and has the same orientation of minimisation problems
+    ///    by inverting the sign of the objective values to maximise, and the reference point
+    ///    coordinates.
     /// 3) Dominated and unfeasible solutions are excluded using the NSGA2 [`crate::utils::fast_non_dominated_sort()`]
-    /// algorithm in order to get the Pareto front (i.e. with non-dominated solutions) to use in
-    /// the calculation.
+    ///    algorithm in order to get the Pareto front (i.e. with non-dominated solutions) to use in
+    ///    the calculation.
     /// 4) If `individuals` or the resulting Pareto front does not contain more than 2 points, a
-    /// zero hyper-volume is returned.
+    ///    zero hyper-volume is returned.
     ///
     /// # Arguments
     ///
     /// * `individuals`: The individuals to use in the calculation. The algorithm will use the
-    /// objective vales stored in each individual.
+    ///   objective vales stored in each individual.
     /// * `reference_point`: The non-dominated reference or anti-optimal point to use in the
-    /// calculation. If you are not sure about the point to use, you could pick the worst value of
-    /// each objective from the individual's variable using [`crate::metrics::estimate_reference_point`].
+    ///   calculation. If you are not sure about the point to use, you could pick the worst value of
+    ///   each objective from the individual's variable using [`crate::metrics::estimate_reference_point`].
     ///
     /// returns: `Result<HyperVolume2D, OError>`
     pub fn new(individuals: &mut [Individual], reference_point: &[f64]) -> Result<Self, OError> {
@@ -135,12 +135,12 @@ mod test {
 
     use float_cmp::{approx_eq, assert_approx_eq};
 
+    use crate::core::utils::{
+        dummy_evaluator, individuals_from_obj_values_dummy, individuals_from_obj_values_ztd1,
+    };
     use crate::core::{
         BoundedNumber, Constraint, Individual, Objective, ObjectiveDirection, Problem,
         RelationalOperator, VariableType, VariableValue,
-    };
-    use crate::core::utils::{
-        dummy_evaluator, individuals_from_obj_values_dummy, individuals_from_obj_values_ztd1,
     };
     use crate::metrics::hypervolume_2d::HyperVolume2D;
     use crate::metrics::test_utils::parse_pagmo_test_data_file;
@@ -160,12 +160,12 @@ mod test {
         let ref_point = [0.2, 20.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
         let err = hv.unwrap_err().to_string();
-        assert!(err.contains("The coordinate #1 of the reference point (0.2) must be strictly larger than the maximum value of objective 'obj0'"), "{}", err);
+        assert!(err.contains("The coordinate (0.2) of the reference point #1 must be strictly larger than the maximum value of objective 'obj0'"), "{}", err);
         // y too small
         let ref_point = [20.0, 1.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
         let err = hv.unwrap_err().to_string();
-        assert!(err.contains("The coordinate #2 of the reference point (1) must be strictly larger than the maximum value of objective 'obj1'"), "{}", err);
+        assert!(err.contains("The coordinate (1) of the reference point #2 must be strictly larger than the maximum value of objective 'obj1'"), "{}", err);
 
         // Maximise obj 1 - x too large
         let mut individuals = individuals_from_obj_values_dummy(
@@ -175,7 +175,7 @@ mod test {
         let ref_point = [6.0, 20.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
         let err = hv.unwrap_err().to_string();
-        assert!(err.contains("The coordinate #1 of the reference point (6) must be strictly smaller than the minimum value of objective 'obj0'"), "{}", err);
+        assert!(err.contains("The coordinate (6) of the reference point #1 must be strictly smaller than the minimum value of objective 'obj0'"), "{}", err);
 
         // Maximise obj 2 - y too large
         let mut individuals = individuals_from_obj_values_dummy(
@@ -185,7 +185,7 @@ mod test {
         let ref_point = [20.0, 19.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
         let err = hv.unwrap_err().to_string();
-        assert!(err.contains("The coordinate #2 of the reference point (19) must be strictly smaller than the minimum value of objective 'obj1'"), "{}", err);
+        assert!(err.contains("The coordinate (19) of the reference point #2 must be strictly smaller than the minimum value of objective 'obj1'"), "{}", err);
     }
 
     #[test]
@@ -216,7 +216,7 @@ mod test {
     }
 
     #[test]
-    /// Two solution is dominated - this return the area of rectangle between ref point and min
+    /// Two solutions are dominated - this return the area of rectangle between ref point and min
     fn test_two_dominated_solutions() {
         let ref_point = [10.0, 10.0];
         let obj_values = [vec![-1.0, 2.0], vec![0.5, 4.0], vec![0.0, 6.0]];
@@ -227,14 +227,15 @@ mod test {
     }
 
     #[test]
-    /// Two solution is dominated - cannot use fast sorting
-    fn test_one_solutions() {
+    #[should_panic]
+    /// Two individuals are needed - cannot use fast sorting
+    fn test_one_solution() {
         let ref_point = [10.0, 10.0];
         let obj_values = [vec![-1.0, -2.0]];
         let mut ind = individuals_from_obj_values_ztd1(&obj_values);
 
         let hv = HyperVolume2D::new(&mut ind, &ref_point);
-        assert_eq!(hv.unwrap().compute(), 0.0);
+        hv.unwrap();
     }
 
     #[test]

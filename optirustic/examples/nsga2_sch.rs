@@ -1,13 +1,16 @@
+use std::env;
 use std::error::Error;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use log::LevelFilter;
-use plotters::chart::ChartBuilder;
+use plotters::backend::BitMapBackend;
+use plotters::chart::{ChartBuilder, SeriesLabelPosition};
 use plotters::drawing::IntoDrawingArea;
-use plotters::prelude::*;
+use plotters::element::{Circle, PathElement, Rectangle};
 use plotters::prelude::full_palette::{GREY_A400, RED_700};
+use plotters::prelude::{Color, LineSeries, Palette, Palette99, ShapeStyle, BLACK, WHITE};
 
-use optirustic::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
+use optirustic::algorithms::{Algorithm, MaxGeneration, NSGA2Arg, StoppingConditionType, NSGA2};
 use optirustic::core::builtin_problems::SCHProblem;
 use optirustic::core::Individual;
 
@@ -46,25 +49,23 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut algo = NSGA2::new(problem, args)?;
     algo.run()?;
 
+    let out_path = PathBuf::from(&env::current_dir().unwrap())
+        .join("examples")
+        .join("results");
+
     // Plot the results
-    plot(&algo.get_results().individuals)?;
+    plot(&algo.get_results().individuals, &out_path)?;
 
     // Export serialised results at last generation
-    algo.save_to_json(
-        &PathBuf::from("optirustic/examples/results"),
-        Some("SCH_2obj"),
-    )?;
+    algo.save_to_json(&out_path, Some("SCH_2obj"))?;
 
     Ok(())
 }
 
 /// Draw the expected objective functions and the solutions from the algorithm.
-fn plot(individuals: &[Individual]) -> Result<(), Box<dyn Error>> {
-    let root = BitMapBackend::new(
-        "optirustic/examples/results/SCH_2_obj_NSGA2_solutions.png",
-        (1024, 768),
-    )
-    .into_drawing_area();
+fn plot(individuals: &[Individual], out_path: &Path) -> Result<(), Box<dyn Error>> {
+    let png_file = out_path.join("SCH_2_obj_NSGA2_solutions.png");
+    let root = BitMapBackend::new(&png_file, (1024, 768)).into_drawing_area();
     static FONT: &str = "sans-serif";
 
     root.fill(&WHITE)?;

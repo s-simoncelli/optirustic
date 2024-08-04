@@ -7,7 +7,7 @@ use rand::prelude::{IteratorRandom, SliceRandom};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::core::{Individual, OError, Problem};
+use crate::core::{OError, Problem};
 
 /// A trait to define a decision variable.
 pub trait Variable<T>: Display {
@@ -251,11 +251,6 @@ impl Display for VariableType {
     }
 }
 
-/// A trait to allow generating a value for an individual.
-pub trait VariableValueGenerator {
-    fn generate(individual: &Individual);
-}
-
 /// The value of a variable to set on an individual.
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -312,13 +307,6 @@ impl VariableValue {
         } else {
             Err(OError::WrongTypeVariable("integer".to_string()))
         }
-    }
-}
-
-impl VariableValueGenerator for VariableValue {
-    fn generate(_individual: &Individual) {
-        // TODO loop variables
-        todo!()
     }
 }
 

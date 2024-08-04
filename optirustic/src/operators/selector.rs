@@ -62,7 +62,7 @@ impl<Operator: BinaryComparisonOperator> TournamentSelector<Operator> {
     /// # Arguments
     ///
     /// * `number_of_competitors`: The number of competitors in the tournament. Default to 2
-    /// individuals.
+    ///    individuals.
     ///
     /// returns: `TournamentSelector`
     pub fn new(number_of_competitors: usize) -> Self {

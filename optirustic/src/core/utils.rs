@@ -1,4 +1,6 @@
+use std::collections::HashSet;
 use std::error::Error;
+use std::hash::Hash;
 #[cfg(test)]
 use std::sync::Arc;
 
@@ -6,10 +8,10 @@ use rand::{RngCore, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
 #[cfg(test)]
+use crate::core::builtin_problems::ZTD1Problem;
+#[cfg(test)]
 use crate::core::{BoundedNumber, Objective, ObjectiveDirection, Problem, VariableType};
 use crate::core::{EvaluationResult, Evaluator, Individual, OError};
-#[cfg(test)]
-use crate::core::builtin_problems::ZTD1Problem;
 
 /// Get the random number generator. If no seed is provided, this randomly generated.
 ///
@@ -105,6 +107,22 @@ pub fn argsort(data: &[f64], sort_type: Sort) -> Vec<usize> {
         indices.reverse();
     }
     indices
+}
+
+/// Check whether a vector contains duplicated elements.
+///
+/// # Arguments
+///
+/// * `iter`: The iterator.
+///
+/// returns: `bool`
+pub fn has_duplicated<T>(iter: T) -> bool
+where
+    T: IntoIterator,
+    T::Item: Eq + Hash,
+{
+    let mut uniq = HashSet::new();
+    !iter.into_iter().all(move |x| uniq.insert(x))
 }
 
 /// Create the individuals for a `N`-objective dummy problem, where `N` is the number of items in

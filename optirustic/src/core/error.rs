@@ -9,8 +9,8 @@ pub enum OError {
     NoObjective,
     #[error("You must provide at least one variable to properly define a problem")]
     NoVariables,
-    #[error("The {0} type named '{1}' already exist")]
-    DuplicatedName(String, String),
+    #[error("The {0} vector contains duplicated names")]
+    DuplicatedNames(String),
     #[error("The {0} index {1} does not exist")]
     NonExistingIndex(String, usize),
     #[error("The {0} named '{1}' does not exist")]

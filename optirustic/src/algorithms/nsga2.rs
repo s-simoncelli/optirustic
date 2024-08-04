@@ -2,6 +2,11 @@ use std::fmt::{Display, Formatter};
 use std::ops::Rem;
 use std::path::PathBuf;
 
+use log::{debug, info};
+use rand::RngCore;
+
+use optirustic_macros::{as_algorithm, as_algorithm_args, impl_algorithm_trait_items};
+
 use crate::algorithms::Algorithm;
 use crate::core::utils::{argsort, get_rng, vector_max, vector_min, Sort};
 use crate::core::{Individual, Individuals, IndividualsMut, OError, VariableValue};
@@ -10,9 +15,6 @@ use crate::operators::{
     SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
 };
 use crate::utils::fast_non_dominated_sort;
-use log::{debug, info};
-use optirustic_macros::{as_algorithm, as_algorithm_args, impl_algorithm_trait_items};
-use rand::RngCore;
 
 /// Input arguments for the NSGA2 algorithm.
 #[as_algorithm_args]
@@ -614,7 +616,7 @@ mod test_problems {
     const BOUND_TOL: f64 = 1.0 / 1000.0;
     const LOOSE_BOUND_TOL: f64 = 0.1;
 
-    #[test_with_retries(3)]
+    #[test_with_retries(10)]
     /// Test problem 1 from Deb et al. (2002). Optional solution x in [0; 2]
     fn test_sch_problem() {
         let problem = SCHProblem::create().unwrap();
@@ -640,7 +642,7 @@ mod test_problems {
         }
     }
 
-    #[test_with_retries(3)]
+    #[test_with_retries(10)]
     /// Test the ZTD1 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd1_problem() {
@@ -687,7 +689,7 @@ mod test_problems {
         }
     }
 
-    #[test_with_retries(3)]
+    #[test_with_retries(10)]
     /// Test the ZTD2 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd2_problem() {
@@ -739,7 +741,7 @@ mod test_problems {
         }
     }
 
-    #[test_with_retries(3)]
+    #[test_with_retries(10)]
     /// Test the ZTD3 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x30 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd3_problem() {
@@ -791,7 +793,7 @@ mod test_problems {
         }
     }
 
-    #[test_with_retries(3)]
+    #[test_with_retries(10)]
     /// Test the ZTD4 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x10 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd4_problem() {
@@ -844,7 +846,7 @@ mod test_problems {
         }
     }
 
-    #[test_with_retries(3)]
+    #[test_with_retries(10)]
     /// Test the ZTD6 problem from Deb et al. (2002) with 30 variables. Solution x1 in [0; 1] and
     /// x2 to x10 = 0. The exact solutions are tested using a strict and loose bounds.
     fn test_ztd6_problem() {

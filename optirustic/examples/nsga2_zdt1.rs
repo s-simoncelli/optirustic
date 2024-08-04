@@ -1,9 +1,10 @@
+use std::env;
 use std::error::Error;
 use std::path::PathBuf;
 
 use log::LevelFilter;
 
-use optirustic::algorithms::{Algorithm, MaxGeneration, NSGA2, NSGA2Arg, StoppingConditionType};
+use optirustic::algorithms::{Algorithm, MaxGeneration, NSGA2Arg, StoppingConditionType, NSGA2};
 use optirustic::core::builtin_problems::ZTD1Problem;
 
 /// Solve the ZDT1 problem (SCH) where the following 2 objectives are minimised:
@@ -48,10 +49,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // Export serialised results at last generation
-    algo.save_to_json(
-        &PathBuf::from("optirustic/examples/results"),
-        Some("ZDT1_2obj"),
-    )?;
+    let out_path = PathBuf::from(&env::current_dir().unwrap())
+        .join("examples")
+        .join("results");
+    algo.save_to_json(&out_path, Some("ZDT1_2obj"))?;
 
     Ok(())
 }
