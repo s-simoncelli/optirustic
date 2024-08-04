@@ -1,5 +1,5 @@
 use crate::core::{Individual, Individuals, Objective, ObjectiveDirection, OError};
-use crate::core::utils::{vector_max, vector_min};
+use crate::core::utils::vector_max;
 use crate::metrics::{HyperVolumeFonseca2006, HyperVolumeWhile2012};
 use crate::metrics::hypervolume_2d::HyperVolume2D;
 
@@ -13,7 +13,7 @@ use crate::metrics::hypervolume_2d::HyperVolume2D;
 ///
 /// * `individuals`: The individuals to use in the calculation.
 /// * `offset`: The offset for each objective to add to the calculated reference point. This must
-/// have a size equal to the number of objectives in the problem ([`crate::core::Problem::number_of_objectives`]).
+///    have a size equal to the number of objectives in the problem ([`crate::core::Problem::number_of_objectives`]).
 ///
 /// returns: `Result<Vec<f64>, OError>` The reference point. This returns an error if there are
 /// no individuals or the size of the offset does not match [`crate::core::Problem::number_of_objectives`].
@@ -47,12 +47,14 @@ pub fn estimate_reference_point(
     let mut ref_point: Vec<f64> = Vec::new();
     for obj_name in obj_names.iter() {
         let obj_values = individuals.objective_values(obj_name)?;
-        // get minimum if objective is minimised
-        let coordinate = if problem.is_objective_minimised(obj_name)? {
-            vector_max(&obj_values)
+        // invert coordinate when maximised to return original value
+        let factor = if problem.is_objective_minimised(obj_name)? {
+            1.0
         } else {
-            vector_min(&obj_values)
-        }?;
+            -1.0
+        };
+        let coordinate = factor * vector_max(&obj_values)?;
+
         ref_point.push(coordinate);
     }
 
