@@ -109,20 +109,20 @@ pub fn argsort(data: &[f64], sort_type: Sort) -> Vec<usize> {
     indices
 }
 
-/// Check whether a vector contains unique items.
+/// Check whether a vector contains duplicated elements.
 ///
 /// # Arguments
 ///
 /// * `iter`: The iterator.
 ///
 /// returns: `bool`
-pub fn has_unique_elements<T>(iter: T) -> bool
+pub fn has_duplicated<T>(iter: T) -> bool
 where
     T: IntoIterator,
     T::Item: Eq + Hash,
 {
     let mut uniq = HashSet::new();
-    iter.into_iter().all(move |x| uniq.insert(x))
+    !iter.into_iter().all(move |x| uniq.insert(x))
 }
 
 /// Create the individuals for a `N`-objective dummy problem, where `N` is the number of items in

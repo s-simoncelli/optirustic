@@ -5,7 +5,7 @@ use std::fmt::{Debug, Display, Formatter};
 use serde::{Deserialize, Serialize};
 
 use crate::core::{Constraint, Individual, Objective, ObjectiveDirection, OError, VariableType};
-use crate::core::utils::has_unique_elements;
+use crate::core::utils::has_duplicated;
 
 /// The struct containing the results of the evaluation function. This is the output of
 /// [`Evaluator::evaluate`], the user-defined function should produce. When the algorithm generates
@@ -183,17 +183,17 @@ impl Problem {
 
         // check unique names
         let obj_names = objectives.iter().map(|o| o.name());
-        if has_unique_elements(obj_names) {
+        if has_duplicated(obj_names) {
             return Err(OError::DuplicatedNames("objective".to_string()));
         }
 
         let var_names = variable_types.iter().map(|o| o.name());
-        if has_unique_elements(var_names) {
+        if has_duplicated(var_names) {
             return Err(OError::DuplicatedNames("variables".to_string()));
         }
 
         let const_names = constraints.iter().map(|o| o.name());
-        if has_unique_elements(const_names) {
+        if has_duplicated(const_names) {
             return Err(OError::DuplicatedNames("constraints".to_string()));
         }
 
