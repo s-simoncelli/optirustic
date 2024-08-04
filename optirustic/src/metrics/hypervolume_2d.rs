@@ -160,12 +160,12 @@ mod test {
         let ref_point = [0.2, 20.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
         let err = hv.unwrap_err().to_string();
-        assert!(err.contains("The coordinate #1 of the reference point (0.2) must be strictly larger than the maximum value of objective 'obj0'"), "{}", err);
+        assert!(err.contains("The coordinate (0.2) of the reference point #1 must be strictly larger than the maximum value of objective 'obj0'"), "{}", err);
         // y too small
         let ref_point = [20.0, 1.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
         let err = hv.unwrap_err().to_string();
-        assert!(err.contains("The coordinate #2 of the reference point (1) must be strictly larger than the maximum value of objective 'obj1'"), "{}", err);
+        assert!(err.contains("The coordinate (1) of the reference point #2 must be strictly larger than the maximum value of objective 'obj1'"), "{}", err);
 
         // Maximise obj 1 - x too large
         let mut individuals = individuals_from_obj_values_dummy(
@@ -175,7 +175,7 @@ mod test {
         let ref_point = [6.0, 20.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
         let err = hv.unwrap_err().to_string();
-        assert!(err.contains("The coordinate #1 of the reference point (6) must be strictly smaller than the minimum value of objective 'obj0'"), "{}", err);
+        assert!(err.contains("The coordinate (6) of the reference point #1 must be strictly smaller than the minimum value of objective 'obj0'"), "{}", err);
 
         // Maximise obj 2 - y too large
         let mut individuals = individuals_from_obj_values_dummy(
@@ -185,7 +185,7 @@ mod test {
         let ref_point = [20.0, 19.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
         let err = hv.unwrap_err().to_string();
-        assert!(err.contains("The coordinate #2 of the reference point (19) must be strictly smaller than the minimum value of objective 'obj1'"), "{}", err);
+        assert!(err.contains("The coordinate (19) of the reference point #2 must be strictly smaller than the minimum value of objective 'obj1'"), "{}", err);
     }
 
     #[test]
@@ -216,7 +216,7 @@ mod test {
     }
 
     #[test]
-    /// Two solution is dominated - this return the area of rectangle between ref point and min
+    /// Two solutions are dominated - this return the area of rectangle between ref point and min
     fn test_two_dominated_solutions() {
         let ref_point = [10.0, 10.0];
         let obj_values = [vec![-1.0, 2.0], vec![0.5, 4.0], vec![0.0, 6.0]];
@@ -227,14 +227,15 @@ mod test {
     }
 
     #[test]
-    /// Two solution is dominated - cannot use fast sorting
-    fn test_one_solutions() {
+    #[should_panic]
+    /// Two individuals are needed - cannot use fast sorting
+    fn test_one_solution() {
         let ref_point = [10.0, 10.0];
         let obj_values = [vec![-1.0, -2.0]];
         let mut ind = individuals_from_obj_values_ztd1(&obj_values);
 
         let hv = HyperVolume2D::new(&mut ind, &ref_point);
-        assert_eq!(hv.unwrap().compute(), 0.0);
+        hv.unwrap();
     }
 
     #[test]
