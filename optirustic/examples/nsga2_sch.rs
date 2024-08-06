@@ -17,7 +17,8 @@ use optirustic::core::Individual;
 /// Solve the Schaffer’s problem (SCH) where the following 2 objectives are minimised:
 /// - `f_1(x) = x^2`
 /// - `f-2(x) = (x - 2)^2`
-/// The problem has 1 variable (`x`) bounded to -0.001 and 0.001. The optional solution is expected
+///
+/// The problem has 1 variable (`x`) bounded to -1000 and 1000. The optional solution is expected
 /// to lie in the [0; 2] range. The algorithm converges in about 1 second.
 ///
 /// Make sure to compile this in release mode to speed up the calculation:
