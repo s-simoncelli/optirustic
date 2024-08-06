@@ -141,3 +141,8 @@ and these are the plotted solutions:
 <div style="text-align: center">
     <img src="optirustic/examples/results/SCH_2_obj_NSGA2_solutions.png" width="300" alt="Results" />
 </div>
+
+## Additional examples
+
+Additional examples showcasing this library's features are available in
+the  [examples folder of this repository](optirustic/examples/nsga2_sch.rs).
