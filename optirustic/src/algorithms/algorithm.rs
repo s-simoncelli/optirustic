@@ -1,15 +1,15 @@
-use std::{fmt, fs};
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fmt::{Debug, Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
+use std::{fmt, fs};
 
 use log::{debug, info};
 use rayon::prelude::*;
-use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 
 use crate::algorithms::{StoppingCondition, StoppingConditionType};
 use crate::core::{

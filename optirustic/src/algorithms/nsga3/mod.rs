@@ -426,7 +426,7 @@ mod test_problems {
     use crate::algorithms::{
         Algorithm, MaxGeneration, NSGA3Arg, Nsga3NumberOfIndividuals, StoppingConditionType, NSGA3,
     };
-    use crate::core::builtin_problems::dtlz1;
+    use crate::core::builtin_problems::DTLZ1Problem;
     use crate::core::test_utils::check_exact_value;
     use crate::operators::{PolynomialMutationArgs, SimulatedBinaryCrossoverArgs};
     use crate::utils::NumberOfPartitions;
@@ -438,7 +438,7 @@ mod test_problems {
         let number_objectives: usize = 3;
         let k: usize = 5;
         let number_variables: usize = number_objectives + k - 1; // M + k - 1 with k = 5 (Section Va)
-        let problem = dtlz1(number_variables, number_objectives).unwrap();
+        let problem = DTLZ1Problem::create(number_variables, number_objectives).unwrap();
         // The number of partitions used in the paper when M=3 - Table I
         let number_of_partitions = NumberOfPartitions::OneLayer(12);
 
