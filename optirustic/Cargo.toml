@@ -1,7 +1,15 @@
 [package]
 name = "optirustic"
 version = "0.1.0"
+authors = ["Stefano Simoncelli <16114781+s-simoncelli@users.noreply.github.com>"]
 edition = "2021"
+rust-version = "1.80"
+description = "A multi-objective optimisation framework in Rust"
+repository = "https://github.com/s-simoncelli/optirustic"
+#license = "MIT OR Apache-2.0"
+keywords = ["genetic-algorithm", "optimisation", "multiobjective", "nsga2", "nsga3"]
+categories = ["science", "algorithms"]
+readme = "../README.md"
 
 [dependencies]
 log = "0.4.21"
