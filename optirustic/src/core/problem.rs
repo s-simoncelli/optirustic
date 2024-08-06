@@ -795,108 +795,112 @@ pub mod builtin_problems {
 
     /// Test problem from K.Deb,L. Thiele,M. Laumanns,and E. Zitzler, “Scalable test problems for
     /// evolutionary multi-objective optimization”
-    ///
-    /// # Arguments:
-    ///
-    /// * `n_vars`: The number of variables.
-    /// * `n_objectives`: The number of objectives.
-    ///
-    /// return: `Result<Problem, OError>`
-    pub fn dtlz1(n_vars: usize, n_objectives: usize) -> Result<Problem, OError> {
-        // if k must be > 0, then n + 1 >= M
-        if n_vars + 1 < n_objectives {
-            return Err(OError::Generic(
-                "n_vars + 1 >= n_objectives not met. Increase n_vars.".to_string(),
-            ));
-        }
+    #[derive(Debug)]
+    pub struct DTLZ1Problem {
+        /// The number of variables.
+        n_vars: usize,
+        /// The number of objectives.
+        n_objectives: usize,
+    }
 
-        let objectives = (1..=n_objectives)
-            .map(|i| Objective::new(format!("f{i}").as_str(), ObjectiveDirection::Minimise))
-            .collect();
-        let constraints: Vec<Constraint> = vec![Constraint::new(
-            "g",
-            RelationalOperator::GreaterOrEqualTo,
-            0.0,
-        )];
-
-        let mut variables: Vec<VariableType> = Vec::new();
-        for i in 1..=n_vars {
-            variables.push(VariableType::Real(BoundedNumber::new(
-                format!("x{i}").as_str(),
-                0.0,
-                1.0,
-            )?));
-        }
-
-        #[derive(Debug)]
-        struct UserEvaluator {
-            n_vars: usize,
-            n_objectives: usize,
-        }
-        impl Evaluator for UserEvaluator {
-            fn evaluate(&self, ind: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
-                // Calculate g(x_M)
-                let k = self.n_vars - self.n_objectives + 1;
-                let mut sum_g = Vec::new();
-                // get last k variables
-                for i in (self.n_vars - k + 1)..=self.n_vars {
-                    let xi = ind
-                        .get_variable_value(format!("x{i}").as_str())?
-                        .as_real()?;
-                    sum_g.push((xi - 0.5).powi(2) - f64::cos(20.0 * f64::pi() * (xi - 0.5)));
-                }
-
-                let g = 100.0 * (k as f64 + sum_g.iter().sum::<f64>());
-
-                // Add constraints values
-                let mut constraints = HashMap::new();
-                constraints.insert("g".to_string(), g);
-
-                // Add objective values
-                // M = 5 (self.n_objectives)
-                // F1 (o=1) = 0.5 * x1 * x2 * x3 * x4 * (1 + g) = 0.5 * Prod_{j=1:M-o} * 1 * (1 + g)
-                // F2 (o=2) = 0.5 * x1 * x2 * x3 * (1 - x4) * (1 + g) = 0.5 * Prod_{j=1:M-o} * (1 - x_{M-o+1}) * (1 + g)
-                // ...
-                // F4 = 0.5 * x1 * (1 - x2) * (1 + g)
-                // F5 (o=5) = 0.5 * (1 - x1) * (1 + g) = 0.5 * 1 * (1 - x_{M-o+1})
-                let mut objectives = HashMap::new();
-                for o in 1..=self.n_objectives {
-                    // first factor (product of x's)
-                    let prod = if self.n_objectives == o {
-                        1.0
-                    } else {
-                        let mut tmp = Vec::new();
-                        for j in 1..=self.n_objectives - o {
-                            tmp.push(
-                                ind.get_variable_value(format!("x{j}").as_str())?
-                                    .as_real()?,
-                            );
-                        }
-                        tmp.iter().product()
-                    };
-                    // second factor (1 - x_{M-o+1})
-                    let delta = if o == 1 {
-                        1.0
-                    } else {
-                        let x = ind
-                            .get_variable_value(format!("x{}", self.n_objectives - o + 1).as_str())?
-                            .as_real()?;
-                        1.0 - x
-                    };
-                    objectives.insert(format!("f{o}"), 0.5 * prod * delta * (1.0 + g));
-                }
-                Ok(EvaluationResult {
-                    constraints: Some(constraints),
-                    objectives,
-                })
+    impl DTLZ1Problem {
+        /// Create the problem for the optimisation.
+        ///
+        /// # Arguments:
+        ///
+        /// * `n_vars`: The number of variables.
+        /// * `n_objectives`: The number of objectives.
+        pub fn create(n_vars: usize, n_objectives: usize) -> Result<Problem, OError> {
+            // if k must be > 0, then n + 1 >= M
+            if n_vars + 1 < n_objectives {
+                return Err(OError::Generic(
+                    "n_vars + 1 >= n_objectives not met. Increase n_vars.".to_string(),
+                ));
             }
-        }
 
-        let e = Box::new(UserEvaluator {
-            n_vars,
-            n_objectives,
-        });
-        Problem::new(objectives, variables, Some(constraints), e)
+            let objectives = (1..=n_objectives)
+                .map(|i| Objective::new(format!("f{i}").as_str(), ObjectiveDirection::Minimise))
+                .collect();
+            let constraints: Vec<Constraint> = vec![Constraint::new(
+                "g",
+                RelationalOperator::GreaterOrEqualTo,
+                0.0,
+            )];
+
+            let mut variables: Vec<VariableType> = Vec::new();
+            for i in 1..=n_vars {
+                variables.push(VariableType::Real(BoundedNumber::new(
+                    format!("x{i}").as_str(),
+                    0.0,
+                    1.0,
+                )?));
+            }
+
+            let e = Box::new(DTLZ1Problem {
+                n_vars,
+                n_objectives,
+            });
+            Problem::new(objectives, variables, Some(constraints), e)
+        }
+    }
+
+    impl Evaluator for DTLZ1Problem {
+        fn evaluate(&self, ind: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+            // Calculate g(x_M)
+            let k = self.n_vars - self.n_objectives + 1;
+            let mut sum_g = Vec::new();
+            // get last k variables
+            for i in (self.n_vars - k + 1)..=self.n_vars {
+                let xi = ind
+                    .get_variable_value(format!("x{i}").as_str())?
+                    .as_real()?;
+                sum_g.push((xi - 0.5).powi(2) - f64::cos(20.0 * f64::pi() * (xi - 0.5)));
+            }
+
+            let g = 100.0 * (k as f64 + sum_g.iter().sum::<f64>());
+
+            // Add constraints values
+            let mut constraints = HashMap::new();
+            constraints.insert("g".to_string(), g);
+
+            // Add objective values
+            // M = 5 (self.n_objectives)
+            // F1 (o=1) = 0.5 * x1 * x2 * x3 * x4 * (1 + g) = 0.5 * Prod_{j=1:M-o} * 1 * (1 + g)
+            // F2 (o=2) = 0.5 * x1 * x2 * x3 * (1 - x4) * (1 + g) = 0.5 * Prod_{j=1:M-o} * (1 - x_{M-o+1}) * (1 + g)
+            // ...
+            // F4 = 0.5 * x1 * (1 - x2) * (1 + g)
+            // F5 (o=5) = 0.5 * (1 - x1) * (1 + g) = 0.5 * 1 * (1 - x_{M-o+1})
+            let mut objectives = HashMap::new();
+            for o in 1..=self.n_objectives {
+                // first factor (product of x's)
+                let prod = if self.n_objectives == o {
+                    1.0
+                } else {
+                    let mut tmp = Vec::new();
+                    for j in 1..=self.n_objectives - o {
+                        tmp.push(
+                            ind.get_variable_value(format!("x{j}").as_str())?
+                                .as_real()?,
+                        );
+                    }
+                    tmp.iter().product()
+                };
+                // second factor (1 - x_{M-o+1})
+                let delta = if o == 1 {
+                    1.0
+                } else {
+                    let x = ind
+                        .get_variable_value(format!("x{}", self.n_objectives - o + 1).as_str())?
+                        .as_real()?;
+                    1.0 - x
+                };
+                objectives.insert(format!("f{o}"), 0.5 * prod * delta * (1.0 + g));
+            }
+            Ok(EvaluationResult {
+                constraints: Some(constraints),
+                objectives,
+            })
+        }
     }
 }
 
@@ -908,7 +912,7 @@ mod test {
 
     use float_cmp::assert_approx_eq;
 
-    use crate::core::builtin_problems::dtlz1;
+    use crate::core::builtin_problems::DTLZ1Problem;
     use crate::core::test_utils::read_csv_test_file;
     use crate::core::utils::dummy_evaluator;
     use crate::core::{
@@ -943,7 +947,7 @@ mod test {
     #[test]
     /// Test the DTLZ1 problem implementation with the optimal solution
     fn test_dtlz1_optimal_solutions() {
-        let problem = Arc::new(dtlz1(4, 3).unwrap());
+        let problem = Arc::new(DTLZ1Problem::create(4, 3).unwrap());
         let mut individual = Individual::new(problem.clone());
         individual
             .update_variable("x1", VariableValue::Real(0.2))
@@ -990,7 +994,7 @@ mod test {
         let all_expected_objectives = read_csv_test_file(&obj_file, None);
 
         for (expected_objectives, vars) in all_expected_objectives.iter().zip(all_vars) {
-            let problem = Arc::new(dtlz1(vars.len(), 3).unwrap());
+            let problem = Arc::new(DTLZ1Problem::create(vars.len(), 3).unwrap());
             let mut individual = Individual::new(problem.clone());
             for (i, var) in vars.iter().enumerate() {
                 individual
