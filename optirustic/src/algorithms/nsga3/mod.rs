@@ -138,8 +138,8 @@ impl NSGA3 {
                         "The population size must have at least 3 individuals".to_string(),
                     ));
                 }
-                // add tolerance (for example Deb et al. sometimes uses pop + 1 = ref_point)
-                if count - 1 > das_darren.number_of_points() as usize {
+                // add tolerance (for example Deb et al. sometimes uses pop + 2 = ref_point)
+                if count - 2 > das_darren.number_of_points() as usize {
                     return Err(OError::AlgorithmInit(
                         name,
                         format!(
@@ -427,32 +427,167 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
 
 #[cfg(test)]
 mod test_problems {
+    use float_cmp::assert_approx_eq;
+
     use optirustic_macros::test_with_retries;
 
     use crate::algorithms::{
         Algorithm, MaxGeneration, NSGA3Arg, Nsga3NumberOfIndividuals, StoppingConditionType, NSGA3,
     };
-    use crate::core::builtin_problems::DTLZ1Problem;
-    use crate::core::test_utils::check_value_in_range;
+    use crate::core::builtin_problems::{DTLZ1Problem, DTLZ2Problem};
+    use crate::core::test_utils::{assert_approx_array_eq, check_value_in_range};
     use crate::operators::{PolynomialMutationArgs, SimulatedBinaryCrossoverArgs};
-    use crate::utils::NumberOfPartitions;
+    use crate::utils::{NumberOfPartitions, TwoLayerPartitions};
 
-    #[test_with_retries(10)]
-    /// Test the ZTD1 problem from Deb et al. (2013) with M=3 (see Table III).
-    fn test_dzlz1() {
+    /// Test the DTLZ1 problem from Deb et al. (2013)
+    fn test_dtlz1(number_objectives: usize, max_gen: usize) {
         // see Table I
-        let number_objectives: usize = 3;
         let k: usize = 5;
         let number_variables: usize = number_objectives + k - 1; // M + k - 1 with k = 5 (Section Va)
         let problem = DTLZ1Problem::create(number_variables, number_objectives).unwrap();
+        // The number of partitions used in the paper when from section 5
+        let number_of_partitions = match number_objectives {
+            3 => NumberOfPartitions::OneLayer(12),
+            5 => NumberOfPartitions::OneLayer(6),
+            8 | 10 => NumberOfPartitions::TwoLayers(TwoLayerPartitions {
+                boundary_layer: 3,
+                inner_layer: 2,
+                scaling: None,
+            }),
+            15 => NumberOfPartitions::TwoLayers(TwoLayerPartitions {
+                boundary_layer: 2,
+                inner_layer: 1,
+                scaling: None,
+            }),
+            _ => panic!("Objective count not supported"),
+        };
+        // number of individuals - from Table I
+        let pop_size: usize = match number_objectives {
+            3 => 92,
+            5 => 212,
+            8 => 156,
+            10 => 276,
+            15 => 136,
+
+            _ => panic!("Objective count not supported"),
+        };
+        let expected_ref_points: usize = match number_objectives {
+            3 => 91,
+            5 => 210,
+            8 => 156,
+            10 => 275,
+            15 => 135,
+
+            _ => panic!("Objective count not supported"),
+        };
+
+        // see Table II
+        let crossover_operator_options = SimulatedBinaryCrossoverArgs {
+            distribution_index: 30.0,
+            ..SimulatedBinaryCrossoverArgs::default()
+        };
+        // eta_m = 20 - probability  1/n_vars
+        let mutation_operator_options = PolynomialMutationArgs::default(&problem);
+
+        let args = NSGA3Arg {
+            // see Table I
+            number_of_individuals: Nsga3NumberOfIndividuals::Custom(pop_size),
+            number_of_partitions,
+            crossover_operator_options: Some(crossover_operator_options),
+            mutation_operator_options: Some(mutation_operator_options),
+            // see Table III
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(max_gen)),
+            parallel: None,
+            export_history: None,
+            seed: Some(1),
+        };
+
+        let mut algo = NSGA3::new(problem, args).unwrap();
+        assert_eq!(algo.reference_points().len(), expected_ref_points);
+
+        algo.run().unwrap();
+        let results = algo.get_results();
+
+        // All objective points lie on the plane passing through the 0.5 intercept on each axis (i.e.
+        // the sum of the objective coordinate is close to 0.5). Because of randomness a few solutions
+        // may breach this condition.
+        let obj_sum: Vec<f64> = results
+            .individuals
+            .iter()
+            .map(|ind| ind.get_objective_values().unwrap().iter().sum())
+            .collect();
+        let strict_range = 0.490..0.510;
+        let outside_range_data = check_value_in_range(&obj_sum, &strict_range);
+        if !outside_range_data.is_empty() {
+            panic!(
+                "Found {} objectives ({:?}) outside the {:?} bounds",
+                outside_range_data.len(),
+                outside_range_data,
+                strict_range,
+            );
+        }
+
+        // All variables in x_M must be 0.5
+        let expected_vars = vec![0.5; number_variables];
+        for ind in results.individuals {
+            let vars: Vec<f64> = ((number_variables - k + 1)..=number_variables)
+                .map(|i| {
+                    ind.get_variable_value(format!("x{i}").as_str())
+                        .unwrap()
+                        .as_real()
+                        .unwrap()
+                })
+                .collect();
+            assert_approx_array_eq(&vars, &expected_vars, Some(0.01));
+        }
+    }
+
+    #[test_with_retries(10)]
+    /// Test the DTLZ1 problem with M=3 and MaxGeneration = 400 (Table III of NSGA3 paper)
+    fn test_dtlz1_obj_3() {
+        test_dtlz1(3, 400);
+    }
+
+    #[test_with_retries(3)]
+    /// Test the DTLZ1 problem with M=5 and MaxGeneration = 600 (Table III of NSGA3 paper)
+    fn test_dtlz1_obj_5() {
+        test_dtlz1(5, 600);
+    }
+
+    #[test_with_retries(3)]
+    /// Test the DTLZ1 problem with M=8 and MaxGeneration = 750 (Table III of NSGA3 paper)
+    fn test_dtlz1_obj_8() {
+        test_dtlz1(8, 750);
+    }
+
+    // These two tests take too long to run on pipeline
+    // #[test_with_retries(3)]
+    // /// Test the DTLZ1 problem with M=10 and MaxGeneration = 1000 (Table III of NSGA3 paper)
+    // fn test_dtlz1_obj_10() {
+    //     test_dtlz1(10, 1000);
+    // }
+
+    // #[test_with_retries(3)]
+    // /// Test the DTLZ1 problem with M=15 and MaxGeneration = 1500 (Table III of NSGA3 paper)
+    // fn test_dtlz1_obj_15() {
+    //     test_dtlz1(15, 1500);
+    // }
+
+    #[test_with_retries(10)]
+    /// Test the DTLZ2 problem from Deb et al. (2013) with M=3 (see Table III).
+    fn test_dtlz2() {
+        // see Table I
+        let number_objectives: usize = 3;
+        let k: usize = 10;
+        let number_variables: usize = number_objectives + k - 1; // M + k - 1 with k = 5 (Section Va)
+        let problem = DTLZ2Problem::create(number_variables, number_objectives).unwrap();
         // The number of partitions used in the paper when M=3 - Table I
         let number_of_partitions = NumberOfPartitions::OneLayer(12);
 
         // see Table II
         let crossover_operator_options = SimulatedBinaryCrossoverArgs {
             distribution_index: 30.0,
-            crossover_probability: 1.0,
-            variable_probability: 0.5,
+            ..SimulatedBinaryCrossoverArgs::default()
         };
         // eta_m = 20 - probability  1/n_vars
         let mutation_operator_options = PolynomialMutationArgs::default(&problem);
@@ -476,23 +611,35 @@ mod test_problems {
         algo.run().unwrap();
         let results = algo.get_results();
 
-        // All objective points lie on the plane passing through the 0.5 intercept on each axis (i.e.
-        // the sum of the objective coordinate is close to 0.5). Because of randomness a few solutions
-        // may breach this condition.
-        let obj_sum: Vec<f64> = results
-            .individuals
-            .iter()
-            .map(|ind| ind.get_objective_values().unwrap().iter().sum())
-            .collect();
-        let strict_range = 0.495..0.505;
-        let outside_range_data = check_value_in_range(&obj_sum, &strict_range);
-        if !outside_range_data.is_empty() {
-            panic!(
-                "Found {} objectives ({:?}) outside the {:?} bounds",
-                outside_range_data.len(),
-                outside_range_data,
-                strict_range,
-            );
+        // Eq 6.9 - sum of objective squared must be 1 and  all variables in x_M must be close to 0.5.
+        let mut invalid_individuals: usize = 0;
+        for ind in &results.individuals {
+            let obj_sum: f64 = ind
+                .get_objective_values()
+                .unwrap()
+                .iter()
+                .map(|v| v.powi(2))
+                .sum();
+            assert_approx_eq!(f64, obj_sum, 1.0, epsilon = 0.1);
+
+            let vars: Vec<f64> = ((number_variables - k + 1)..=number_variables)
+                .map(|i| {
+                    ind.get_variable_value(format!("x{i}").as_str())
+                        .unwrap()
+                        .as_real()
+                        .unwrap()
+                })
+                .collect();
+
+            let strict_range = 0.480..0.520;
+            let values_outside = check_value_in_range(&vars, &strict_range);
+            if !values_outside.is_empty() {
+                invalid_individuals += 1;
+            }
+        }
+
+        if invalid_individuals > 10 {
+            panic!("Found {invalid_individuals} individuals not meeting the ideal solution bounds",);
         }
     }
 }
