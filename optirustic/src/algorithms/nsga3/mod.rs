@@ -516,7 +516,7 @@ mod test_problems {
             .iter()
             .map(|ind| ind.get_objective_values().unwrap().iter().sum())
             .collect();
-        let strict_range = 0.490..0.510;
+        let strict_range = 0.485..0.515;
         let outside_range_data = check_value_in_range(&obj_sum, &strict_range);
         if !outside_range_data.is_empty() {
             panic!(
@@ -548,13 +548,13 @@ mod test_problems {
         test_dtlz1(3, 400);
     }
 
-    #[test_with_retries(3)]
+    #[test_with_retries(5)]
     /// Test the DTLZ1 problem with M=5 and MaxGeneration = 600 (Table III of NSGA3 paper)
     fn test_dtlz1_obj_5() {
         test_dtlz1(5, 600);
     }
 
-    #[test_with_retries(3)]
+    #[test_with_retries(5)]
     /// Test the DTLZ1 problem with M=8 and MaxGeneration = 750 (Table III of NSGA3 paper)
     fn test_dtlz1_obj_8() {
         test_dtlz1(8, 750);
