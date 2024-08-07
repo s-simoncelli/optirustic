@@ -108,18 +108,18 @@ impl<'a> Normalise<'a> {
             weights[j] = 1.0;
 
             let mut min_value = f64::INFINITY; // minimum ASF
-            let mut ind_index = 0; // index of individual with minimum ASF
-            for (x_idx, ind) in self.individuals.iter().enumerate() {
+            let mut selected_ind: &Individual = self.individuals.first().unwrap(); // individual with minimum ASF
+            for ind in self.individuals.iter() {
                 let f_j = NSGA3::get_normalised_objectives(ind)?;
                 let value = self.asf(f_j.as_f64_vec()?, &weights)?;
 
                 if value < min_value {
                     min_value = value;
-                    ind_index = x_idx;
+                    selected_ind = ind;
                 }
             }
             extreme_points.push(
-                NSGA3::get_normalised_objectives(&self.individuals[ind_index])?
+                NSGA3::get_normalised_objectives(selected_ind)?
                     .as_f64_vec()?
                     .clone(),
             );
@@ -232,7 +232,7 @@ impl<'a> Normalise<'a> {
         let asf: Vec<f64> = translated_objective
             .iter()
             .zip(weights)
-            .map(|(x, w)| x / w)
+            .map(|(o, w)| o / w)
             .collect();
         vector_max(&asf)
     }
