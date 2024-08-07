@@ -138,30 +138,30 @@ impl<'a> Niching<'a> {
 
             // step 6 - select points from front F_l
             if !i_j.is_empty() {
-                let (_, ind) = argmin_by(&i_j, |(_, ind)| {
-                    ind.get_data(MIN_DISTANCE).unwrap().as_real().unwrap()
-                })
-                .unwrap();
-                let new_ind_index = index_of(self.potential_individuals, ind);
-                let method = "min_distance";
+                // let (_, ind) = argmin_by(&i_j, |(_, ind)| {
+                //     ind.get_data(MIN_DISTANCE).unwrap().as_real().unwrap()
+                // })
+                // .unwrap();
+                // let new_ind_index = index_of(self.potential_individuals, ind);
+                // let method = "min_distance";
 
-                // let (new_ind_index, method) = if min_rho_j == 0 {
-                //     // step 7 - no point from P_{t+1} is associated with the selected reference point
-                //     // j_hat. There's at least one point from F_l that can be linked (I_j is not empty)
-                //
-                //     // step 8 - find individual in F_l with the shortest distance
-                //     let (_, ind) = argmin_by(&i_j, |(_, ind)| {
-                //         ind.get_data(MIN_DISTANCE).unwrap().as_real().unwrap()
-                //     })
-                //     .unwrap();
-                //     let new_ind_index = index_of(self.potential_individuals, ind);
-                //     (new_ind_index, "min_distance")
-                // } else {
-                //     // step 10 - choose random point from F_l
-                //     let ind = i_j.choose(self.rng).unwrap();
-                //     let new_ind_index = index_of(self.potential_individuals, ind);
-                //     (new_ind_index, "random")
-                // };
+                let (new_ind_index, method) = if min_rho_j == 0 {
+                    // step 7 - no point from P_{t+1} is associated with the selected reference point
+                    // j_hat. There's at least one point from F_l that can be linked (I_j is not empty)
+
+                    // step 8 - find individual in F_l with the shortest distance
+                    let (_, ind) = argmin_by(&i_j, |(_, ind)| {
+                        ind.get_data(MIN_DISTANCE).unwrap().as_real().unwrap()
+                    })
+                    .unwrap();
+                    let new_ind_index = index_of(self.potential_individuals, ind);
+                    (new_ind_index, "min_distance")
+                } else {
+                    // step 10 - choose random point from F_l
+                    let ind = i_j.choose(self.rng).unwrap();
+                    let new_ind_index = index_of(self.potential_individuals, ind);
+                    (new_ind_index, "random")
+                };
 
                 // step 12a - mark reference point as associated to a new F_l's individual
                 *self.rho_j.get_mut(&j_hat).unwrap() += 1;
@@ -189,7 +189,7 @@ impl<'a> Niching<'a> {
                 }
             } else {
                 // step 15 - no point in F_l is associated with reference point indexed by j_hat.
-                // j_hat will have no linked individual at this evolution. Excluding it.
+                // j_hat will have no linked individual at this evolution. Exclude it.
                 debug!("Excluding ref point index {j_hat} - no candidates associated with it");
                 self.rho_j.remove(&j_hat);
             }
