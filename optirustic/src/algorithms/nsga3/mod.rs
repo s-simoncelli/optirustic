@@ -82,7 +82,11 @@ pub struct NSGA3Arg {
 /// > Constraints," in IEEE Transactions on Evolutionary Computation, vol. 18, no. 4, pp. 577-601,
 /// > Aug. 2014, doi: 10.1109/TEVC.2013.2281535
 ///
-/// See: <https://10.1109/TEVC.2013.2281535>.
+/// See: <https://10.1109/TEVC.2013.2281535>.///
+/// # Example - solve the DTLZ1 problem
+/// ```rust
+#[doc = include_str!("../../../examples/nsga3.rs")]
+/// ```
 #[as_algorithm(NSGA3Arg)]
 pub struct NSGA3 {
     /// The vector of reference points
@@ -212,7 +216,7 @@ impl NSGA3 {
         individual.get_data(NORMALISED_OBJECTIVE_KEY)
     }
 
-    /// For each reference point count selected individuals in P_{t+1} associated with it. This
+    /// For each reference point, count selected individuals in P_{t+1} associated with it. This
     /// returns `rho_j` which is a lookup map, mapping the reference point index to the number of
     /// linked individuals.
     ///
@@ -423,17 +427,19 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
 
 #[cfg(test)]
 mod test_problems {
+    use optirustic_macros::test_with_retries;
+
     use crate::algorithms::{
         Algorithm, MaxGeneration, NSGA3Arg, Nsga3NumberOfIndividuals, StoppingConditionType, NSGA3,
     };
     use crate::core::builtin_problems::DTLZ1Problem;
-    use crate::core::test_utils::check_exact_value;
+    use crate::core::test_utils::check_value_in_range;
     use crate::operators::{PolynomialMutationArgs, SimulatedBinaryCrossoverArgs};
     use crate::utils::NumberOfPartitions;
 
-    #[test]
+    #[test_with_retries(10)]
     /// Test the ZTD1 problem from Deb et al. (2013) with M=3 (see Table III).
-    fn test_ztd1_problem_1() {
+    fn test_dzlz1() {
         // see Table I
         let number_objectives: usize = 3;
         let k: usize = 5;
@@ -446,7 +452,7 @@ mod test_problems {
         let crossover_operator_options = SimulatedBinaryCrossoverArgs {
             distribution_index: 30.0,
             crossover_probability: 1.0,
-            variable_probability: 1.0,
+            variable_probability: 0.5,
         };
         // eta_m = 20 - probability  1/n_vars
         let mutation_operator_options = PolynomialMutationArgs::default(&problem);
@@ -478,17 +484,14 @@ mod test_problems {
             .iter()
             .map(|ind| ind.get_objective_values().unwrap().iter().sum())
             .collect();
-        let strict_range = 0.47..0.53;
-        let loose_range = -10.0..10.0;
-        let (x_other_outside_bounds, breached_range, b_type) =
-            check_exact_value(&obj_sum, &strict_range, &loose_range, 2);
-        if !x_other_outside_bounds.is_empty() {
+        let strict_range = 0.495..0.505;
+        let outside_range_data = check_value_in_range(&obj_sum, &strict_range);
+        if !outside_range_data.is_empty() {
             panic!(
-                "Found {} objectives ({:?}) outside the {} bounds {:?}",
-                x_other_outside_bounds.len(),
-                x_other_outside_bounds,
-                b_type,
-                breached_range
+                "Found {} objectives ({:?}) outside the {:?} bounds",
+                outside_range_data.len(),
+                outside_range_data,
+                strict_range,
             );
         }
     }
