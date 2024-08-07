@@ -20,9 +20,11 @@ pub fn test_with_retries(attrs: TokenStream, item: TokenStream) -> TokenStream {
         fn #fn_name() {
             #input_fn
             for i in 1..=#tries {
+                println!("Attempt #{i}");
                 let result = std::panic::catch_unwind(|| { #fn_name() });
 
                 if result.is_ok() {
+                    println!("Ok");
                     return;
                 }
 

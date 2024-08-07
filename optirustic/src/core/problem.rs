@@ -793,8 +793,8 @@ pub mod builtin_problems {
         }
     }
 
-    /// Test problem from K.Deb,L. Thiele,M. Laumanns,and E. Zitzler, “Scalable test problems for
-    /// evolutionary multi-objective optimization”
+    /// Test problem DTLZ1 from K.Deb,L. Thiele,M. Laumanns,and E. Zitzler, “Scalable test problems
+    /// for evolutionary multi-objective optimization”
     #[derive(Debug)]
     pub struct DTLZ1Problem {
         /// The number of variables.
@@ -902,6 +902,112 @@ pub mod builtin_problems {
             })
         }
     }
+
+    /// Test problem DTLZ2 from K.Deb,L. Thiele,M. Laumanns,and E. Zitzler, “Scalable test problems
+    /// for evolutionary multi-objective optimization”
+    #[derive(Debug)]
+    pub struct DTLZ2Problem {
+        /// The number of variables.
+        n_vars: usize,
+        /// The number of objectives.
+        n_objectives: usize,
+    }
+
+    impl DTLZ2Problem {
+        /// Create the problem for the optimisation.
+        ///
+        /// # Arguments:
+        ///
+        /// * `n_vars`: The number of variables.
+        /// * `n_objectives`: The number of objectives.
+        pub fn create(n_vars: usize, n_objectives: usize) -> Result<Problem, OError> {
+            // sphere function defined when n >= M
+            if n_vars + 1 < n_objectives {
+                return Err(OError::Generic(
+                    "n_vars >= n_objectives not met. Increase n_vars.".to_string(),
+                ));
+            }
+
+            let objectives = (1..=n_objectives)
+                .map(|i| Objective::new(format!("f{i}").as_str(), ObjectiveDirection::Minimise))
+                .collect();
+            let constraints: Vec<Constraint> = vec![Constraint::new(
+                "g",
+                RelationalOperator::GreaterOrEqualTo,
+                0.0,
+            )];
+
+            let mut variables: Vec<VariableType> = Vec::new();
+            for i in 1..=n_vars {
+                variables.push(VariableType::Real(BoundedNumber::new(
+                    format!("x{i}").as_str(),
+                    0.0,
+                    1.0,
+                )?));
+            }
+
+            let e = Box::new(DTLZ2Problem {
+                n_vars,
+                n_objectives,
+            });
+            Problem::new(objectives, variables, Some(constraints), e)
+        }
+    }
+
+    impl Evaluator for DTLZ2Problem {
+        fn evaluate(&self, ind: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
+            // Calculate g(x_M)
+            let k = self.n_vars - self.n_objectives + 1;
+            let mut sum_g = Vec::new();
+            // get first M variables
+            for i in (self.n_vars - k + 1)..=self.n_vars {
+                let xi = ind
+                    .get_variable_value(format!("x{i}").as_str())?
+                    .as_real()?;
+                sum_g.push((xi - 0.5).powi(2));
+            }
+            let g = sum_g.iter().sum::<f64>();
+
+            // Add constraints values
+            let mut constraints = HashMap::new();
+            constraints.insert("g".to_string(), g);
+
+            // Add objective values
+            // M = 5 (self.n_objectives)
+            // F1 (o=1) = (1 + g) * cos(x1 pi/2) * cos(x2 pi/2) * cos(x3 pi/2) * cos(x4 pi/2)
+            // F2 (o=2) = (1 + g) * cos(x1 pi/2) * cos(x2 pi/2) * cos(x3 pi/2) * sin(x4 pi/2) = (1 + g) * sum_{1:M-o}^j( cos(x_j pi/2) ) * sin(x_{M-o+1} pi/2)
+            // F3 (o=3) = (1 + g) * cos(x1 pi/2) * cos(x2 pi/2) * sin(x3 pi/2)
+            // ...
+            // F4 (o=4) = (1 + g) * cos(x1 pi/2) * sin(x2 pi/2)
+            // F5 (o=5) = (1 + g) * sin(x1 pi/2)
+            let mut objectives = HashMap::new();
+            let c = f64::pi() / 2.0;
+            for o in 1..=self.n_objectives {
+                // product of cos functions
+                let mut tmp = vec![];
+                for j in 1..=self.n_objectives - o {
+                    tmp.push(f64::cos(
+                        ind.get_variable_value(format!("x{j}").as_str())?
+                            .as_real()?
+                            * c,
+                    ));
+                }
+                // last sin function
+                if o > 1 {
+                    let x = ind
+                        .get_variable_value(format!("x{}", self.n_objectives - o + 1).as_str())?
+                        .as_real()?;
+                    tmp.push(f64::sin(x * c));
+                }
+                objectives.insert(format!("f{o}"), (1.0 + g) * tmp.iter().product::<f64>());
+            }
+
+            Ok(EvaluationResult {
+                constraints: Some(constraints),
+                objectives,
+            })
+        }
+    }
 }
 
 #[cfg(test)]
@@ -912,7 +1018,7 @@ mod test {
 
     use float_cmp::assert_approx_eq;
 
-    use crate::core::builtin_problems::DTLZ1Problem;
+    use crate::core::builtin_problems::{DTLZ1Problem, DTLZ2Problem};
     use crate::core::test_utils::read_csv_test_file;
     use crate::core::utils::dummy_evaluator;
     use crate::core::{
@@ -1008,5 +1114,45 @@ mod test {
                 assert_approx_eq!(f64, *obj, data.objectives[&name], epsilon = 0.00001);
             }
         }
+    }
+
+    #[test]
+    /// Test the DTLZ2 problem implementation with the optimal solution
+    fn test_dtlz2_optimal_solutions() {
+        let problem = Arc::new(DTLZ2Problem::create(4, 3).unwrap());
+        let mut individual = Individual::new(problem.clone());
+        individual
+            .update_variable("x1", VariableValue::Real(0.2))
+            .unwrap();
+        individual
+            .update_variable("x2", VariableValue::Real(0.2))
+            .unwrap();
+        for i in 3..=problem.number_of_variables() {
+            individual
+                .update_variable(format!("x{i}").as_str(), VariableValue::Real(0.5))
+                .unwrap();
+        }
+        let data = problem.evaluator.evaluate(&individual).unwrap();
+        let constraints = data.constraints.clone().unwrap();
+        individual.update_constraint("g", constraints["g"]).unwrap();
+
+        // g must yield 0
+        assert!(
+            individual.is_feasible(),
+            "g must be larger or equal to 0 but was {:?}",
+            individual.get_constraint_value("g").unwrap()
+        );
+
+        // Eq 6.9
+        assert_approx_eq!(
+            f64,
+            problem
+                .objective_names()
+                .iter()
+                .map(|name| data.objectives[name].powi(2))
+                .sum::<f64>(),
+            1.0,
+            epsilon = 0.00001
+        );
     }
 }
