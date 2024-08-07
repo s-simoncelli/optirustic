@@ -108,10 +108,10 @@ impl HyperVolumeFonseca2006 {
 mod test {
     use float_cmp::approx_eq;
 
-    use crate::core::ObjectiveDirection;
     use crate::core::test_utils::individuals_from_obj_values_dummy;
-    use crate::metrics::HyperVolumeFonseca2006;
+    use crate::core::ObjectiveDirection;
     use crate::metrics::test_utils::parse_pagmo_test_data_file;
+    use crate::metrics::HyperVolumeFonseca2006;
 
     #[test]
     /// Reference point must be strictly larger than any objective
