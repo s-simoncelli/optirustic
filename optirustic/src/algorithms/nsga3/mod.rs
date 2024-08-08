@@ -427,7 +427,7 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
 
 #[cfg(test)]
 mod test_problems {
-    use float_cmp::assert_approx_eq;
+    use float_cmp::{approx_eq, assert_approx_eq};
 
     use optirustic_macros::test_with_retries;
 
@@ -508,28 +508,19 @@ mod test_problems {
         algo.run().unwrap();
         let results = algo.get_results();
 
-        // All objective points lie on the plane passing through the 0.5 intercept on each axis (i.e.
-        // the sum of the objective coordinate is close to 0.5). Because of randomness a few solutions
-        // may breach this condition.
-        let obj_sum: Vec<f64> = results
-            .individuals
-            .iter()
-            .map(|ind| ind.get_objective_values().unwrap().iter().sum())
-            .collect();
-        let strict_range = 0.485..0.515;
-        let outside_range_data = check_value_in_range(&obj_sum, &strict_range);
-        if !outside_range_data.is_empty() {
-            panic!(
-                "Found {} objectives ({:?}) outside the {:?} bounds",
-                outside_range_data.len(),
-                outside_range_data,
-                strict_range,
-            );
-        }
-
-        // All variables in x_M must be 0.5
         let expected_vars = vec![0.5; number_variables];
+        let mut invalid_individuals: usize = 0;
         for ind in results.individuals {
+            // All objective points lie on the plane passing through the 0.5 intercept on each axis (i.e.
+            // the sum of the objective coordinate is close to 0.5). Because of randomness a few solutions
+            // may breach this condition.
+            let obj_sum: f64 = ind.get_objective_values().unwrap().iter().sum();
+            let outside_range_data = approx_eq!(f64, obj_sum, 0.5, epsilon = 0.01);
+            if !outside_range_data {
+                invalid_individuals += 1;
+            }
+
+            // All variables in x_M must be 0.5
             let vars: Vec<f64> = ((number_variables - k + 1)..=number_variables)
                 .map(|i| {
                     ind.get_variable_value(format!("x{i}").as_str())
@@ -539,6 +530,11 @@ mod test_problems {
                 })
                 .collect();
             assert_approx_array_eq(&vars, &expected_vars, Some(0.01));
+        }
+
+        // about 90% of solutions are ideal
+        if invalid_individuals > 10 {
+            panic!("Found {invalid_individuals} individuals not meeting the ideal solution");
         }
     }
 

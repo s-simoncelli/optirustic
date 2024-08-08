@@ -312,7 +312,7 @@ mod test {
         // counter is 0 for all other ref_points
         rho_j.entry(2).or_insert(0);
         let mut potential_individuals = vec![ind_3, ind_4];
-        let selected_ind = potential_individuals[1].clone();
+        // let selected_ind = potential_individuals[1].clone();
 
         let mut rng = get_rng(Some(1));
         let mut n = Niching::new(
