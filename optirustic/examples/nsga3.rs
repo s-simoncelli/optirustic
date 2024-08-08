@@ -1,3 +1,4 @@
+use std::env;
 use std::error::Error;
 use std::path::PathBuf;
 
@@ -71,7 +72,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     algo.run()?;
 
     // Export the last results to a JSON file
-    let destination = PathBuf::from("optirustic/examples/results");
+    let destination = PathBuf::from(&env::current_dir().unwrap())
+        .join("examples")
+        .join("results");
+
     algo.save_to_json(&destination, Some("DTLZ1_3obj"))?;
 
     // algo.plot_objectives("optirustic/examples/results/DTLZ1_3obj.png")?;

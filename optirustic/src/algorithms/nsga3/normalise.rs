@@ -165,11 +165,13 @@ impl<'a> Normalise<'a> {
     /// passing through the vector of `points`. For example, for a 3D system the equation being
     /// used is: $ax + by + cz = 1$. The coefficient vector $x = [a, b, c]$ is found by solving
     /// the linear system $A \cdot x = b$ where `A` is
+    /// ```ignore
     ///
     ///          | x_0   y_0   z_0 |
     ///      A = | x_1   y_1   z_1 |
     ///          |       ...       |
     ///          | x_n   y_n   z_n |
+    /// ```
     /// `n` the size of `points` and $b = [1, 1, 1]$. The intercepts are then calculated as the
     /// inverse of `x` as $1/x$. For example for the z-axis intercept (with x=0 and y=0), the point
     /// is found by solving $cz = 1$ or $1/x\[2\]$.
