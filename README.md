@@ -139,7 +139,7 @@ algorithm: [SCH_2obj_NSGA2_gen250.json](optirustic/examples/results/SCH_2obj_NSG
 and these are the plotted solutions:
 
 <div style="text-align: center">
-    <img src="optirustic/examples/results/SCH_2_obj_NSGA2_solutions.png" width="300" alt="Results" />
+    <img src="optirustic/examples/results/SCH_2obj_NSGA2_solutions.png" width="300" alt="Results" />
 </div>
 
 ## Additional examples

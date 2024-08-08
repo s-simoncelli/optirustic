@@ -1,8 +1,10 @@
+pub use distance::Distance;
 pub use hypervolume::{estimate_reference_point, hyper_volume};
 pub use hypervolume_2d::HyperVolume2D;
 pub use hypervolume_fonseca_2006::HyperVolumeFonseca2006;
 pub use hypervolume_while_2012::HyperVolumeWhile2012;
 
+mod distance;
 mod hypervolume;
 mod hypervolume_2d;
 mod hypervolume_fonseca_2006;
@@ -17,11 +19,11 @@ pub(crate) mod test_utils {
 
     #[derive(Debug)]
     /// Pagmo's test data.
-    pub(crate) struct TestData<const N: usize> {
+    pub(crate) struct TestData {
         /// The reference point to use in the test.
         pub(crate) reference_point: Vec<f64>,
         /// The objective values to use in the test.
-        pub(crate) objective_values: Vec<[f64; N]>,
+        pub(crate) objective_values: Vec<Vec<f64>>,
         /// The expected hyper-volume for the front.
         pub(crate) hyper_volume: f64,
     }
@@ -29,9 +31,9 @@ pub(crate) mod test_utils {
     /// Parse a fle containing Pagmo test data.
     ///
     /// return: `Vec<(Vec<Vec<f64>>, Vec<f64>)>` A vector with a set of tests.
-    pub(crate) fn parse_pagmo_test_data_file<const N: usize>(
+    pub(crate) fn parse_pagmo_test_data_file(
         filename: &str,
-    ) -> Result<Vec<TestData<N>>, Box<dyn Error>> {
+    ) -> Result<Vec<TestData>, Box<dyn Error>> {
         let test_path = Path::new(&env::current_dir().unwrap())
             .join("src")
             .join("metrics")
@@ -39,10 +41,10 @@ pub(crate) mod test_utils {
 
         // data for one test
         let mut reference_point: Vec<f64> = vec![];
-        let mut objective_values: Vec<[f64; N]> = vec![];
+        let mut objective_values: Vec<Vec<f64>> = vec![];
         let mut hyper_volume: f64;
 
-        let mut all_test_data: Vec<TestData<N>> = vec![];
+        let mut all_test_data: Vec<TestData> = vec![];
         let mut data_line: usize = 0;
         let mut total_points: usize = 0;
 
@@ -75,7 +77,6 @@ pub(crate) mod test_utils {
                     .split(' ')
                     .map(|v| v.to_string().parse::<f64>())
                     .collect::<Result<Vec<f64>, _>>()?;
-                let point: [f64; N] = point.try_into().unwrap();
                 objective_values.push(point);
                 data_line += 1;
                 continue;

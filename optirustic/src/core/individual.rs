@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::ops::RangeBounds;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
-use crate::core::{OError, Problem, VariableValue};
+use crate::core::{DataValue, OError, Problem, VariableValue};
+use crate::utils::hasmap_eq_with_nans;
 
 /// An individual in the population containing the problem solution, and the objective and
 /// constraint values.
@@ -54,11 +56,27 @@ pub struct Individual {
     objective_values: HashMap<String, f64>,
     /// Whether the individual has been evaluated and the problem constraint and objective values
     /// are available. When an individual is created with some variables after the population
-    /// evolution, constraints and objectives need to be evaluated using a user-defined function.
+    /// evolves, constraints and objectives need to be evaluated using a user-defined function.
     evaluated: bool,
     /// Additional numeric data to store for the individuals (such as crowding distance or rank)
     /// depending on the algorithm the individuals are derived from.
-    data: HashMap<String, VariableValue>,
+    data: HashMap<String, DataValue>,
+}
+
+impl PartialEq for Individual {
+    /// Compare two individual's constraints, variables, objectives and stored data.
+    ///
+    /// # Arguments
+    ///
+    /// * `other`: The other individual to compare.
+    ///
+    /// returns: `bool`
+    fn eq(&self, other: &Self) -> bool {
+        self.variable_values == other.variable_values
+            && hasmap_eq_with_nans(&self.constraint_values, &other.constraint_values)
+            && hasmap_eq_with_nans(&self.objective_values, &other.objective_values)
+            && self.data == other.data
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -73,6 +91,12 @@ pub struct IndividualExport {
     pub variable_values: HashMap<String, VariableValue>,
     /// Whether the solution meets all the problem constraints.
     pub is_feasible: bool,
+    /// Whether the individual has been evaluated and the problem constraint and objective values
+    /// are available.
+    pub evaluated: bool,
+    /// Additional numeric data to store for the individuals (such as crowding distance or rank)
+    /// depending on the algorithm the individuals are derived from.
+    pub data: HashMap<String, DataValue>,
 }
 
 impl Display for Individual {
@@ -288,6 +312,24 @@ impl Individual {
             .collect()
     }
 
+    /// Get the constraint value by name. This return an error if the constraint name does not exist.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The constraint name.
+    ///
+    /// returns: `Result<f64, OError>`
+    pub fn get_constraint_value(&self, name: &str) -> Result<f64, OError> {
+        if !self.constraint_values.contains_key(name) {
+            return Err(OError::NonExistingName(
+                "constraint".to_string(),
+                name.to_string(),
+            ));
+        }
+
+        Ok(self.constraint_values[name])
+    }
+
     /// Get the number stored in a real variable by name. This returns an error if the variable
     /// name does not exist or the variable is not of type real.
     ///
@@ -299,7 +341,7 @@ impl Individual {
     pub fn get_real_value(&self, name: &str) -> Result<f64, OError> {
         self.get_variable_value(name)?
             .as_real()
-            .map_err(|_| OError::WrongTypeVariableWithName(name.to_string(), "real".to_string()))
+            .map_err(|_| OError::WrongVariableTypeWithName(name.to_string(), "real".to_string()))
     }
 
     /// Get the number stored in an integer variable by name. This returns an error if the variable
@@ -313,7 +355,7 @@ impl Individual {
     pub fn get_integer_value(&self, name: &str) -> Result<i64, OError> {
         self.get_variable_value(name)?
             .as_integer()
-            .map_err(|_| OError::WrongTypeVariableWithName(name.to_string(), "integer".to_string()))
+            .map_err(|_| OError::WrongVariableTypeWithName(name.to_string(), "integer".to_string()))
     }
 
     /// Ge the objective value by name. This returns an error if the objective does not exist.
@@ -390,20 +432,23 @@ impl Individual {
     /// * `value`: The value.
     ///
     /// returns: `()`.
-    pub fn set_data(&mut self, name: &str, value: VariableValue) {
+    pub fn set_data(&mut self, name: &str, value: DataValue) {
         self.data.insert(name.to_string(), value);
     }
 
-    /// Get custom data set on the individual.
+    /// Get a copy of the custom data set on the individual. This returns an error if no custom
+    /// data with the provided `name` is set on the individual.
     ///
     /// # Arguments
     ///
     /// * `name`: The name of the data.
     ///
-    /// returns: `Option<VariableValue>`. This returns `None` if no custom data with the
-    /// given `name` exists.
-    pub fn get_data(&self, name: &str) -> Option<VariableValue> {
-        self.data.get(name).cloned()
+    /// returns: `Result<DataValue, OError>`
+    pub fn get_data(&self, name: &str) -> Result<DataValue, OError> {
+        self.data
+            .get(name)
+            .cloned()
+            .ok_or(OError::WrongDataName(name.to_string()))
     }
 
     /// Export all the solution data (constraint and objective values, constraint violation and
@@ -430,6 +475,8 @@ impl Individual {
             constraint_violation: self.constraint_violation(),
             variable_values: self.variable_values.clone(),
             is_feasible: self.is_feasible(),
+            evaluated: self.evaluated,
+            data: self.data.clone(),
         }
     }
 
@@ -459,8 +506,8 @@ impl Individual {
 }
 
 /// The population with the solutions.
-#[derive(Clone, Default)]
-pub struct Population(pub Vec<Individual>);
+#[derive(Clone, Default, Debug)]
+pub struct Population(Vec<Individual>);
 
 impl Population {
     /// Initialise a population with no individuals.
@@ -484,8 +531,15 @@ impl Population {
     /// Get the population size.
     ///
     /// return: `usize`
-    pub fn size(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.0.len()
+    }
+
+    /// Return `true` if the population is empty.
+    ///
+    /// return: `bool`
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 
     /// Get the population individuals.
@@ -493,6 +547,13 @@ impl Population {
     /// return: `&[Individual]`
     pub fn individuals(&self) -> &[Individual] {
         self.0.as_ref()
+    }
+
+    /// Get a population individual by its index.
+    ///
+    /// return: `Option<&Individual>`
+    pub fn individual(&self, index: usize) -> Option<&Individual> {
+        self.0.get(index)
     }
 
     /// Borrow the population individuals as mutable reference.
@@ -506,11 +567,36 @@ impl Population {
     ///
     /// # Arguments
     ///
-    /// * `individual`: The vector of individuals to add.
+    /// * `individuals`: The vector of individuals to add.
     ///
     /// returns: `()`
-    pub fn add_new_individuals(&mut self, individual: Vec<Individual>) {
-        self.0.extend(individual);
+    pub fn add_new_individuals(&mut self, individuals: Vec<Individual>) {
+        self.0.extend(individuals);
+    }
+
+    /// Add a new individual to the population.
+    ///
+    /// # Arguments
+    ///
+    /// * `individual`: The individual to add.
+    ///
+    /// returns: `()`
+    pub fn add_individual(&mut self, individual: Individual) {
+        self.0.push(individual);
+    }
+
+    /// Remove the specified range from the population in bulk and return all removed elements.
+    ///
+    /// # Arguments
+    ///
+    /// * `range_to_remove`: The range to remove.
+    ///
+    /// returns: `Vec<Individual>`
+    pub fn drain<R>(&mut self, range_to_remove: R) -> Vec<Individual>
+    where
+        R: RangeBounds<usize>,
+    {
+        self.0.drain(range_to_remove).collect()
     }
 
     /// Generate a population with a number of individuals equal to `number_of_individuals`. All

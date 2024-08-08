@@ -65,7 +65,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 /// Draw the expected objective functions and the solutions from the algorithm.
 fn plot(individuals: &[Individual], out_path: &Path) -> Result<(), Box<dyn Error>> {
-    let png_file = out_path.join("SCH_2_obj_NSGA2_solutions.png");
+    let png_file = out_path.join("SCH_2obj_NSGA2_solutions.png");
     let root = BitMapBackend::new(&png_file, (1024, 768)).into_drawing_area();
     static FONT: &str = "sans-serif";
 

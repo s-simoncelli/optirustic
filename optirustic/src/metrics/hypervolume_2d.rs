@@ -135,9 +135,10 @@ mod test {
 
     use float_cmp::{approx_eq, assert_approx_eq};
 
-    use crate::core::utils::{
-        dummy_evaluator, individuals_from_obj_values_dummy, individuals_from_obj_values_ztd1,
+    use crate::core::test_utils::{
+        individuals_from_obj_values_dummy, individuals_from_obj_values_ztd1,
     };
+    use crate::core::utils::dummy_evaluator;
     use crate::core::{
         BoundedNumber, Constraint, Individual, Objective, ObjectiveDirection, Problem,
         RelationalOperator, VariableType, VariableValue,
@@ -148,12 +149,13 @@ mod test {
     #[test]
     /// Test that an error is returned if the reference point does not dominate the objectives
     fn test_ref_point_error() {
-        let obj_values = vec![[1.0, 2.0], [0.5, 4.0], [0.0, 6.0]];
+        let obj_values = vec![vec![1.0, 2.0], vec![0.5, 4.0], vec![0.0, 6.0]];
 
         // Minimise both
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            None,
         );
 
         // x too small
@@ -171,6 +173,7 @@ mod test {
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
             &[ObjectiveDirection::Maximise, ObjectiveDirection::Minimise],
+            None,
         );
         let ref_point = [6.0, 20.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
@@ -181,6 +184,7 @@ mod test {
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Maximise],
+            None,
         );
         let ref_point = [20.0, 19.0];
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
@@ -287,17 +291,18 @@ mod test {
     fn test_maximise_obj_1() {
         let ref_point = [-10.0, 10.0];
         let obj_values = vec![
-            [11.1, 8.1],
-            [8.1, 6.1],
-            [5.1, 4.1],
-            [3.1, 3.1],
-            [2.1, 2.1],
-            [1.1, 1.1],
-            [0.0, 5.1],
+            vec![11.1, 8.1],
+            vec![8.1, 6.1],
+            vec![5.1, 4.1],
+            vec![3.1, 3.1],
+            vec![2.1, 2.1],
+            vec![1.1, 1.1],
+            vec![0.0, 5.1],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
             &[ObjectiveDirection::Maximise, ObjectiveDirection::Minimise],
+            None,
         );
 
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
@@ -309,16 +314,17 @@ mod test {
     fn test_maximise_obj_2() {
         let ref_point = [15.0, -10.0];
         let obj_values = vec![
-            [11.1, 8.1],
-            [6.1, 6.1],
-            [5.1, 5.1],
-            [3.1, 3.1],
-            [2.1, 2.1],
-            [1.1, 1.1],
+            vec![11.1, 8.1],
+            vec![6.1, 6.1],
+            vec![5.1, 5.1],
+            vec![3.1, 3.1],
+            vec![2.1, 2.1],
+            vec![1.1, 1.1],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &obj_values,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Maximise],
+            None,
         );
 
         let hv = HyperVolume2D::new(&mut individuals, &ref_point);
@@ -329,13 +335,15 @@ mod test {
     /// Test the `HyperVolume2D` struct using Pagmo c_max_t100_d2_n128 test data.
     /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
     fn test_c_max_t1_d3_n2048() {
-        let all_test_data = parse_pagmo_test_data_file::<2>("c_max_t100_d2_n128").unwrap();
-        let objective_direction = [ObjectiveDirection::Minimise; 2];
+        let all_test_data = parse_pagmo_test_data_file("c_max_t100_d2_n128").unwrap();
+        let obj_count = all_test_data.first().unwrap().reference_point.len();
+        let objective_direction = vec![ObjectiveDirection::Minimise; obj_count];
 
         for (ti, test_data) in all_test_data.iter().enumerate() {
             let mut individuals = individuals_from_obj_values_dummy(
                 &test_data.objective_values,
                 &objective_direction,
+                None,
             );
             let hv = HyperVolume2D::new(&mut individuals, &test_data.reference_point).unwrap();
 

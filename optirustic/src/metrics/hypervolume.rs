@@ -1,7 +1,7 @@
-use crate::core::utils::vector_max;
 use crate::core::{Individual, Individuals, OError, Objective, ObjectiveDirection};
 use crate::metrics::hypervolume_2d::HyperVolume2D;
 use crate::metrics::{HyperVolumeFonseca2006, HyperVolumeWhile2012};
+use crate::utils::vector_max;
 
 /// Calculates a reference point by taking the maximum of each objective (or minimum if the
 /// objective is maximised) from the calculated individual's objective values, so that the point will
@@ -235,7 +235,8 @@ pub fn hyper_volume(
 mod test {
     use std::sync::Arc;
 
-    use crate::core::utils::{dummy_evaluator, individuals_from_obj_values_ztd1};
+    use crate::core::test_utils::individuals_from_obj_values_ztd1;
+    use crate::core::utils::dummy_evaluator;
     use crate::core::{
         BoundedNumber, Individual, Objective, ObjectiveDirection, Problem, VariableType,
     };

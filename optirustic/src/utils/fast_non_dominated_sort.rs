@@ -1,4 +1,4 @@
-use crate::core::{Individual, OError, VariableValue};
+use crate::core::{DataValue, Individual, OError};
 use crate::operators::{BinaryComparisonOperator, ParetoConstrainedDominance, PreferredSolution};
 
 /// Outputs of the non-dominated sort algorithm.
@@ -17,13 +17,16 @@ pub struct NonDominatedSortResults {
     pub domination_counter: Vec<usize>,
 }
 
+/// The data key where the rank is stored for each [`Individual`].
+const RANK_KEY: &str = "rank";
+
 /// Non-dominated fast sorting from NSGA2 paper (with complexity $O(M * N^2)$, where `M` is the
 /// number of objectives and `N` the number of individuals).
 ///
 /// This sorts solutions into fronts and ranks the individuals based on the number of solutions
 /// an individual dominates. Solutions that are not dominated by any other individuals will belong
 /// to the first front. The method also stores the `rank` property into each individual; to retrieve
-/// it, use `Individual::set_data("rank").unwrap()`.
+/// it, use `Individual::get_data("rank").unwrap()`.
 ///
 /// Implemented based on paragraph 3A in:
 /// > K. Deb, A. Pratap, S. Agarwal and T. Meyarivan, "A fast and elitist multi-objective genetic
@@ -88,7 +91,7 @@ pub fn fast_non_dominated_sort(
         // front whose items have rank 1
         if domination_counter[pi] == 0 {
             current_front.push(pi);
-            individuals[pi].set_data("rank", VariableValue::Integer(1));
+            individuals[pi].set_data(RANK_KEY, DataValue::Integer(1));
         }
     }
 
@@ -122,7 +125,7 @@ pub fn fast_non_dominated_sort(
                 // dominated by `p` and `q` belongs to the next front
                 if domination_counter[*qi] == 0 {
                     next_front.push(*qi);
-                    individuals[*qi].set_data("rank", VariableValue::Integer(i + 1));
+                    individuals[*qi].set_data(RANK_KEY, DataValue::Integer(i + 1));
                 }
             }
         }
@@ -156,30 +159,32 @@ pub fn fast_non_dominated_sort(
 
 #[cfg(test)]
 mod test {
-    use crate::core::utils::individuals_from_obj_values_dummy;
-    use crate::core::{ObjectiveDirection, VariableValue};
+    use crate::core::test_utils::individuals_from_obj_values_dummy;
+    use crate::core::{DataValue, ObjectiveDirection};
     use crate::utils::fast_non_dominated_sort;
+    use crate::utils::fast_non_dominated_sort::RANK_KEY;
 
     #[test]
     /// Test the non-dominated sorting. The resulting fronts and ranks were manually calculated by
     /// plotting the objective values.
     fn test_sorting_2obj() {
         let objectives = vec![
-            [1.1, 8.1],
-            [2.1, 6.1],
-            [3.1, 4.1],
-            [3.1, 7.1],
-            [5.1, 3.1],
-            [5.1, 5.1],
-            [7.1, 7.1],
-            [8.1, 2.1],
-            [10.1, 6.1],
-            [11.1, 1.1],
-            [11.1, 3.1],
+            vec![1.1, 8.1],
+            vec![2.1, 6.1],
+            vec![3.1, 4.1],
+            vec![3.1, 7.1],
+            vec![5.1, 3.1],
+            vec![5.1, 5.1],
+            vec![7.1, 7.1],
+            vec![8.1, 2.1],
+            vec![10.1, 6.1],
+            vec![11.1, 1.1],
+            vec![11.1, 3.1],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
+            None,
         );
         let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
 
@@ -190,8 +195,8 @@ mod test {
         // check rank
         for idx in &expected_first {
             assert_eq!(
-                individuals[*idx].get_data("rank").unwrap(),
-                VariableValue::Integer(1)
+                individuals[*idx].get_data(RANK_KEY).unwrap(),
+                DataValue::Integer(1)
             );
         }
 
@@ -200,8 +205,8 @@ mod test {
         assert_eq!(result.front_indexes[1], expected_second);
         for idx in expected_second {
             assert_eq!(
-                individuals[idx].get_data("rank").unwrap(),
-                VariableValue::Integer(2)
+                individuals[idx].get_data(RANK_KEY).unwrap(),
+                DataValue::Integer(2)
             );
         }
 
@@ -209,8 +214,8 @@ mod test {
         assert_eq!(result.front_indexes[2], expected_third);
         for idx in expected_third {
             assert_eq!(
-                individuals[idx].get_data("rank").unwrap(),
-                VariableValue::Integer(3)
+                individuals[idx].get_data(RANK_KEY).unwrap(),
+                DataValue::Integer(3)
             );
         }
 
@@ -230,17 +235,18 @@ mod test {
     /// Test the non-dominated sorting when objective #1 is maximised.
     fn test_sorting_2obj_max_obj1() {
         let objectives = vec![
-            [11.1, 8.1],
-            [8.1, 6.1],
-            [5.1, 4.1],
-            [3.1, 3.1],
-            [2.1, 2.1],
-            [1.1, 1.1],
-            [0.0, 5.1],
+            vec![11.1, 8.1],
+            vec![8.1, 6.1],
+            vec![5.1, 4.1],
+            vec![3.1, 3.1],
+            vec![2.1, 2.1],
+            vec![1.1, 1.1],
+            vec![0.0, 5.1],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
             &[ObjectiveDirection::Maximise, ObjectiveDirection::Minimise],
+            None,
         );
         let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
 
@@ -251,8 +257,8 @@ mod test {
         // check rank
         for idx in &expected_first {
             assert_eq!(
-                individuals[*idx].get_data("rank").unwrap(),
-                VariableValue::Integer(1)
+                individuals[*idx].get_data(RANK_KEY).unwrap(),
+                DataValue::Integer(1)
             );
         }
 
@@ -265,17 +271,18 @@ mod test {
     /// Test the non-dominated sorting when objective #2 is maximised.
     fn test_sorting_2obj_max_obj2() {
         let objectives = vec![
-            [11.1, 8.1],
-            [8.1, 6.1],
-            [5.1, 4.1],
-            [3.1, 3.1],
-            [2.1, 2.1],
-            [1.1, 1.1],
-            [0.0, 5.1],
+            vec![11.1, 8.1],
+            vec![8.1, 6.1],
+            vec![5.1, 4.1],
+            vec![3.1, 3.1],
+            vec![2.1, 2.1],
+            vec![1.1, 1.1],
+            vec![0.0, 5.1],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Maximise],
+            None,
         );
         let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
 
@@ -286,8 +293,8 @@ mod test {
         // check rank
         for idx in &expected_first {
             assert_eq!(
-                individuals[*idx].get_data("rank").unwrap(),
-                VariableValue::Integer(1)
+                individuals[*idx].get_data(RANK_KEY).unwrap(),
+                DataValue::Integer(1)
             );
         }
 
@@ -301,10 +308,10 @@ mod test {
     /// plotting the objective values.
     fn test_sorting_3obj() {
         let objectives = vec![
-            [2.1, 3.1, 4.1],
-            [-1.1, 4.1, 8.1],
-            [0.1, -1.1, -2.1],
-            [0.1, 0.1, 0.1],
+            vec![2.1, 3.1, 4.1],
+            vec![-1.1, 4.1, 8.1],
+            vec![0.1, -1.1, -2.1],
+            vec![0.1, 0.1, 0.1],
         ];
         let mut individuals = individuals_from_obj_values_dummy(
             &objectives,
@@ -313,6 +320,7 @@ mod test {
                 ObjectiveDirection::Minimise,
                 ObjectiveDirection::Minimise,
             ],
+            None,
         );
         let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
 
@@ -323,8 +331,8 @@ mod test {
         // check rank
         for idx in &expected_first {
             assert_eq!(
-                individuals[*idx].get_data("rank").unwrap(),
-                VariableValue::Integer(1)
+                individuals[*idx].get_data(RANK_KEY).unwrap(),
+                DataValue::Integer(1)
             );
         }
 
@@ -333,8 +341,8 @@ mod test {
         assert_eq!(result.front_indexes[1], expected_second);
         for idx in expected_second {
             assert_eq!(
-                individuals[idx].get_data("rank").unwrap(),
-                VariableValue::Integer(2)
+                individuals[idx].get_data(RANK_KEY).unwrap(),
+                DataValue::Integer(2)
             );
         }
 
@@ -342,8 +350,8 @@ mod test {
         assert_eq!(result.front_indexes[2], expected_third);
         for idx in expected_third {
             assert_eq!(
-                individuals[idx].get_data("rank").unwrap(),
-                VariableValue::Integer(3)
+                individuals[idx].get_data(RANK_KEY).unwrap(),
+                DataValue::Integer(3)
             );
         }
 

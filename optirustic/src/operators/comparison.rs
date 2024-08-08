@@ -115,7 +115,7 @@ impl BinaryComparisonOperator for ParetoConstrainedDominance {
 ///    ${distance}_i > {distance}_j$
 /// where `rank_x` is the rank from the fast non-dominated sort algorithm (see
 /// [`crate::utils::fast_non_dominated_sort()`]) and `{distance}_x` is the crowding distance using
-/// neighboring solutions (see [`crate::algorithms::NSGA2::set_crowding_distance`]).
+/// neighboring solutions.
 ///
 /// Implemented based on:
 /// > K. Deb, A. Pratap, S. Agarwal and T. Meyarivan, "A fast and elitist multi-objective genetic
@@ -139,51 +139,52 @@ impl BinaryComparisonOperator for CrowdedComparison {
         first_solution: &Individual,
         second_solution: &Individual,
     ) -> Result<PreferredSolution, OError> {
+        let name = "CrowdedComparison".to_string();
         let rank1 = match first_solution.get_data("rank") {
-            None => {
+            Err(_) => {
                 return Err(OError::ComparisonOperator(
-                    "CrowdedComparison".to_string(),
+                    name,
                     "The rank on the first individual does not exist".to_string(),
                 ))
             }
-            Some(r) => r.as_integer()?,
+            Ok(r) => r.as_integer()?,
         };
         let rank2 = match second_solution.get_data("rank") {
-            None => {
+            Err(_) => {
                 return Err(OError::ComparisonOperator(
-                    "CrowdedComparison".to_string(),
+                    name,
                     "The rank on the second individual does not exist".to_string(),
                 ))
             }
-            Some(r) => r.as_integer()?,
+            Ok(r) => r.as_integer()?,
         };
 
         match rank1.cmp(&rank2) {
             Ordering::Less => Ok(PreferredSolution::First),
             Ordering::Equal => {
                 let d1 = match first_solution.get_data("crowding_distance") {
-                    None => {
+                    Err(_) => {
                         return Err(OError::ComparisonOperator(
-                            "CrowdedComparison".to_string(),
+                            name,
                             format!(
                                 "The crowding distance on the first individual {:?} does not exist",
                                 first_solution.variables()
                             ),
                         ))
                     }
-                    Some(r) => r.as_real()?,
+                    Ok(r) => r.as_real()?,
                 };
                 let d2 = match second_solution.get_data("crowding_distance") {
-                    None => {
+                    Err(_) => {
                         return Err(OError::ComparisonOperator(
-                            "CrowdedComparison".to_string(),
+                            name,
                             format!(
                             "The crowding distance on the second individual {:?} does not exist",
                             second_solution.variables()
                         ),
                         ))
                     }
-                    Some(r) => r.as_real()?,
+                    Ok(r) => r.as_real()?,
                 };
 
                 if d1 > d2 {
@@ -480,8 +481,7 @@ mod test_crowded_comparison {
 
     use crate::core::utils::dummy_evaluator;
     use crate::core::{
-        BoundedNumber, Individual, Objective, ObjectiveDirection, Problem, VariableType,
-        VariableValue,
+        BoundedNumber, DataValue, Individual, Objective, ObjectiveDirection, Problem, VariableType,
     };
     use crate::operators::comparison::CrowdedComparison;
     use crate::operators::{BinaryComparisonOperator, PreferredSolution};
@@ -497,8 +497,8 @@ mod test_crowded_comparison {
 
         let mut solution1 = Individual::new(problem.clone());
         let mut solution2 = Individual::new(problem.clone());
-        solution1.set_data("rank", VariableValue::Integer(1));
-        solution2.set_data("rank", VariableValue::Integer(4));
+        solution1.set_data("rank", DataValue::Integer(1));
+        solution2.set_data("rank", DataValue::Integer(4));
 
         // Sol 1 dominates
         assert_eq!(
@@ -507,7 +507,7 @@ mod test_crowded_comparison {
         );
 
         // Sol 2 dominates
-        solution1.set_data("rank", VariableValue::Integer(5));
+        solution1.set_data("rank", DataValue::Integer(5));
         assert_eq!(
             CrowdedComparison::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::Second
@@ -525,11 +525,11 @@ mod test_crowded_comparison {
 
         let mut solution1 = Individual::new(problem.clone());
         let mut solution2 = Individual::new(problem.clone());
-        solution1.set_data("rank", VariableValue::Integer(1));
-        solution2.set_data("rank", VariableValue::Integer(1));
+        solution1.set_data("rank", DataValue::Integer(1));
+        solution2.set_data("rank", DataValue::Integer(1));
 
-        solution1.set_data("crowding_distance", VariableValue::Real(10.5));
-        solution2.set_data("crowding_distance", VariableValue::Real(0.32));
+        solution1.set_data("crowding_distance", DataValue::Real(10.5));
+        solution2.set_data("crowding_distance", DataValue::Real(0.32));
         // Sol 1 dominates
         assert_eq!(
             CrowdedComparison::compare(&solution1, &solution2).unwrap(),
@@ -537,7 +537,7 @@ mod test_crowded_comparison {
         );
 
         // Sol 2 dominates
-        solution2.set_data("crowding_distance", VariableValue::Real(100.32));
+        solution2.set_data("crowding_distance", DataValue::Real(100.32));
         assert_eq!(
             CrowdedComparison::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::Second
