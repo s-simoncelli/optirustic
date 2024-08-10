@@ -2,6 +2,11 @@
 name = "optirustic-macros"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/s-simoncelli/optirustic"
+authors = ["Stefano Simoncelli <16114781+s-simoncelli@users.noreply.github.com>"]
+description = "A set of macros for the optirustic crate"
+homepage = "https://github.com/s-simoncelli/optirustic"
+license = "GPL-3.0-only"
 
 [lib]
 proc-macro = true
