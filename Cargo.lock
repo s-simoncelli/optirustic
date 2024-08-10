@@ -530,17 +530,7 @@ checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "hv-fonseca-et-al-2006-sys"
-version = "2.0.0-rc.2"
-dependencies = [
- "bindgen",
- "cc",
-]
-
-[[package]]
-name = "hv-fonseca-et-al-2006-sys"
-version = "2.0.0-rc.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ab0ed8af067fcd2ddaf1acfe3c4f6d5a3c5b9db042d9f40e5573af068f14a7a"
+version = "2.0.1-rc.2"
 dependencies = [
  "bindgen",
  "cc",
@@ -549,16 +539,6 @@ dependencies = [
 [[package]]
 name = "hv-wfg-sys"
 version = "0.1.0"
-dependencies = [
- "bindgen",
- "cc",
-]
-
-[[package]]
-name = "hv-wfg-sys"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b21993dd7233822f705cb5105d2bc275f0e811aebc8089e0a1f64bdfeeb4e5c8"
 dependencies = [
  "bindgen",
  "cc",
@@ -821,16 +801,16 @@ checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
 
 [[package]]
 name = "optirustic"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "env_logger",
  "float-cmp",
- "hv-fonseca-et-al-2006-sys 2.0.0-rc.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hv-wfg-sys 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hv-fonseca-et-al-2006-sys",
+ "hv-wfg-sys",
  "log",
  "nalgebra",
- "optirustic-macros 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "optirustic-macros",
  "ordered-float",
  "plotters",
  "rand",
@@ -844,17 +824,6 @@ dependencies = [
 [[package]]
 name = "optirustic-macros"
 version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "optirustic-macros"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "160b439f5ff16320d4eba32ef9be0fb788d508bf7e45d39cf1cf7bb7a29ee972"
 dependencies = [
  "proc-macro2",
  "quote",

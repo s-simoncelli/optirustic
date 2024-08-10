@@ -75,7 +75,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .join("results");
 
     algo.save_to_json(&destination, Some("DTLZ1_3obj"))?;
-    // algo.plot_objectives("optirustic/examples/results/DTLZ1_3obj.png")?;
+    // algo.plot_objectives("examples/results/DTLZ1_3obj.png")?;
 
     Ok(())
 }

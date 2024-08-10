@@ -129,20 +129,20 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 ```
 
-The full example is available in the [examples folder of this repository](optirustic/examples/nsga2_sch.rs) and can be
+The full example is available in the [examples folder of this repository](examples/nsga2_sch.rs) and can be
 run using
 
 > cargo run --example nsga2_sch --release
 
 This is the serialised data exported by the
-algorithm: [SCH_2obj_NSGA2_gen250.json](optirustic/examples/results/SCH_2obj_NSGA2_gen250.json)
+algorithm: [SCH_2obj_NSGA2_gen250.json](examples/results/SCH_2obj_NSGA2_gen250.json)
 and these are the plotted solutions:
 
 <div style="text-align: center">
-    <img src="optirustic/examples/results/SCH_2obj_NSGA2_solutions.png" width="300" alt="Results" />
+    <img src="examples/results/SCH_2obj_NSGA2_solutions.png" width="300" alt="Results" />
 </div>
 
 ## Additional examples
 
 Additional examples showcasing this library's features are available in
-the  [examples folder of this repository](optirustic/examples/nsga2_sch.rs).
+the  [examples folder of this repository](examples/nsga2_sch.rs).
