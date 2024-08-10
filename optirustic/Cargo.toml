@@ -10,7 +10,7 @@ repository = "https://github.com/s-simoncelli/optirustic"
 keywords = ["genetic-algorithm", "optimisation", "multiobjective", "nsga2", "nsga3"]
 categories = ["science", "algorithms"]
 readme = "../README.md"
-license = "GPL-3"
+license = "GPL-3.0-only"
 
 [dependencies]
 log = "0.4.21"
