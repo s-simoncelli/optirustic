@@ -6,7 +6,7 @@ authors = ["Stefano Simoncelli <netcelli@gmail.com>"]
 repository = "https://github.com/s-simoncelli/optirustic"
 version = "0.1.0"
 edition = "2021"
-license = "GPL-3"
+license = "GPL-3.0-only"
 
 [build-dependencies]
 bindgen = "0.69.4"
