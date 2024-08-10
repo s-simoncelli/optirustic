@@ -16,9 +16,7 @@ fn main() {
         .generate()
         .expect("Unable to generate 'hv' bindings");
 
-    let file = PathBuf::from(&env::current_dir().unwrap())
-        .join("src")
-        .join("bindings.rs");
+    let file = PathBuf::from(env::var("OUT_DIR").unwrap()).join("bindings.rs");
     bindings
         .write_to_file(file)
         .expect("Couldn't write 'hv' bindings");

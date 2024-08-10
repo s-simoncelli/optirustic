@@ -1,5 +1,6 @@
 extern crate bindgen;
 
+use std::env;
 use std::path::PathBuf;
 
 fn main() {
@@ -15,8 +16,9 @@ fn main() {
         .generate()
         .expect("Unable to generate 'wfg' bindings");
 
+    let file = PathBuf::from(env::var("OUT_DIR").unwrap()).join("bindings.rs");
     bindings
-        .write_to_file("src/bindings.rs")
+        .write_to_file(file)
         .expect("Couldn't write 'wfg' bindings");
 
     // Compile library for minimisation problems

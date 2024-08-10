@@ -1,5 +1,8 @@
 # Optirustic
 
+[![Package](https://img.shields.io/crates/v/optirustic.svg)](https://crates.io/crates/optirustic)
+[![Documentation](https://docs.rs/optirustic/badge.svg)](https://docs.rs/optirustic)
+
 Optirustic is a framework written in Rust that provides algorithms and
 analysis tool to solve multi-objective problems using multi-objective
 evolutionary algorithms (MOEAs). It allows you to:
@@ -7,8 +10,13 @@ evolutionary algorithms (MOEAs). It allows you to:
 - define minimisation and maximisation problems with custom objective functions;
 - define constraint and unconstrained variables (real, integer, boolean or choice);
 - use multi-thread to evaluate objectives and constraints on population with many individuals
+- export the population history as JSON and resume its evolution from file
 
-At the moment, it comes with the NSGA2 and NSGA3 algorithms.
+At the moment, it comes with the `NSGA2` and `NSGA3` algorithms.
+
+The API documentation is available on [docs.rs](https://docs.rs/optirustic/).
+Examples showcasing this library's features are available in
+the  [examples folder of this repository](examples/nsga2_sch.rs).
 
 ## Installing Optirustic
 
@@ -76,7 +84,7 @@ impl SCHProblem {
 
 // Implement the function to evaluate the objectives and constraints. The `evaluate`
 // function below receives the individuals which contain the variables/solutions `x` 
-// proposed by the algorithm. The function must returns the evaluated objectives and
+// proposed by the algorithm. The function must return the evaluated objectives and
 // constraints in the `EvaluationResult` struct.
 impl Evaluator for SCHProblem {
     fn evaluate(&self, i: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
@@ -141,8 +149,3 @@ and these are the plotted solutions:
 <div style="text-align: center">
     <img src="examples/results/SCH_2obj_NSGA2_solutions.png" width="300" alt="Results" />
 </div>
-
-## Additional examples
-
-Additional examples showcasing this library's features are available in
-the  [examples folder of this repository](examples/nsga2_sch.rs).

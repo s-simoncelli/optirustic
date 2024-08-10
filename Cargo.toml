@@ -1,10 +1,10 @@
 [package]
 name = "optirustic"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Stefano Simoncelli <16114781+s-simoncelli@users.noreply.github.com>"]
 edition = "2021"
 rust-version = "1.80"
-description = "A multi-objective optimisation framework in Rust"
+description = "A multi-objective optimisation framework for Rust"
 repository = "https://github.com/s-simoncelli/optirustic"
 keywords = ["genetic-algorithm", "optimisation", "multiobjective", "nsga2", "nsga3"]
 categories = ["science", "algorithms"]
@@ -30,9 +30,9 @@ rayon = "1.10.0"
 env_logger = "0.11.3"
 chrono = { version = "0.4.38", features = ["serde"] }
 ordered-float = "4.2.0"
-optirustic-macros = { path = "optirustic-macros" }
-hv-fonseca-et-al-2006-sys = { path = "hv-fonseca-et-al-2006-sys" }
-hv-wfg-sys = { path = "hv-wfg-sys" }
+optirustic-macros = { path = "optirustic-macros", version = "0.1.0" }
+hv-fonseca-et-al-2006-sys = { path = "hv-fonseca-et-al-2006-sys", version = "2.0.2-rc.2" }
+hv-wfg-sys = { path = "hv-wfg-sys", version = "0.1.1" }
 plotters = { version = "0.3.6", optional = true }
 nalgebra = "0.33.0"
 
@@ -45,6 +45,7 @@ plot = ["dep:plotters"]
 
 [package.metadata.docs.rs]
 all-features = true
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--html-in-header src/katex-header.html"]
 
 # Run test with optimisation to speed up tests solving optimisation problems.

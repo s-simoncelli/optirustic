@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-include!("bindings.rs");
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 /// Calculate the hyper-volume using the algorithm proposed by [Fonseca et al. (2006)](http://dx.doi.org/10.1109/CEC.2006.1688440)
 /// for a problem with `d` objectives and `n` individuals. The function calls version 4 of the

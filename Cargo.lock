@@ -530,7 +530,7 @@ checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "hv-fonseca-et-al-2006-sys"
-version = "2.0.1-rc.2"
+version = "2.0.2-rc.2"
 dependencies = [
  "bindgen",
  "cc",
@@ -538,7 +538,7 @@ dependencies = [
 
 [[package]]
 name = "hv-wfg-sys"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bindgen",
  "cc",
@@ -801,7 +801,7 @@ checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
 
 [[package]]
 name = "optirustic"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "chrono",
  "env_logger",
