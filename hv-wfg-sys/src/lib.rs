@@ -5,7 +5,7 @@
 
 use std::ffi::c_int;
 
-include!("bindings.rs");
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 /// Calculate the hyper-volume using the algorithm proposed by [While et al. (2012)](http://dx.doi.org/10.1109/TEVC.2010.2077298)
 /// for a problem with `d` objectives and `n` individuals. This function assumes that the objectives

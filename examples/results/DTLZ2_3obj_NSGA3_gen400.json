@@ -130,8 +130,7 @@
     ],
     "number_of_objectives": 3,
     "number_of_constraints": 1,
-    "
-    ": 12
+    "number_of_variables": 12
   },
   "individuals": [
     {

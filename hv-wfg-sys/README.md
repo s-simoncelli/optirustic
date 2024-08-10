@@ -16,3 +16,13 @@ The following changes were applied to the code in the `vendor` folder (from comm
 - the part of the code calculating the hyper-volume from input files was removed.
 
 This code is re-released under the `GPL3` license.
+
+# How to use the bindings
+
+The `binding.rs` file is generated in the out directory, which is available in the `OUT_DIR` env variable.
+Include the following macro call at the top of the Rust file:
+
+```rust
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+```
+   

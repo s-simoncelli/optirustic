@@ -16,3 +16,12 @@ indicator](http://dx.doi.org/10.1109/CEC.2006.1688440). In Proceedings of the 20
 > Piscataway, NJ, July 2006.
 [ [bibtex](https://lopez-ibanez.eu/LopezIbanez_bib.html#FonPaqLop06:hypervolume)
 | [10.1109/CEC.2006.1688440](http://dx.doi.org/10.1109/CEC.2006.1688440) | [PDF](https://lopez-ibanez.eu/doc/FonPaqLop06-hypervolume.pdf) ]
+
+# How to use the bindings
+
+The `binding.rs` file is generated in the out directory, which is available in the `OUT_DIR` env variable.
+Include the following macro call at the top of the Rust file:
+
+```rust
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+```
