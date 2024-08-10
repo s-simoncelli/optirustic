@@ -2,3 +2,4 @@ target
 .idea
 *.o
 *.a
+.DS_Store
