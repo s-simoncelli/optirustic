@@ -7,28 +7,25 @@ use log::LevelFilter;
 use optirustic::algorithms::{
     Algorithm, MaxGeneration, NSGA3Arg, Nsga3NumberOfIndividuals, StoppingConditionType, NSGA3,
 };
-use optirustic::core::builtin_problems::DTLZ1Problem;
-use optirustic::operators::{PolynomialMutationArgs, SimulatedBinaryCrossoverArgs};
+use optirustic::core::builtin_problems::DTLZ2Problem;
+use optirustic::operators::SimulatedBinaryCrossoverArgs;
 use optirustic::utils::{DasDarren1998, NumberOfPartitions};
 
-/// Solve the DTLZ1 problem from Deb et al. (2013) with 3 objectives. This is a problem where the
-/// optimal solutions or objectives lie on the hyper-plane passing through the intercept point
-/// at 0.5 on each objective axis. This code replicates the first testing problem in Deb et al.
-/// (2013).
+/// Solve the DTLZ2 problem from Deb et al. (2013) with 3 objectives.
 ///
 /// Make sure to compile this in release mode to speed up the calculation:
 ///
-/// `cargo run --example nsga3 --release`
+/// `cargo run --example nsga3_dtlz2 --release`
 fn main() -> Result<(), Box<dyn Error>> {
     // Add log
     env_logger::builder().filter_level(LevelFilter::Info).init();
 
     let number_objectives: usize = 3;
     // Set the number of variables to use in the DTLZ1 problem
-    let k: usize = 5;
+    let k: usize = 10;
     let number_variables: usize = number_objectives + k - 1;
     // Get the built-in problem
-    let problem = DTLZ1Problem::create(number_variables, number_objectives)?;
+    let problem = DTLZ2Problem::create(number_variables, number_objectives)?;
 
     // Set the number of partitions to create the reference points for the NSGA3 algorithm. This
     // uses one layer of 12 uniform gaps
@@ -46,9 +43,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let crossover_operator_options = SimulatedBinaryCrossoverArgs {
         distribution_index: 30.0,
         crossover_probability: 1.0,
-        variable_probability: 0.5,
+        ..SimulatedBinaryCrossoverArgs::default()
     };
-    let mutation_operator_options = PolynomialMutationArgs::default(&problem);
 
     // Set up the NSGA3 algorithm
     let args = NSGA3Arg {
@@ -56,7 +52,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         number_of_individuals: Nsga3NumberOfIndividuals::Custom(92),
         number_of_partitions,
         crossover_operator_options: Some(crossover_operator_options),
-        mutation_operator_options: Some(mutation_operator_options),
+        mutation_operator_options: None,
         // stop at generation 400
         stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(400)),
         parallel: None,
@@ -75,9 +71,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let destination = PathBuf::from(&env::current_dir().unwrap())
         .join("examples")
         .join("results");
+    algo.save_to_json(&destination, Some("DTLZ2_3obj"))?;
 
-    algo.save_to_json(&destination, Some("DTLZ1_3obj"))?;
-
-    // algo.plot_objectives("optirustic/examples/results/DTLZ1_3obj.png")?;
     Ok(())
 }

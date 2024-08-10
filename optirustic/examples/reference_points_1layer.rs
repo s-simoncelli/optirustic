@@ -1,3 +1,6 @@
+use std::env;
+use std::path::PathBuf;
+
 use optirustic::core::OError;
 use optirustic::utils::{DasDarren1998, NumberOfPartitions};
 
@@ -16,5 +19,8 @@ fn main() -> Result<(), OError> {
     println!("Weights = {:?}", weights);
 
     // Save the charts of points to inspect them
-    m.plot("ref_points_3obj_5gaps.png")
+    let out_path = PathBuf::from(&env::current_dir().unwrap())
+        .join("examples")
+        .join("results");
+    m.plot(&out_path.join("ref_points_3obj_5gaps.png"))
 }
