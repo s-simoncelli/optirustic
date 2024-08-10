@@ -45,7 +45,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let crossover_operator_options = SimulatedBinaryCrossoverArgs {
         distribution_index: 30.0,
         crossover_probability: 1.0,
-        ..SimulatedBinaryCrossoverArgs::Default()
+        ..SimulatedBinaryCrossoverArgs::default()
     };
 
     // Set up the NSGA3 algorithm
