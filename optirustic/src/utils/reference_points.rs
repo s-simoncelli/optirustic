@@ -1,5 +1,6 @@
 #[cfg(feature = "plot")]
 use std::error::Error;
+use std::path::PathBuf;
 
 #[cfg(feature = "plot")]
 use plotters::prelude::*;
@@ -263,7 +264,7 @@ impl DasDarren1998 {
     ///
     /// returns: `Result<(), OError>`
     #[cfg(feature = "plot")]
-    pub fn plot(&self, file_name: &str) -> Result<(), OError> {
+    pub fn plot(&self, file_name: &PathBuf) -> Result<(), OError> {
         if self.number_of_objectives == 2 {
             self.plot_2d(file_name)
                 .map_err(|e| OError::Generic(e.to_string()))
@@ -285,7 +286,7 @@ impl DasDarren1998 {
     ///
     /// returns: `Result<(), Box<dyn Error>>`
     #[cfg(feature = "plot")]
-    fn plot_2d(&self, file_name: &str) -> Result<(), Box<dyn Error>> {
+    fn plot_2d(&self, file_name: &PathBuf) -> Result<(), Box<dyn Error>> {
         let root = BitMapBackend::new(file_name, (800, 600)).into_drawing_area();
 
         root.fill(&WHITE)?;
@@ -336,7 +337,7 @@ impl DasDarren1998 {
     ///
     /// returns: `Result<(), Box<dyn Error>>`
     #[cfg(feature = "plot")]
-    fn plot_3d(&self, file_name: &str) -> Result<(), Box<dyn Error>> {
+    fn plot_3d(&self, file_name: &PathBuf) -> Result<(), Box<dyn Error>> {
         let root = BitMapBackend::new(file_name, (800, 600)).into_drawing_area();
 
         root.fill(&WHITE)?;

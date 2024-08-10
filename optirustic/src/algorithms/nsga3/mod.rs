@@ -82,10 +82,10 @@ pub struct NSGA3Arg {
 /// > Constraints," in IEEE Transactions on Evolutionary Computation, vol. 18, no. 4, pp. 577-601,
 /// > Aug. 2014, doi: 10.1109/TEVC.2013.2281535
 ///
-/// See: <https://10.1109/TEVC.2013.2281535>.///
+/// See: <https://10.1109/TEVC.2013.2281535>
 /// # Example - solve the DTLZ1 problem
 /// ```rust
-#[doc = include_str!("../../../examples/nsga3.rs")]
+#[doc = include_str!("../../../examples/nsga3_dtlz1.rs")]
 /// ```
 #[as_algorithm(NSGA3Arg)]
 pub struct NSGA3 {
