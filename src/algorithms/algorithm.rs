@@ -15,7 +15,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::algorithms::{StoppingCondition, StoppingConditionType};
 use crate::core::{
-    DataValue, Individual, IndividualExport, OError, Population, Problem, ProblemExport,
+    DataValue, Individual, IndividualExport, OError, ObjectiveDirection, Population, Problem,
+    ProblemExport,
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -544,13 +545,22 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
                 format!("cannot read the JSON file because {e}"),
             )
         })?;
-        let res: AlgorithmSerialisedExport<AlgorithmOptions> = serde_json::from_str(&data)
+        let mut res: AlgorithmSerialisedExport<AlgorithmOptions> = serde_json::from_str(&data)
             .map_err(|e| {
                 OError::File(
                     file.to_path_buf(),
                     format!("cannot parse the JSON file because: {e}"),
                 )
             })?;
+
+        // invert sign of maximised objective values
+        for mut ind in &mut res.individuals {
+            for (name, value) in ind.objective_values.iter_mut() {
+                if res.problem.objectives[name].direction() == ObjectiveDirection::Maximise {
+                    *value = -1.0 * *value;
+                }
+            }
+        }
 
         Ok(res)
     }
