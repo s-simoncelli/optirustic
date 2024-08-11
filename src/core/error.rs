@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -49,4 +51,6 @@ pub enum OError {
     AlgorithmExport(String),
     #[error("NaN detected when adding {0} '{1}'. This may be an error in the user-defined evaluation function")]
     NaN(String, String),
+    #[error("The following error occurred for file '{0}': {1}")]
+    File(PathBuf, String),
 }
