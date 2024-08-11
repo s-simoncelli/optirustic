@@ -4,6 +4,7 @@ use std::fmt::{Debug, Display, Formatter};
 
 use serde::{Deserialize, Serialize};
 
+use crate::core::utils::dummy_evaluator;
 use crate::core::{Constraint, Individual, OError, Objective, ObjectiveDirection, VariableType};
 use crate::utils::has_unique_elements_by_key;
 
@@ -63,7 +64,7 @@ pub trait Evaluator: Sync + Send + Debug {
     fn evaluate(&self, individual: &Individual) -> Result<EvaluationResult, Box<dyn Error>>;
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 /// Serialised data of a problem.
 pub struct ProblemExport {
     /// The problem objectives.
@@ -84,6 +85,23 @@ pub struct ProblemExport {
     pub number_of_constraints: usize,
     /// The number of variables
     pub number_of_variables: usize,
+}
+
+/// Convert `ProblemExport` to `Problem`. The problem will have a dummy evaluator.
+impl TryInto<Problem> for ProblemExport {
+    type Error = OError;
+
+    fn try_into(self) -> Result<Problem, Self::Error> {
+        let objectives = self.objectives.iter().map(|(_, o)| o.clone()).collect();
+        let variables = self.variables.iter().map(|(_, v)| v.clone()).collect();
+        let constraints = self
+            .constraints
+            .iter()
+            .map(|(_, c)| c.clone())
+            .collect::<Vec<Constraint>>();
+
+        Problem::new(objectives, variables, Some(constraints), dummy_evaluator())
+    }
 }
 
 /// Define a new problem to optimise as:

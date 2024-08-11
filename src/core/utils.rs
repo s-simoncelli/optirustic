@@ -20,20 +20,16 @@ pub(crate) fn get_rng(seed: Option<u64>) -> Box<dyn RngCore> {
     Box::new(rng)
 }
 
-/// Return a dummy evaluator. This is only used in tests.
+/// Return a dummy evaluator.
 ///
 /// return `Box<dyn Evaluator>`
-#[doc(hidden)]
 pub fn dummy_evaluator() -> Box<dyn Evaluator> {
-    // dummy evaluator function
     #[derive(Debug)]
     struct UserEvaluator;
+
     impl Evaluator for UserEvaluator {
         fn evaluate(&self, _: &Individual) -> Result<EvaluationResult, Box<dyn Error>> {
-            Ok(EvaluationResult {
-                constraints: Default::default(),
-                objectives: Default::default(),
-            })
+            unimplemented!("The evaluation method is not implemented");
         }
     }
 
