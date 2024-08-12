@@ -427,31 +427,42 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
     ///
     /// # Arguments
     ///
-    /// * `file`: The path to the JSON file.
+    /// * `file`: The path to the JSON file exported from this library.
     ///
     /// returns: `Result<AlgorithmSerialisedExport<T>, OError>`
-    fn read_json_file(file: &Path) -> Result<AlgorithmSerialisedExport<AlgorithmOptions>, OError> {
-        let file_path = PathBuf::from(file);
-        if !file_path.exists() {
+    fn read_json_file(
+        file: &PathBuf,
+    ) -> Result<AlgorithmSerialisedExport<AlgorithmOptions>, OError> {
+        if !file.exists() {
             return Err(OError::File(
                 file.to_path_buf(),
                 "the file does not exist".to_string(),
             ));
         }
-        let data = fs::File::open(file_path).map_err(|e| {
+        let data = fs::File::open(file).map_err(|e| {
             OError::File(
                 file.to_path_buf(),
-                format!("cannot read the file because: {e}"),
+                format!("cannot read the JSON file because: {e}"),
             )
         })?;
 
-        let history: AlgorithmSerialisedExport<AlgorithmOptions> = serde_json::from_reader(data)
-            .map_err(|e| {
+        let mut history: AlgorithmSerialisedExport<AlgorithmOptions> =
+            serde_json::from_reader(data).map_err(|e| {
                 OError::File(
                     file.to_path_buf(),
                     format!("cannot parse the JSON file because: {e}"),
                 )
             })?;
+
+        // invert sign of maximised objective values
+        for ind in &mut history.individuals {
+            for (name, value) in ind.objective_values.iter_mut() {
+                if history.problem.objectives[name].direction() == ObjectiveDirection::Maximise {
+                    *value *= -1.0;
+                }
+            }
+        }
+
         Ok(history)
     }
 
@@ -523,48 +534,6 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
         Err(OError::Generic("Not available".to_string()))
     }
 
-    /// Import serialized results from a JSON file.
-    ///
-    /// # Arguments
-    ///
-    /// * `file`: The path to the JSON file exported from this library.
-    ///
-    /// returns: `Result<AlgorithmSerialisedExport<AlgorithmOptions?>, OError>`
-    fn import_results(
-        file: &PathBuf,
-    ) -> Result<AlgorithmSerialisedExport<AlgorithmOptions>, OError> {
-        if !file.exists() {
-            return Err(OError::File(
-                file.to_path_buf(),
-                "The file does not exist".to_string(),
-            ));
-        }
-        let data = fs::read_to_string(file).map_err(|e| {
-            OError::File(
-                file.to_path_buf(),
-                format!("cannot read the JSON file because {e}"),
-            )
-        })?;
-        let mut res: AlgorithmSerialisedExport<AlgorithmOptions> = serde_json::from_str(&data)
-            .map_err(|e| {
-                OError::File(
-                    file.to_path_buf(),
-                    format!("cannot parse the JSON file because: {e}"),
-                )
-            })?;
-
-        // invert sign of maximised objective values
-        for ind in &mut res.individuals {
-            for (name, value) in ind.objective_values.iter_mut() {
-                if res.problem.objectives[name].direction() == ObjectiveDirection::Maximise {
-                    *value = -1.0 * *value;
-                }
-            }
-        }
-
-        Ok(res)
-    }
-
     /// Seed the population using the values of variables, objectives and constraints exported
     /// to a JSON file.
     ///
@@ -583,7 +552,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
         expected_individuals: usize,
         file: &PathBuf,
     ) -> Result<Population, OError> {
-        let data = Self::import_results(file)?;
+        let data = Self::read_json_file(file)?;
 
         // check number of variables
         if problem.number_of_variables() != data.problem.variables.len() {
