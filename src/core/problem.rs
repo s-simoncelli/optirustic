@@ -92,13 +92,9 @@ impl TryInto<Problem> for ProblemExport {
     type Error = OError;
 
     fn try_into(self) -> Result<Problem, Self::Error> {
-        let objectives = self.objectives.iter().map(|(_, o)| o.clone()).collect();
-        let variables = self.variables.iter().map(|(_, v)| v.clone()).collect();
-        let constraints = self
-            .constraints
-            .iter()
-            .map(|(_, c)| c.clone())
-            .collect::<Vec<Constraint>>();
+        let objectives = self.objectives.values().cloned().collect();
+        let variables = self.variables.values().cloned().collect();
+        let constraints = self.constraints.values().cloned().collect();
 
         Problem::new(objectives, variables, Some(constraints), dummy_evaluator())
     }
