@@ -309,6 +309,16 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
 
         let mut history_gen_step: usize = 0;
         loop {
+            // Export history
+            if let Some(export) = self.export_history() {
+                if history_gen_step == export.generation_step - 1 {
+                    self.save_to_json(&export.destination, None)?;
+                    history_gen_step = 0;
+                } else {
+                    history_gen_step += 1;
+                }
+            }
+
             // Evolve population
             info!("Generation #{}", self.generation());
             self.evolve()?;
@@ -320,16 +330,6 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
             debug!("========================");
             debug!("");
             debug!("");
-
-            // Export history
-            if let Some(export) = self.export_history() {
-                if history_gen_step >= export.generation_step {
-                    self.save_to_json(&export.destination, None)?;
-                    history_gen_step = 0;
-                } else {
-                    history_gen_step += 1;
-                }
-            }
 
             // Termination
             let cond = self.stopping_condition();
@@ -554,7 +554,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
             })?;
 
         // invert sign of maximised objective values
-        for mut ind in &mut res.individuals {
+        for ind in &mut res.individuals {
             for (name, value) in ind.objective_values.iter_mut() {
                 if res.problem.objectives[name].direction() == ObjectiveDirection::Maximise {
                     *value = -1.0 * *value;
