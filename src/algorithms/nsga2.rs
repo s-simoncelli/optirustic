@@ -206,7 +206,7 @@ impl NSGA2 {
     ///
     /// returns: `Result<(), OError>`
     fn set_crowding_distance(mut individuals: &mut [Individual]) -> Result<(), OError> {
-        let inf = DataValue::Real(f64::INFINITY);
+        let inf = DataValue::Real(f64::MAX); // do not use INF because is not supported by serde
         let total_individuals = individuals.len();
 
         // if there are enough point set distance to + infinite
