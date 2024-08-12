@@ -266,7 +266,7 @@ impl HyperVolume {
         data: &AlgorithmSerialisedExport<AlgorithmOptions>,
         reference_point: &[f64],
     ) -> Result<HyperVolumeFileData, OError> {
-        let problem: Problem = data.problem();
+        let problem: Problem = data.problem()?;
         let objectives: Vec<HashMap<String, f64>> = data
             .individuals
             .iter()
