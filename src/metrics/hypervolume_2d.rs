@@ -39,7 +39,7 @@ impl HyperVolume2D {
     ///   objective vales stored in each individual.
     /// * `reference_point`: The non-dominated reference or anti-optimal point to use in the
     ///   calculation. If you are not sure about the point to use, you could pick the worst value of
-    ///   each objective from the individual's variable using [`crate::metrics::estimate_reference_point`].
+    ///   each objective from the individual's variable using [`crate::metrics::HyperVolume::estimate_reference_point`].
     ///
     /// returns: `Result<HyperVolume2D, OError>`
     pub fn new(individuals: &mut [Individual], reference_point: &[f64]) -> Result<Self, OError> {
