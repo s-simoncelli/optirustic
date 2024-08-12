@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.4
+
+- Added `AlgorithmSerialisedExport::problem()` and `AlgorithmSerialisedExport::individuals()` to
+  get the `Problem` and vector of `Individual` from serialised data.
+- Implemented trait to convert from `AlgorithmSerialisedExport` to `AlgorithmExport`.
+
 ## 0.3.3
 
 - Added `exported_on` field in `AlgorithmSerialisedExport`. This field
