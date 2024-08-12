@@ -52,13 +52,13 @@ pub struct AlgorithmSerialisedExport<T: Serialize> {
 }
 
 /// Implement a list of helper functions to get the problem and individuals.
-impl<T> AlgorithmSerialisedExport<T> {
+impl<T: Serialize> AlgorithmSerialisedExport<T> {
     /// Build the [`Problem`] struct from serialised data. The problem will have a dummy
     /// [`Algorithm::evolve`] method.
     ///
-    /// returns: `Problem`
-    pub fn problem(&self) -> Problem {
-        self.problem.clone().into()
+    /// returns: `Result<Problem, OError>`
+    pub fn problem(&self) -> Result<Problem, OError> {
+        self.problem.clone().try_into()
     }
 
     /// Build the vector of [`Individual`] from serialised data. Each individual will have the
@@ -66,21 +66,21 @@ impl<T> AlgorithmSerialisedExport<T> {
     ///
     /// returns: `Result<Vec<Individual>, OError>`
     pub fn individuals(&self) -> Result<Vec<Individual>, OError> {
-        let problem = Arc::new(self.problem());
+        let problem = Arc::new(self.problem()?);
         let mut individuals: Vec<Individual> = vec![];
         for individual_data in &self.individuals {
             let mut ind = Individual::new(problem.clone());
-            for (name, value) in individual_data.objective_values {
-                ind.update_objective(&name, value)?;
+            for (name, value) in &individual_data.objective_values {
+                ind.update_objective(name, *value)?;
             }
-            for (name, value) in individual_data.constraint_values {
-                ind.update_constraint(&name, value)?;
+            for (name, value) in &individual_data.constraint_values {
+                ind.update_constraint(name, *value)?;
             }
-            for (name, value) in individual_data.variable_values {
-                ind.update_variable(&name, value)?;
+            for (name, value) in &individual_data.variable_values {
+                ind.update_variable(name, value.clone())?;
             }
-            for (name, value) in individual_data.data {
-                ind.set_data(&name, value);
+            for (name, value) in &individual_data.data {
+                ind.set_data(name, value.clone());
             }
             ind.set_evaluated();
             individuals.push(ind);
@@ -91,12 +91,12 @@ impl<T> AlgorithmSerialisedExport<T> {
 }
 
 /// Convert the [`AlgorithmSerialisedExport`] to [`AlgorithmExport`]
-impl<T> TryInto<AlgorithmExport> for AlgorithmSerialisedExport<T> {
+impl<T: Serialize> TryInto<AlgorithmExport> for AlgorithmSerialisedExport<T> {
     type Error = OError;
 
     fn try_into(self) -> Result<AlgorithmExport, Self::Error> {
         let data = AlgorithmExport {
-            problem: Arc::new(self.problem()),
+            problem: Arc::new(self.problem()?),
             individuals: self.individuals()?,
             generation: self.generation,
             algorithm: self.algorithm,
