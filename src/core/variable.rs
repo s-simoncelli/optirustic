@@ -20,7 +20,7 @@ pub trait Variable<T>: Display {
 pub trait BoundedNumberTrait: SampleUniform + PartialOrd + Display + Clone {}
 impl<T: SampleUniform + PartialOrd + Display + Clone> BoundedNumberTrait for T {}
 
-/// A number between a lower and upper bound.
+/// A variable between a lower and upper bound.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BoundedNumber<N: BoundedNumberTrait> {
     /// The variable name
