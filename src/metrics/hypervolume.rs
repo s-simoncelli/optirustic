@@ -299,10 +299,12 @@ impl HyperVolume {
         data: &[AlgorithmSerialisedExport<AlgorithmOptions>],
         reference_point: &[f64],
     ) -> Result<AllHyperVolumeFileData, OError> {
-        let results = data
+        let mut results = data
             .iter()
             .map(|p| HyperVolume::from_file::<AlgorithmOptions>(p, reference_point))
             .collect::<Result<Vec<HyperVolumeFileData>, OError>>()?;
+
+        results.sort_by_key(|r| r.generation);
         Ok(AllHyperVolumeFileData(results))
     }
 
