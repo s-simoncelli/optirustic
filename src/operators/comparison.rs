@@ -110,11 +110,15 @@ impl BinaryComparisonOperator for ParetoConstrainedDominance {
 
 /// This implements the crowded-comparison operator from Deb et al. (2002) for the NSGAII algorithm.
 /// A solution $S_i$ dominates a solution $S_j$ if:
-///    $rank_i < rank_j$
-/// or when  $rank_i =rank_j$
-///    ${distance}_i > {distance}_j$
-/// where `rank_x` is the rank from the fast non-dominated sort algorithm (see
-/// [`crate::utils::fast_non_dominated_sort()`]) and `{distance}_x` is the crowding distance using
+///
+///    - $rank_i < rank_j$
+///
+/// or when $rank_i =rank_j$
+///
+///    - ${distance}_i > {distance}_j$
+///
+/// where $rank_x$ is the rank from the fast non-dominated sort algorithm (see
+/// [`crate::utils::fast_non_dominated_sort()`]) and $distance_x$ is the crowding distance using
 /// neighboring solutions.
 ///
 /// Implemented based on:
