@@ -6,6 +6,7 @@ use crate::core::OError;
 
 /// The data type and value that can be stored in an individual or algorithm..
 #[derive(Clone, Deserialize, Debug)]
+#[serde(untagged)]
 pub enum DataValue {
     /// The value for a floating-point number. This is a f64.
     Real(f64),

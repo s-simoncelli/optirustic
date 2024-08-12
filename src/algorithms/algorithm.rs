@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fmt::{Debug, Display, Formatter};
+use std::fs::read_dir;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
 use std::{fmt, fs};
 
+use chrono::{DateTime, Utc};
 use log::{debug, info};
 use rayon::prelude::*;
 use serde::de::DeserializeOwned;
@@ -13,7 +15,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::algorithms::{StoppingCondition, StoppingConditionType};
 use crate::core::{
-    DataValue, Individual, IndividualExport, OError, Population, Problem, ProblemExport,
+    DataValue, Individual, IndividualExport, OError, ObjectiveDirection, Population, Problem,
+    ProblemExport,
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -44,6 +47,8 @@ pub struct AlgorithmSerialisedExport<T: Serialize> {
     pub additional_data: Option<HashMap<String, DataValue>>,
     /// The time took to reach the `generation`.
     pub took: Elapsed,
+    /// The date and time when the data was exported
+    pub exported_on: DateTime<Utc>,
 }
 
 /// The struct used to export an algorithm data.
@@ -103,8 +108,7 @@ impl ExportHistory {
     ///    the given folder.
     ///
     /// returns: `Result<ExportHistory, OError>`
-    pub fn new(generation_step: usize, destination: &str) -> Result<Self, OError> {
-        let destination = PathBuf::from(destination);
+    pub fn new(generation_step: usize, destination: &PathBuf) -> Result<Self, OError> {
         if !destination.exists() {
             return Err(OError::Generic(format!(
                 "The destination folder '{:?}' does not exist",
@@ -305,6 +309,16 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
 
         let mut history_gen_step: usize = 0;
         loop {
+            // Export history
+            if let Some(export) = self.export_history() {
+                if history_gen_step == export.generation_step - 1 {
+                    self.save_to_json(&export.destination, None)?;
+                    history_gen_step = 0;
+                } else {
+                    history_gen_step += 1;
+                }
+            }
+
             // Evolve population
             info!("Generation #{}", self.generation());
             self.evolve()?;
@@ -316,16 +330,6 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
             debug!("========================");
             debug!("");
             debug!("");
-
-            // Export history
-            if let Some(export) = self.export_history() {
-                if history_gen_step >= export.generation_step {
-                    self.save_to_json(&export.destination, None)?;
-                    history_gen_step = 0;
-                } else {
-                    history_gen_step += 1;
-                }
-            }
 
             // Termination
             let cond = self.stopping_condition();
@@ -393,6 +397,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
                 minutes,
                 seconds,
             },
+            exported_on: Utc::now(),
         };
         let data = serde_json::to_string_pretty(&export).map_err(|e| {
             OError::AlgorithmExport(format!(
@@ -422,28 +427,74 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
     ///
     /// # Arguments
     ///
-    /// * `file`: The path to the JSON file.
+    /// * `file`: The path to the JSON file exported from this library.
     ///
     /// returns: `Result<AlgorithmSerialisedExport<T>, OError>`
-    fn read_results(file: &Path) -> Result<AlgorithmSerialisedExport<AlgorithmOptions>, OError> {
-        let file_path = PathBuf::from(file);
-        let file_str = file.to_str().unwrap();
-        if !file_path.exists() {
-            return Err(OError::Generic(format!(
-                "The file '{file_str}' does not exist"
-            )));
+    fn read_json_file(
+        file: &PathBuf,
+    ) -> Result<AlgorithmSerialisedExport<AlgorithmOptions>, OError> {
+        if !file.exists() {
+            return Err(OError::File(
+                file.to_path_buf(),
+                "the file does not exist".to_string(),
+            ));
         }
-        let data = fs::File::open(file_path).map_err(|e| {
-            OError::Generic(format!("Cannot read the file '{file_str}' because: {e}"))
+        let data = fs::File::open(file).map_err(|e| {
+            OError::File(
+                file.to_path_buf(),
+                format!("cannot read the JSON file because: {e}"),
+            )
         })?;
 
-        let history: AlgorithmSerialisedExport<AlgorithmOptions> = serde_json::from_reader(data)
-            .map_err(|e| {
-                OError::Generic(format!(
-                    "Cannot parse the JSON file '{file_str}' because: {e}"
-                ))
+        let mut history: AlgorithmSerialisedExport<AlgorithmOptions> =
+            serde_json::from_reader(data).map_err(|e| {
+                OError::File(
+                    file.to_path_buf(),
+                    format!("cannot parse the JSON file because: {e}"),
+                )
             })?;
+
+        // invert sign of maximised objective values
+        for ind in &mut history.individuals {
+            for (name, value) in ind.objective_values.iter_mut() {
+                if history.problem.objectives[name].direction() == ObjectiveDirection::Maximise {
+                    *value *= -1.0;
+                }
+            }
+        }
+
         Ok(history)
+    }
+
+    /// Read the results from files exported during an algorithm evolution. This returns an error if
+    /// the path does not exist or does not contain valid JSON files.
+    ///
+    /// # Arguments
+    ///
+    /// * `folder`: The folder path to the JSON files.
+    ///
+    /// returns: `Result<Vec<AlgorithmSerialisedExport<T>>, OError>`
+    fn read_json_files(
+        folder: &PathBuf,
+    ) -> Result<Vec<AlgorithmSerialisedExport<AlgorithmOptions>>, OError> {
+        let json_files: Vec<_> = read_dir(folder)
+            .map_err(|e| OError::Generic(format!("Cannot read folder because {e}")))?
+            .filter_map(|res| res.ok())
+            .map(|dir_entry| dir_entry.path())
+            .filter_map(|path| {
+                if path.extension().map_or(false, |ext| ext == "json") {
+                    Some(path)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        let results = json_files
+            .iter()
+            .map(|file| Self::read_json_file(file))
+            .collect::<Result<Vec<_>, OError>>()?;
+        Ok(results)
     }
 
     /// Generate and save a chart with the individual's objectives at the last generation.
@@ -483,30 +534,6 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
         Err(OError::Generic("Not available".to_string()))
     }
 
-    /// Import serialized results from a JSON file.
-    ///
-    /// # Arguments
-    ///
-    /// * `file`: The path to the JSON file exported from this library.
-    ///
-    /// returns: `Result<AlgorithmSerialisedExport<AlgorithmOptions?>, OError>`
-    fn import_results(
-        file: &PathBuf,
-    ) -> Result<AlgorithmSerialisedExport<AlgorithmOptions>, OError> {
-        if !file.exists() {
-            return Err(OError::Generic(format!(
-                "The file {:?} does not exist",
-                file
-            )));
-        }
-        let data = fs::read_to_string(file)
-            .map_err(|e| OError::Generic(format!("Cannot read the JSON file because: {e}")))?;
-        let res: AlgorithmSerialisedExport<AlgorithmOptions> = serde_json::from_str(&data)
-            .map_err(|e| OError::Generic(format!("Cannot parse the JSON file because: {e}")))?;
-
-        Ok(res)
-    }
-
     /// Seed the population using the values of variables, objectives and constraints exported
     /// to a JSON file.
     ///
@@ -525,7 +552,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
         expected_individuals: usize,
         file: &PathBuf,
     ) -> Result<Population, OError> {
-        let data = Self::import_results(file)?;
+        let data = Self::read_json_file(file)?;
 
         // check number of variables
         if problem.number_of_variables() != data.problem.variables.len() {

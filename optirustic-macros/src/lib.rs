@@ -40,7 +40,7 @@ pub fn test_with_retries(attrs: TokenStream, item: TokenStream) -> TokenStream {
 /// Register new fields on a struct that contains algorithm options. This macro adds:
 ///  - the Serialize, Deserialize, Clone traits to the structure to make it serialisable and
 ///    de-serialisable.
-///  - add the following fields: stopping_condition ([`StoppingConditionType`]), parallel (`bool`)
+///  - add the following fields: stopping_condition (`StoppingConditionType`), parallel (`bool`)
 ///    and export_history (`Option<ExportHistory>`).
 #[proc_macro_attribute]
 pub fn as_algorithm_args(_attrs: TokenStream, input: TokenStream) -> TokenStream {

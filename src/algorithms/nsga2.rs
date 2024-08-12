@@ -206,7 +206,7 @@ impl NSGA2 {
     ///
     /// returns: `Result<(), OError>`
     fn set_crowding_distance(mut individuals: &mut [Individual]) -> Result<(), OError> {
-        let inf = DataValue::Real(f64::INFINITY);
+        let inf = DataValue::Real(f64::MAX); // do not use INF because is not supported by serde
         let total_individuals = individuals.len();
 
         // if there are enough point set distance to + infinite
@@ -420,7 +420,7 @@ mod test_sorting {
         for i in individuals {
             assert_eq!(
                 i.get_data(CROWDING_DIST_KEY).unwrap(),
-                DataValue::Real(f64::INFINITY)
+                DataValue::Real(f64::MAX)
             );
         }
     }
@@ -443,7 +443,7 @@ mod test_sorting {
         for i in individuals {
             assert_eq!(
                 i.get_data(CROWDING_DIST_KEY).unwrap(),
-                DataValue::Real(f64::INFINITY)
+                DataValue::Real(f64::MAX)
             );
         }
     }
@@ -481,7 +481,7 @@ mod test_sorting {
                     .unwrap()
                     .get_data(CROWDING_DIST_KEY)
                     .unwrap(),
-                DataValue::Real(f64::INFINITY)
+                DataValue::Real(f64::MAX)
             );
             assert_eq!(
                 individuals
@@ -490,7 +490,7 @@ mod test_sorting {
                     .unwrap()
                     .get_data(CROWDING_DIST_KEY)
                     .unwrap(),
-                DataValue::Real(f64::INFINITY)
+                DataValue::Real(f64::MAX)
             );
         }
     }
@@ -530,7 +530,7 @@ mod test_sorting {
                 .unwrap()
                 .get_data(CROWDING_DIST_KEY)
                 .unwrap(),
-            DataValue::Real(f64::INFINITY)
+            DataValue::Real(f64::MAX)
         );
         assert_eq!(
             individuals
@@ -539,7 +539,7 @@ mod test_sorting {
                 .unwrap()
                 .get_data(CROWDING_DIST_KEY)
                 .unwrap(),
-            DataValue::Real(f64::INFINITY)
+            DataValue::Real(f64::MAX)
         );
     }
 
@@ -566,7 +566,7 @@ mod test_sorting {
                 .unwrap()
                 .get_data(CROWDING_DIST_KEY)
                 .unwrap(),
-            DataValue::Real(f64::INFINITY)
+            DataValue::Real(f64::MAX)
         );
         assert_eq!(
             individuals
@@ -593,7 +593,7 @@ mod test_sorting {
                 .unwrap()
                 .get_data(CROWDING_DIST_KEY)
                 .unwrap(),
-            DataValue::Real(f64::INFINITY)
+            DataValue::Real(f64::MAX)
         );
     }
 
@@ -616,12 +616,12 @@ mod test_sorting {
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
 
         let expected = [
-            f64::INFINITY,
+            f64::MAX,
             0.7714285714285714,
             0.728571429,
             0.785714286,
             0.885714286,
-            f64::INFINITY,
+            f64::MAX,
         ];
         for (idx, value) in expected.into_iter().enumerate() {
             assert_approx_eq!(
