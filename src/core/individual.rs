@@ -283,6 +283,20 @@ impl Individual {
         self.variable_values.clone()
     }
 
+    /// Get all the constraints.
+    ///
+    /// returns: `HashMap<String, f64>`
+    pub fn constraints(&self) -> HashMap<String, f64> {
+        self.constraint_values.clone()
+    }
+
+    /// Get all the objectives.
+    ///
+    /// returns: `HashMap<String, f64>`
+    pub fn objectives(&self) -> HashMap<String, f64> {
+        self.objective_values.clone()
+    }
+
     /// Ge the variable value by name. This return an error if the variable name does not exist.
     ///
     /// # Arguments
@@ -358,7 +372,7 @@ impl Individual {
             .map_err(|_| OError::WrongVariableTypeWithName(name.to_string(), "integer".to_string()))
     }
 
-    /// Ge the objective value by name. This returns an error if the objective does not exist.
+    /// Get the objective value by name. This returns an error if the objective does not exist.
     ///
     /// # Arguments
     ///
@@ -422,6 +436,13 @@ impl Individual {
     /// calculated for its solution.
     pub fn set_evaluated(&mut self) {
         self.evaluated = true;
+    }
+
+    /// Get all the individual's data.
+    ///
+    /// returns: `HashMap<String, DataValue>`
+    pub fn data(&self) -> HashMap<String, DataValue> {
+        self.data.clone()
     }
 
     /// Store custom data on the individual.
