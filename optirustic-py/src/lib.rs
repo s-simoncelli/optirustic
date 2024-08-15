@@ -3,16 +3,15 @@ use std::env;
 use std::path::PathBuf;
 
 use chrono::{DateTime, Utc};
-use pyo3::exceptions::PyValueError;
-use pyo3::prelude::*;
-use pyo3::types::PyDict;
-
 use optirustic::algorithms::{
     Algorithm, AlgorithmExport, AlgorithmSerialisedExport, NSGA2Arg, NSGA3Arg, NSGA2 as RustNSGA2,
     NSGA3 as RustNSGA3,
 };
 use optirustic::core::OError;
 use optirustic::metrics::HyperVolume;
+use pyo3::exceptions::PyValueError;
+use pyo3::prelude::*;
+use pyo3::types::PyDict;
 
 use crate::constraint::PyRelationalOperator;
 use crate::individual::{PyData, PyIndividual};
@@ -169,6 +168,25 @@ macro_rules! create_interface {
                             self.export_data.individuals.len(),
                         ),
                     )
+                })
+            }
+
+            #[staticmethod]
+            pub fn plot_convergence(
+                folder: String,
+                reference_point: Vec<f64>,
+            ) -> PyResult<PyObject> {
+                let folder = PathBuf::from(folder);
+                let all_serialise_data = $type::read_json_files(&folder)
+                    .map_err(|e| PyValueError::new_err(e.to_string()))?;
+                let data = HyperVolume::from_files(&all_serialise_data, &reference_point)
+                    .map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+                let py_plot = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/utils/plot.py"));
+                Python::with_gil(|py| {
+                    let module = PyModule::from_code_bound(py, py_plot, "plot.py", "utils.plot")?;
+                    let fun: Py<PyAny> = module.getattr("plot_convergence")?.into();
+                    fun.call1(py, (data.generations(), data.values()))
                 })
             }
         }
