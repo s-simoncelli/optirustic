@@ -13,8 +13,9 @@ license = "GPL-3.0-only"
 
 [workspace]
 resolver = "2"
-members = ["optirustic-macros", "hv-fonseca-et-al-2006-sys", "hv-wfg-sys"]
-default-members = ["optirustic-macros", "hv-fonseca-et-al-2006-sys", "hv-wfg-sys"]
+members = ["libs/optirustic-macros", "libs/hv-fonseca-et-al-2006-sys", "libs/hv-wfg-sys"]
+default-members = ["libs/optirustic-macros", "libs/hv-fonseca-et-al-2006-sys", "libs/hv-wfg-sys"]
+exclude = ["optirustic-py"]
 
 [lib]
 name = "optirustic"
@@ -30,9 +31,9 @@ rayon = "1.10.0"
 env_logger = "0.11.3"
 chrono = { version = "0.4.38", features = ["serde"] }
 ordered-float = "4.2.0"
-optirustic-macros = { path = "optirustic-macros", version = "0.1.0" }
-hv-fonseca-et-al-2006-sys = { path = "hv-fonseca-et-al-2006-sys", version = "2.0.2-rc.2" }
-hv-wfg-sys = { path = "hv-wfg-sys", version = "0.1.1" }
+optirustic-macros = { path = "libs/optirustic-macros", version = "0.1.0" }
+hv-fonseca-et-al-2006-sys = { path = "libs/hv-fonseca-et-al-2006-sys", version = "2.0.2-rc.2" }
+hv-wfg-sys = { path = "libs/hv-wfg-sys", version = "0.1.1" }
 plotters = { version = "0.3.6", optional = true }
 nalgebra = "0.33.0"
 

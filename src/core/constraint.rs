@@ -152,6 +152,20 @@ impl Constraint {
             }
         }
     }
+
+    /// Get the set constraint target.
+    ///
+    /// returns: `f64`.
+    pub fn target(&self) -> f64 {
+        self.target
+    }
+
+    /// Get the set constraint operator.
+    ///
+    /// returns: `f64`.
+    pub fn operator(&self) -> RelationalOperator {
+        self.operator.clone()
+    }
 }
 
 impl Display for Constraint {

@@ -1,5 +1,6 @@
 target
 .idea
+.env
 *.o
 *.a
 .DS_Store

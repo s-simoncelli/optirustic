@@ -1,0 +1,14 @@
+[package]
+name = "optirustic-py"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "optirustic"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22.2", features = ["chrono"] }
+optirustic = { path = ".." }
+serde = { version = "1.0.200" }
+chrono = "0.4.38"

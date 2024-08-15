@@ -224,6 +224,16 @@ impl VariableType {
         }
     }
 
+    pub fn label(&self) -> String {
+        let label = match &self {
+            VariableType::Real(_) => "real",
+            VariableType::Integer(_) => "integer",
+            VariableType::Boolean(_) => "boolean",
+            VariableType::Choice(_) => "choice",
+        };
+        label.into()
+    }
+
     /// Check if the variable is a real number.
     ///
     /// return: `bool`

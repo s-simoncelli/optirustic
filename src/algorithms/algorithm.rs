@@ -23,11 +23,11 @@ use crate::core::{
 /// The data with the elapsed time.
 pub struct Elapsed {
     /// Elapsed hours.
-    hours: u64,
+    pub hours: u64,
     /// Elapsed minutes.
-    minutes: u64,
+    pub minutes: u64,
     /// Elapsed seconds.
-    seconds: u64,
+    pub seconds: u64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -135,6 +135,22 @@ impl AlgorithmExport {
             .iter()
             .map(|i| i.get_real_value(name))
             .collect()
+    }
+
+    /// Get the objective values grouped by objective name.
+    ///
+    /// returns: `Result<HashMap<String, Vec<f64>>, OError>`
+    pub fn get_objectives(&self) -> Result<HashMap<String, Vec<f64>>, OError> {
+        let mut map = HashMap::new();
+        for name in self.problem.objective_names() {
+            let data_vec = self
+                .individuals
+                .iter()
+                .map(|i| i.get_objective_value(&name))
+                .collect::<Result<Vec<f64>, OError>>()?;
+            map.insert(name, data_vec);
+        }
+        Ok(map)
     }
 }
 
