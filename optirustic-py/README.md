@@ -63,7 +63,7 @@ print(f"Additional stored data: {data.individuals[0].data}")
 print(f"Hyper-volume is: {data.hyper_volume(reference_point=[100, 100, 100])}")
 ```
 
-## Plot
+## Generate Pareto front chart
 
 ```python
 import matplotlib.pyplot as plt
@@ -81,4 +81,22 @@ plt.show()
 NSGA3(r"../examples/results/DTLZ1_8obj_NSGA3_gen750.json").plot()
 plt.show()
 
+```
+
+## Generate convergence chart
+
+This template script plots the algorithm convergence by calculating
+the hyper-volumes at different generations:
+
+```python
+import matplotlib.pyplot as plt
+from optirustic import NSGA2
+
+# provide the folder where optimistic exported the JSON files
+# and a reference point to use in the hyper-volume calculation
+NSGA2.plot_convergence(
+    folder=r"../examples/results/convergence",
+    reference_point=[10000, 10000]
+)
+plt.show()
 ```

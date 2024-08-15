@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 
 
 def plot_2d(
-    objectives: dict[str, list[float]], algorithm: str, generation: int, pop_size: int
+        objectives: dict[str, list[float]], algorithm: str, generation: int, pop_size: int
 ) -> plt.Figure:
     """
     Plot the objective chart for a problem with 2 objectives.
@@ -30,10 +30,10 @@ def plot_2d(
 
 
 def plot_3d(
-    objectives: dict[str, list[float]],
-    algorithm: str,
-    generation: int,
-    pop_size: int,
+        objectives: dict[str, list[float]],
+        algorithm: str,
+        generation: int,
+        pop_size: int,
 ) -> plt.Figure:
     """
     Plot the objective chart for a problem with 2 objectives.
@@ -61,10 +61,10 @@ def plot_3d(
 
 
 def plot_parallel(
-    objectives: dict[str, list[float]],
-    algorithm: str,
-    generation: int,
-    pop_size: int,
+        objectives: dict[str, list[float]],
+        algorithm: str,
+        generation: int,
+        pop_size: int,
 ):
     names = list(objectives.keys())
     values = list(objectives.values())
@@ -78,9 +78,9 @@ def plot_parallel(
 
 
 def parallel_coordinate_plot(
-    data: list[list[float]],
-    objective_names: list[str],
-    color="red",
+        data: list[list[float]],
+        objective_names: list[str],
+        color="red",
 ) -> plt.Figure:
     """
     Render a parallel coordinate plot. This code was edited from
@@ -155,5 +155,26 @@ def parallel_coordinate_plot(
 
         if y_labels[i]:
             ax.set_yticklabels(y_labels[i])
+
+    return fig
+
+
+def plot_convergence(generations: list[int], values: list[float]) -> plt.Figure:
+    """
+    Plot the hyper-volume as function of the generation number to track the algorithm
+    convergence.
+    :param generations: The generation numbers.
+    :param values: The hyper-volume values.
+    :return: The figure object.
+    """
+    fig = plt.figure()
+    ax = plt.subplot()
+
+    ax.plot(generations, values, "k.-")
+    ax.set_xlabel("Generation")
+    ax.set_ylabel("Hyper-volume")
+    plt.title(
+        f"Convergence from {min(generations)} to {max(generations)} generations"
+    )
 
     return fig
