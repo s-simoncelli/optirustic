@@ -18,7 +18,7 @@ fn variable_value_to_py(value: &VariableValue, py: Python<'_>) -> PyObject {
 
 /// Struct holding data
 #[derive(Clone)]
-enum PyData {
+pub enum PyData {
     Real(f64),
     Integer(i64),
     USize(usize),
@@ -95,7 +95,7 @@ impl From<&Individual> for PyIndividual {
             variables: value.variables(),
             constraints: value.constraints(),
             objectives: value.objectives(),
-            data: value.data().into(),
+            data: value.data(),
             constraint_violation: value.constraint_violation(),
             is_feasible: value.is_feasible(),
         }

@@ -1,6 +1,7 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from enum import Enum
-from typing import Any
+
+import matplotlib.pyplot as plt
 
 
 class ObjectiveDirection(Enum):
@@ -103,6 +104,7 @@ class Problem:
 
 
 type VariableType = float | int | bool | str
+type DataType = float, int | list[DataType] | dict[str, DataType]
 
 
 class Individual:
@@ -123,7 +125,7 @@ class Individual:
     """
     is_feasible: bool
     """ Whether the solution meets all the problem constraints """
-    data: dict[str, Any]
+    data: dict[str, DataType]
     """ Additional numeric data stores in the individuals (such as crowding distance or rank)
      depending on the algorithm the individuals are derived from """
 
@@ -167,6 +169,11 @@ class AlgorithmData:
      the problem solution, and the objective and constraint values. """
     objectives: dict[str, list[float]]
     """ The objective values grouped by objective name """
+    additional_data: dict[str, DataType] | None
+    """ Any additional data exported by the algorithm (such as the distance to
+    the reference point for NSGA3) """
+    exported_on: datetime
+    """  The date and time when the parsed JSON file was exported """
 
     def __init__(self, file: str):
         """
@@ -189,6 +196,16 @@ class AlgorithmData:
         value of each objective from the individual's values. The size of this point must
         match the number of problem objectives.
         :return: The hyper volume.
+        """
+
+    def plot(self) -> plt.Figure:
+        """
+        Plot the Pareto front with the objective values. With 2 or 3 objectives, a 2D or
+        3D chart is rendered respectively. With multi-objective problem a parallel
+        coordinate chart is generated.
+        This function only generates the matplotlib chart; you can manipulate the figure,
+        save it (using `self.plot().savefig("figure.png")`) or show it (using `plt.show()`).
+        :return: The `matplotlib`  figure object.
         """
 
 
