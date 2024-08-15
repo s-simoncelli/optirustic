@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.0
+
+- Made 'Elapsed' fields public.
+- Added `Constraint::target()` and `Constraint::operator()` to access the
+  struct target and operator data respectively.
+- Added `Variable::label` to get a label describing the type of variable set
+  on a problem.
+- Added `Individual::constraints()` and `Individual::objectives()` to access
+  an individual's constraint and objective values grouped by their name.
+- Added `Individual::data()` to access any custom data set on an individual
+  (such as the rank, crowding distance or reference point distance).
+- Added new `optirustic-py` crate to load serialised data from Python and
+  plot Pareto front and convergence charts.
+
 ## 0.3.4
 
 - Added `AlgorithmSerialisedExport::problem()` and `AlgorithmSerialisedExport::individuals()` to
