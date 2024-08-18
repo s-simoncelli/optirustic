@@ -47,6 +47,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
+      - uses: dtolnay/rust-toolchain@stable
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -54,9 +55,6 @@ jobs:
           args: --release --out dist --find-interpreter --manifest-path optirustic-py/Cargo.toml
           sccache: 'true'
           manylinux: auto
-          before-script-linux: |
-            sudo apt-get update
-            sudo apt-get install -y libclang-dev
       - name: Test Python API
         run: |
           pip install matplotlib numpy
