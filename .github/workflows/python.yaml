@@ -41,18 +41,18 @@ jobs:
       #        run: . "$HOME/.cargo/env"
       - name: Install Clang
         run: sudo apt update && sudo apt install --yes clang libclang-dev build-essential clang-11
-      #      - name: Install maturin system deps
-      #        run: sudo apt update && sudo apt install --yes fontconfig
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
+      - uses: dtolnay/rust-toolchain@stable
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter --manifest-path optirustic-py/Cargo.toml
-          #          sccache: 'true'
+          container: off
+          sccache: 'true'
           manylinux: auto
       - name: Test Python API
         run: |
