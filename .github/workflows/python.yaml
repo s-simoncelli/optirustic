@@ -19,7 +19,8 @@ permissions:
   contents: read
 
 jobs:
-  Build and tests on Linux:
+  linux-build-and-test:
+    name: Linux (build and test)
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -84,7 +85,8 @@ jobs:
   #          name: wheels-windows-${{ matrix.platform.target }}
   #          path: dist
 
-  Build on MacOS:
+  macos-build:
+    name: Mac OS (build only)
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -114,7 +116,7 @@ jobs:
     name: Wheel release
     runs-on: ubuntu-latest
     if: "startsWith(github.ref, 'refs/tags/')"
-    needs: [ Build and tests on Linux, Build on MacOS ]
+    needs: [ linux-build-and-test, macos-build ]
     #    needs: [ linux, windows, macos ]
     steps:
       - uses: actions/download-artifact@v4
