@@ -41,7 +41,7 @@ nalgebra = "0.33.0"
 float-cmp = "0.9.0"
 
 [features]
-default = ["plot"]
+default = []
 plot = ["dep:plotters"]
 
 [package.metadata.docs.rs]
