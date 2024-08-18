@@ -40,7 +40,7 @@ jobs:
       #      - name: Add Cargo to PATH
       #        run: . "$HOME/.cargo/env"
       - name: Install Clang
-        run: sudo apt update && sudo apt install --yes clang libclang-dev build-essential
+        run: sudo apt update && sudo apt install --yes clang libclang-dev build-essential clang-11
       #      - name: Install maturin system deps
       #        run: sudo apt update && sudo apt install --yes fontconfig
       - uses: actions/checkout@v4
@@ -54,6 +54,9 @@ jobs:
           args: --release --out dist --find-interpreter --manifest-path optirustic-py/Cargo.toml
           sccache: 'true'
           manylinux: auto
+          before-script-linux: |
+            sudo apt-get update
+            sudo apt-get install -y libclang-dev
       - name: Test Python API
         run: |
           pip install matplotlib numpy
