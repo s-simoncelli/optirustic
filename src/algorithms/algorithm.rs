@@ -1,8 +1,11 @@
 use std::collections::HashMap;
+#[cfg(feature = "plot")]
 use std::ffi::OsStr;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::read_dir;
-use std::path::{Path, PathBuf};
+#[cfg(feature = "plot")]
+use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 use std::{fmt, fs};
