@@ -39,11 +39,10 @@ jobs:
       #          override: true
       #      - name: Add Cargo to PATH
       #        run: . "$HOME/.cargo/env"
-      #      - name: Install Clang
-      #        run: sudo apt update && sudo apt install --yes clang
-
-      - name: Install maturin system deps
-        run: sudo apt update && sudo apt install --yes fontconfig
+      - name: Install Clang
+        run: sudo apt update && sudo apt install --yes clang
+      #      - name: Install maturin system deps
+      #        run: sudo apt update && sudo apt install --yes fontconfig
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
