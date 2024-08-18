@@ -40,7 +40,7 @@ jobs:
       #      - name: Add Cargo to PATH
       #        run: . "$HOME/.cargo/env"
       - name: Install Clang
-        run: sudo apt update && sudo apt install --yes clang
+        run: sudo apt update && sudo apt install --yes clang libclang-dev build-essential
       #      - name: Install maturin system deps
       #        run: sudo apt update && sudo apt install --yes fontconfig
       - uses: actions/checkout@v4

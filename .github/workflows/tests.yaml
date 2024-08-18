@@ -23,7 +23,7 @@ jobs:
       - name: Build
         run: cargo build --verbose
       - name: Run tests
-        run: cargo test --verbose --all
+        run: cargo test --verbose --all --all-features
 # NOTE disabled due to compiler failure in hv-fonseca crate
 #  test-windows:
 #    name: Cargo check and test on Windows
