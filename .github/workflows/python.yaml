@@ -27,8 +27,6 @@ jobs:
           - runner: ubuntu-latest
             target: x86_64
           - runner: ubuntu-latest
-            target: x86
-          - runner: ubuntu-latest
             target: aarch64
     steps:
       # Enable this when testing with nektos/act
@@ -51,13 +49,14 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter --manifest-path optirustic-py/Cargo.toml
+          # run w/o container to prevent issue with missing clang lib
           container: off
           sccache: 'true'
           manylinux: auto
+      # Run tests only in linux env
       - name: Test Python API
         run: |
-          pip install matplotlib numpy
-          pip install optirustic --no-index --find-links dist --force-reinstall --no-deps
+          pip install optirustic --no-index --find-links dist --force-reinstall
           python optirustic-py/tests/test_api.py
       - name: Upload wheels
         uses: actions/upload-artifact@v4
