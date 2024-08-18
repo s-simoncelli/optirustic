@@ -207,6 +207,20 @@ class AlgorithmData:
         save it (using `self.plot().savefig("figure.png")`) or show it (using `plt.show()`).
         :return: The `matplotlib`  figure object.
         """
+
+    @staticmethod
+    def convergence_data(folder: str, reference_point: list[float]) -> tuple[list[int], list[datetime], list[float]]:
+        """
+        Calculate the hyper-volume at different generations (using the serialised
+        objective values in JSON files exported at different generations).
+        :param folder: The folder with the JSON files exported by the algorithm.
+        :param reference_point: The reference or anti-optimal point to use in the
+        calculation. The size of this point must match the number of problem objectives
+        and must be dominated by all objectives at all generations.
+        :return: A tuple containing the list of generation numbers, datetime objects,
+        when the JSOn files were exported, and the hyper-olume values.
+        """
+
     @staticmethod
     def plot_convergence(folder: str, reference_point: list[float]) -> plt.Figure:
         """

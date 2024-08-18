@@ -172,6 +172,20 @@ macro_rules! create_interface {
             }
 
             #[staticmethod]
+            pub fn convergence_data(
+                folder: String,
+                reference_point: Vec<f64>,
+            ) -> PyResult<(Vec<usize>, Vec<DateTime<Utc>>, Vec<f64>)> {
+                let folder = PathBuf::from(folder);
+                let all_serialise_data = $type::read_json_files(&folder)
+                    .map_err(|e| PyValueError::new_err(e.to_string()))?;
+                let data = HyperVolume::from_files(&all_serialise_data, &reference_point)
+                    .map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+                Ok((data.generations(), data.times(), data.values()))
+            }
+
+            #[staticmethod]
             pub fn plot_convergence(
                 folder: String,
                 reference_point: Vec<f64>,
