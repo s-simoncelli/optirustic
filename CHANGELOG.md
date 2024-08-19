@@ -1,8 +1,17 @@
 # Changelog
 
+## 0.4.1
+
+- Added `Hypervolume::estimate_reference_point_from_file` and
+  `Hypervolume::estimate_reference_point_from_files` methods, to easily
+  estimate the reference point from a file or set of files.
+- Python package API now includes the following new methods: `convergence_data`
+  (to fetch the convergence data instead of plotting it), `estimate_reference_point_from_file`
+  and `estimate_reference_point_from_files`.
+
 ## 0.4.0
 
-- Made 'Elapsed' fields public.
+- Made `Elapsed` fields public.
 - Added `Constraint::target()` and `Constraint::operator()` to access the
   struct target and operator data respectively.
 - Added `Variable::label` to get a label describing the type of variable set
