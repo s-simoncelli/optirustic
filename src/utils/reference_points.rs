@@ -1,12 +1,12 @@
 #[cfg(feature = "plot")]
 use std::error::Error;
+#[cfg(feature = "plot")]
 use std::path::PathBuf;
 
 #[cfg(feature = "plot")]
 use plotters::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "plot")]
 use crate::core::OError;
 
 /// Calculate the binomial coefficient. This gives the number of `k`-subsets possible out of a
