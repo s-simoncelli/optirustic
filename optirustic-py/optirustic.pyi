@@ -188,14 +188,45 @@ class AlgorithmData:
          - with 2 objectives: by calculating the rectangle areas between each objective
            point and the reference point.
          - with 3 objectives: by using the algorithm proposed by Fonseca et al. (2006)
-           (http://dx.doi.org/10.1109/CEC.2006.1688440).
+           (https://dx.doi.org/10.1109/CEC.2006.1688440).
          - with 4 or more objectives:  by using the algorithm proposed by While et al.
-           (2012) (http://dx.doi.org/10.1109/TEVC.2010.2077298).
+           (2012) (https://dx.doi.org/10.1109/TEVC.2010.2077298).
         :param reference_point: The reference or anti-optimal point to use in the
         calculation. If you are not sure about the point to use you could pick the worst
         value of each objective from the individual's values. The size of this point must
         match the number of problem objectives.
         :return: The hyper volume.
+        """
+
+    def estimate_reference_point(self, offset: list[float | None]) -> list[float]:
+        """
+        Calculates a reference point by taking the maximum of each objective (or minimum
+        if the objective is maximised) from the calculated individual's objective
+        values, so that the point will be dominated by all other points. An optional
+        offset for all objectives could also be added or removed to enforce strict
+        dominance (if the objective is minimised the offset is added to the calculated
+        reference point, otherwise it is subtracted).
+        :param offset: The offset to add to each objective coordinate of the calculated
+        reference point. This must have a size equal to the number of objectives in the
+        problem (`self.problem.number_of_objectives`).
+        :return: The reference point. This returns an error if there are no individuals
+        or the size of the offset does not match `self.problem.number_of_objectives`.
+        """
+
+    @staticmethod
+    def estimate_reference_point_from_files(folder: str, offset: list[float | None]) -> list[float]:
+        """
+        Calculates a reference point by taking the maximum of each objective (or minimum
+        if the objective is maximised) from the objective values exported in a JSON
+        files. This may be use to estimate the reference point when convergence is being
+        tracked and one dominated reference point is needed.
+        :param folder: The path to the folder with the JSON files.
+        :param offset: The offset to add to each objective coordinate of the calculated
+        reference point. This must have a size equal to the number of objectives in the
+        problem (`self.problem.number_of_objectives`).
+        :return: The reference point. This returns an error if there are no individuals,
+        the folder does not exist or the size of the offset does not match
+        `self.problem.number_of_objectives`.
         """
 
     def plot(self) -> plt.Figure:
@@ -207,6 +238,20 @@ class AlgorithmData:
         save it (using `self.plot().savefig("figure.png")`) or show it (using `plt.show()`).
         :return: The `matplotlib`  figure object.
         """
+
+    @staticmethod
+    def convergence_data(folder: str, reference_point: list[float]) -> tuple[list[int], list[datetime], list[float]]:
+        """
+        Calculate the hyper-volume at different generations (using the serialised
+        objective values in JSON files exported at different generations).
+        :param folder: The folder with the JSON files exported by the algorithm.
+        :param reference_point: The reference or anti-optimal point to use in the
+        calculation. The size of this point must match the number of problem objectives
+        and must be dominated by all objectives at all generations.
+        :return: A tuple containing the list of generation numbers, datetime objects,
+        when the JSOn files were exported, and the hyper-olume values.
+        """
+
     @staticmethod
     def plot_convergence(folder: str, reference_point: list[float]) -> plt.Figure:
         """
