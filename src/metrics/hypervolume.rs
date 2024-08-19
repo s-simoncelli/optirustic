@@ -308,6 +308,35 @@ impl HyperVolume {
         Ok(AllHyperVolumeFileData(results))
     }
 
+    /// Add or remove the offset from the reference point.
+    ///
+    /// # Arguments
+    ///
+    /// * `ref_point`: The reference point.
+    /// * `offset`: The offset to use.
+    /// * `problem`: The problem.
+    ///
+    /// returns: `Result<Vec<f64>, OError>`
+    fn add_offset(
+        ref_point: &Vec<f64>,
+        offset: Option<Vec<f64>>,
+        problem: &Problem,
+    ) -> Result<Vec<f64>, OError> {
+        let mut ref_point = ref_point.clone();
+        if let Some(offset) = offset {
+            for (idx, name) in problem.objective_names().iter().enumerate() {
+                let sign = if problem.is_objective_minimised(name)? {
+                    1.0
+                } else {
+                    -1.0
+                };
+                ref_point[idx] += sign * offset[idx];
+            }
+        }
+
+        Ok(ref_point)
+    }
+
     /// Calculates a reference point by taking the maximum of each objective (or minimum if the
     /// objective is maximised) from the calculated individual's objective values, so that the point will
     /// be dominated by all other points. An optional offset for all objectives could also be added or
@@ -317,8 +346,9 @@ impl HyperVolume {
     /// # Arguments
     ///
     /// * `individuals`: The individuals to use in the calculation.
-    /// * `offset`: The offset for each objective to add to the calculated reference point. This must
-    ///    have a size equal to the number of objectives in the problem ([`Problem::number_of_objectives`]).
+    /// * `offset`: The offset to add to each objective coordinate of the calculated reference
+    ///    point. This must have a size equal to the number of objectives in the problem
+    ///    ([`Problem::number_of_objectives`]).
     ///
     /// returns: `Result<Vec<f64>, OError>` The reference point. This returns an error if there are
     /// no individuals or the size of the offset does not match [`Problem::number_of_objectives`].
@@ -364,20 +394,73 @@ impl HyperVolume {
         }
 
         // add or remove offset
-        if let Some(offset) = offset {
-            for (idx, name) in obj_names.iter().enumerate() {
-                let sign = if problem.is_objective_minimised(name)? {
-                    1.0
-                } else {
-                    -1.0
-                };
-                ref_point[idx] += sign * offset[idx];
-            }
+        let ref_point = HyperVolume::add_offset(&ref_point, offset, &problem)?;
+        Ok(ref_point)
+    }
+
+    /// Calculates a reference point by taking the maximum of each objective (or minimum if the
+    /// objective is maximised) from the objective values exported in a JSON file.
+    /// See [`HyperVolume::estimate_reference_point`] for a detailed description of the estimation.
+    ///
+    /// # Arguments
+    ///
+    /// * `data`: The serialised data. This can be imported using [`crate::algorithms::Algorithm::read_json_file`]
+    ///    where [`crate::algorithms::Algorithm`] is the algorithm used to export the data (for example
+    ///    [`crate::algorithms::NSGA2`]).    
+    /// * `offset`: The offset to add to each objective coordinate of the calculated reference
+    ///    point. This must have a size equal to the number of objectives in the problem
+    ///    ([`Problem::number_of_objectives`]).
+    ///
+    /// returns: `Result<Vec<f64>, OError>` The reference point. This returns an error if there are
+    /// no individuals or the size of the offset does not match [`Problem::number_of_objectives`].
+    pub fn estimate_reference_point_from_file<AlgorithmOptions: Serialize + DeserializeOwned>(
+        data: &AlgorithmSerialisedExport<AlgorithmOptions>,
+        offset: Option<Vec<f64>>,
+    ) -> Result<Vec<f64>, OError> {
+        let individuals = data.individuals()?;
+        HyperVolume::estimate_reference_point(&individuals, offset)
+    }
+
+    /// Calculates a reference point by taking the maximum of each objective (or minimum if the
+    /// objective is maximised) from the objective values exported in a JSON files. This may be
+    /// use to estimate the reference point when convergence is being tracked and one dominated
+    /// reference point is needed.
+    /// See [`HyperVolume::estimate_reference_point`] for a detailed description of the estimation.
+    ///
+    /// # Arguments
+    ///
+    /// * `data`: The serialised data from the JSON files. These can be imported using
+    ///    [`crate::algorithms::Algorithm::read_json_files`] where [`crate::algorithms::Algorithm`]
+    ///    is the algorithm used to export the data (for example [`crate::algorithms::NSGA2`]).
+    /// * `offset`: The offset to add to each objective coordinate of the calculated reference
+    ///    point. This must have a size equal to the number of objectives in the problem
+    ///    ([`Problem::number_of_objectives`]).
+    ///
+    /// returns: `Result<Vec<f64>, OError>` The reference point. This returns an error if there are
+    /// no individuals or the size of the offset does not match [`Problem::number_of_objectives`].
+    pub fn estimate_reference_point_from_files<AlgorithmOptions: Serialize + DeserializeOwned>(
+        data: &[AlgorithmSerialisedExport<AlgorithmOptions>],
+        offset: Option<Vec<f64>>,
+    ) -> Result<Vec<f64>, OError> {
+        let results = data
+            .iter()
+            .map(|p| HyperVolume::estimate_reference_point_from_file::<AlgorithmOptions>(p, None))
+            .collect::<Result<Vec<Vec<f64>>, OError>>()?;
+
+        // get the maximum for each coordinate
+        let problem = &data.first().unwrap().problem()?;
+        let mut ref_point = vec![];
+        for obj_idx in 0..problem.number_of_objectives() {
+            let obj_coordinate_values = results.iter().map(|v| v[obj_idx]).collect::<Vec<f64>>();
+            ref_point.push(vector_max(&obj_coordinate_values)?);
         }
 
+        // add or remove offset
+        let ref_point = HyperVolume::add_offset(&ref_point, offset, &problem)?;
         Ok(ref_point)
     }
 }
+
 #[cfg(test)]
 mod test {
     use std::env;
@@ -387,7 +470,7 @@ mod test {
     use float_cmp::assert_approx_eq;
 
     use crate::algorithms::{Algorithm, NSGA2};
-    use crate::core::test_utils::individuals_from_obj_values_ztd1;
+    use crate::core::test_utils::{assert_approx_array_eq, individuals_from_obj_values_ztd1};
     use crate::core::utils::dummy_evaluator;
     use crate::core::{
         BoundedNumber, Individual, Objective, ObjectiveDirection, Problem, VariableType,
@@ -475,5 +558,18 @@ mod test {
             99.64248567691,
             epsilon = 0.0001
         )
+    }
+
+    #[test]
+    fn test_ref_point_from_file() {
+        let file = Path::new(&env::current_dir().unwrap())
+            .join("examples")
+            .join("results")
+            .join("ZDT1_2obj_NSGA2_gen1000.json");
+        let data = NSGA2::read_json_file(&file).unwrap();
+
+        let found = HyperVolume::estimate_reference_point_from_file(&data, None).unwrap();
+        let expected = [0.999, 1.00];
+        assert_approx_array_eq(&found, &expected, Some(0.001));
     }
 }
