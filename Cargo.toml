@@ -34,15 +34,10 @@ ordered-float = "4.2.0"
 optirustic-macros = { path = "libs/optirustic-macros", version = "0.1.0" }
 hv-fonseca-et-al-2006-sys = { path = "libs/hv-fonseca-et-al-2006-sys", version = "2.0.2-rc.2" }
 hv-wfg-sys = { path = "libs/hv-wfg-sys", version = "0.1.1" }
-plotters = { version = "0.3.6", optional = true }
 nalgebra = "0.33.0"
 
 [dev-dependencies]
 float-cmp = "0.9.0"
-
-[features]
-default = []
-plot = ["dep:plotters"]
 
 [package.metadata.docs.rs]
 all-features = true
