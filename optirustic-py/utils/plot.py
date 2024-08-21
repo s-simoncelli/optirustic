@@ -52,6 +52,7 @@ def plot_3d(
     ax.set_xlabel(names[0])
     ax.set_ylabel(names[1])
     ax.set_zlabel(names[2])
+    ax.view_init(azim=10)
     plt.title(
         f"Results for {algorithm} @ generation={generation} \n"
         f"Population size={pop_size}"
