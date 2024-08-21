@@ -188,9 +188,9 @@ class AlgorithmData:
          - with 2 objectives: by calculating the rectangle areas between each objective
            point and the reference point.
          - with 3 objectives: by using the algorithm proposed by Fonseca et al. (2006)
-           (http://dx.doi.org/10.1109/CEC.2006.1688440).
+           (https://dx.doi.org/10.1109/CEC.2006.1688440).
          - with 4 or more objectives:  by using the algorithm proposed by While et al.
-           (2012) (http://dx.doi.org/10.1109/TEVC.2010.2077298).
+           (2012) (https://dx.doi.org/10.1109/TEVC.2010.2077298).
         :param reference_point: The reference or anti-optimal point to use in the
         calculation. If you are not sure about the point to use you could pick the worst
         value of each objective from the individual's values. The size of this point must
@@ -207,6 +207,7 @@ class AlgorithmData:
         save it (using `self.plot().savefig("figure.png")`) or show it (using `plt.show()`).
         :return: The `matplotlib`  figure object.
         """
+
     @staticmethod
     def plot_convergence(folder: str, reference_point: list[float]) -> plt.Figure:
         """
@@ -232,4 +233,20 @@ class NSGA3(AlgorithmData):
     """
      Class to parse data exported with the NSGA3 algorithm.
     """
-    pass
+
+    def plot_reference_points(self, reference_points: list[list[float]]) -> plt.Figure:
+        """
+        Generate a chart showing the reference point locations used by the algorithm and
+        generated with the Das & Darren (2019) method.
+        :param reference_points: The reference points.
+        :return: The figure object.
+        """
+
+
+def plot_reference_points(reference_points: list[list[float]]) -> plt.Figure:
+    """
+    Generate a chart showing the reference point locations (for example using the Das
+    & Darren (2019) method).
+    :param reference_points: The reference points.
+    :return: The figure object.
+    """
