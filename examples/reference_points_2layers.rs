@@ -22,9 +22,14 @@ fn main() -> Result<(), OError> {
     let weights = m.get_weights();
     println!("Weights = {:?}", weights);
 
-    // Save the charts of points to inspect them
+    // Save the serialise data to inspect them
     let out_path = PathBuf::from(&env::current_dir().unwrap())
         .join("examples")
-        .join("results");
-    m.plot(&out_path.join("ref_points_2layers_3obj_5gaps.png"))
+        .join("results")
+        .join("ref_points_2layers_3obj_5gaps.json");
+    DasDarren1998::serialise(&weights, &out_path)?;
+
+    // You can plot the data by running reference_points_2layers_plot.py
+
+    Ok(())
 }
