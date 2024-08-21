@@ -11,6 +11,7 @@ data = NSGA2(file.as_posix())
 individuals_data = [[ind.variables["x"], ind.objectives["x^2"], ind.objectives["(x-2)^2"]] for ind in data.individuals]
 individuals_data = np.array(individuals_data)
 
+# Generate chart with expected vs. found solution
 plt.figure()
 x = np.arange(-6, 6, 0.1)
 f1 = np.pow(x, 2)
@@ -36,3 +37,7 @@ plt.ylim(-1, 20)
 plt.title("SCH problem solved with NSGA2")
 
 plt.savefig(file.parent / "SCH_2obj_NSGA2_solutions.png")
+
+# Generate Pareto front chart
+data.plot()
+plt.savefig(file.parent / "SCH_2obj_NSGA2_Pareto_front.png")
