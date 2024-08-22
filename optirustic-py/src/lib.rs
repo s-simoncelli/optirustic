@@ -153,6 +153,46 @@ macro_rules! create_interface {
                 Ok(hv)
             }
 
+            /// Estimate the reference point from serialised data.
+            #[pyo3(signature = (offset=None))]
+            pub fn estimate_reference_point(&self, offset: Option<Vec<f64>>) -> PyResult<Vec<f64>> {
+                let individuals = &self.export_data.individuals;
+                let ref_point = HyperVolume::estimate_reference_point(individuals, offset)
+                    .map_err(|e| PyValueError::new_err(e.to_string()))?;
+                Ok(ref_point)
+            }
+
+            /// Estimate the reference point from files.
+            #[staticmethod]
+            #[pyo3(signature = (folder, offset=None))]
+            pub fn estimate_reference_point_from_files(
+                folder: PathBuf,
+                offset: Option<Vec<f64>>,
+            ) -> PyResult<Vec<f64>> {
+                let all_serialise_data_vec = $type::read_json_files(&folder)
+                    .map_err(|e| PyValueError::new_err(e.to_string()))?;
+                let ref_point = HyperVolume::estimate_reference_point_from_files(
+                    &all_serialise_data_vec,
+                    offset,
+                )
+                .map_err(|e| PyValueError::new_err(e.to_string()))?;
+                Ok(ref_point)
+            }
+
+            #[staticmethod]
+            pub fn convergence_data(
+                folder: String,
+                reference_point: Vec<f64>,
+            ) -> PyResult<(Vec<usize>, Vec<DateTime<Utc>>, Vec<f64>)> {
+                let folder = PathBuf::from(folder);
+                let all_serialise_data = $type::read_json_files(&folder)
+                    .map_err(|e| PyValueError::new_err(e.to_string()))?;
+                let data = HyperVolume::from_files(&all_serialise_data, &reference_point)
+                    .map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+                Ok((data.generations(), data.times(), data.values()))
+            }
+
             /// Plot the Pareto front
             pub fn plot(&self) -> PyResult<PyObject> {
                 Python::with_gil(|py| {

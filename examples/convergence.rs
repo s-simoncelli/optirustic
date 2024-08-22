@@ -47,16 +47,9 @@ fn main() -> Result<(), OError> {
     algo.run()?;
     let mut results = algo.get_results();
 
-    // select a reference point to use for the calculation. This is an arbitrary point that must be
-    // dominated by all the points on the Pareto front. You can pick your own or estimate it with
-    // the helper function below.
-    let manual_pick = true;
-    let ref_point = if !manual_pick {
-        let offset = vec![10.0, 10.0]; // add an offset for the 2 objectives
-        HyperVolume::estimate_reference_point(&results.individuals, Some(offset))?
-    } else {
-        vec![1000000.0, 1000000.0]
-    };
+    let serialised_data = NSGA2::read_json_files(&out_path)?;
+    let ref_point = HyperVolume::estimate_reference_point_from_files(&serialised_data, None)?;
+    println!("Reference point: {:?}", ref_point);
 
     // calculate metric from the history file
     let serialised_data = NSGA2::read_json_file(&out_path.join("History_NSGA2_gen200.json"))?;
