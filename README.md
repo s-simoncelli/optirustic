@@ -3,10 +3,10 @@
 [![Package](https://img.shields.io/crates/v/optirustic.svg)](https://crates.io/crates/optirustic)
 [![Documentation](https://docs.rs/optirustic/badge.svg)](https://docs.rs/optirustic)
 
-<div style="text-align: center">
-    <img src="examples/results/SCH_2obj_NSGA2_Pareto_front.png" width="200" alt="Results" />
-    <img src="examples/results/DTLZ1_3obj_NSGA3_gen400_Pareto_front.png" width="200" alt="Results" />
-</div>
+<p align="center">
+    <img src="examples/results/SCH_2obj_NSGA2_Pareto_front.png" width="300" alt="Results" hspace="10"/>
+    <img src="examples/results/DTLZ1_3obj_NSGA3_gen400_Pareto_front.png" width="300" alt="Results" />
+</p>
 
 Optirustic is a framework written in Rust that provides algorithms and
 analysis tool to solve multi-objective problems using multi-objective
