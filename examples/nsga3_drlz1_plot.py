@@ -52,5 +52,3 @@ plt.title(
     f"for {data.algorithm} @ generation={data.generation}"
 )
 plt.savefig(file.parent / f"{file.stem}_obj_vs_ref_points.png")
-
-# TODO plot  ref points vs objectives in 3D only

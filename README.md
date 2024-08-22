@@ -3,6 +3,11 @@
 [![Package](https://img.shields.io/crates/v/optirustic.svg)](https://crates.io/crates/optirustic)
 [![Documentation](https://docs.rs/optirustic/badge.svg)](https://docs.rs/optirustic)
 
+<div style="text-align: center">
+    <img src="examples/results/SCH_2obj_NSGA2_Pareto_front.png" width="200" alt="Results" />
+    <img src="examples/results/DTLZ1_3obj_NSGA3_gen400_Pareto_front.png" width="200" alt="Results" />
+</div>
+
 Optirustic is a framework written in Rust that provides algorithms and
 analysis tool to solve multi-objective problems using multi-objective
 evolutionary algorithms (MOEAs). It allows you to:
@@ -11,12 +16,13 @@ evolutionary algorithms (MOEAs). It allows you to:
 - define constraint and unconstrained variables (real, integer, boolean or choice);
 - use multi-thread to evaluate objectives and constraints on population with many individuals
 - export the population history as JSON and resume its evolution from file
+- generate charts with the dedicated [Python package](https://pypi.org/project/optirustic/)
 
 At the moment, it comes with the `NSGA2` and `NSGA3` algorithms.
 
 The API documentation is available on [docs.rs](https://docs.rs/optirustic/).
 Examples showcasing this library's features are available in
-the  [examples folder of this repository](examples/nsga2_sch.rs).
+the [examples folder of this repository](examples/nsga2_sch.rs).
 
 ## Installing Optirustic
 
