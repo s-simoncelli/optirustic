@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.0
+
+- Remove `plot` feature and `plotters` as dependency. Charts can now be generated via
+  the Python package `optirustic`
+- Added python API for NSGA3 to plot reference points from the algorithm's data
+- Added python function `plot_reference_points` to plot reference points from a vector
+- Updated reference point examples to use new serialise function
+- Added Python scripts to plot serialised reference points
+- Added new charts in example folder generated from serialised data
+
 ## 0.4.1
 
 - Added `Hypervolume::estimate_reference_point_from_file` and

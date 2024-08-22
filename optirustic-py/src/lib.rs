@@ -3,15 +3,16 @@ use std::env;
 use std::path::PathBuf;
 
 use chrono::{DateTime, Utc};
+use pyo3::exceptions::PyValueError;
+use pyo3::prelude::*;
+use pyo3::types::PyDict;
+
 use optirustic::algorithms::{
     Algorithm, AlgorithmExport, AlgorithmSerialisedExport, NSGA2Arg, NSGA3Arg, NSGA2 as RustNSGA2,
     NSGA3 as RustNSGA3,
 };
 use optirustic::core::OError;
 use optirustic::metrics::HyperVolume;
-use pyo3::exceptions::PyValueError;
-use pyo3::prelude::*;
-use pyo3::types::PyDict;
 
 use crate::constraint::PyRelationalOperator;
 use crate::individual::{PyData, PyIndividual};
@@ -23,6 +24,14 @@ mod individual;
 mod objective;
 mod problem;
 mod variable;
+
+/// Get the python function from the utils.plot module
+fn get_plot_fun(function: &str, py: Python<'_>) -> PyResult<PyObject> {
+    let py_plot = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/utils/plot.py"));
+    let module = PyModule::from_code_bound(py, py_plot, "plot.py", "utils.plot")?;
+    let fun: Py<PyAny> = module.getattr(function)?.into();
+    Ok(fun)
+}
 
 /// Macro to generate python class for an algorithm data reader
 macro_rules! create_interface {
@@ -186,19 +195,14 @@ macro_rules! create_interface {
 
             /// Plot the Pareto front
             pub fn plot(&self) -> PyResult<PyObject> {
-                let py_plot = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/utils/plot.py"));
                 Python::with_gil(|py| {
-                    let module = PyModule::from_code_bound(py, py_plot, "plot.py", "utils.plot")?;
                     let obj_count = self.problem.number_of_objectives;
-
-                    let fun_name = if obj_count == 2 {
-                        "plot_2d"
-                    } else if obj_count == 3 {
-                        "plot_3d"
-                    } else {
-                        "plot_parallel"
+                    let fun_name = match obj_count {
+                        2 => "plot_2d",
+                        3 => "plot_3d",
+                        _ => "plot_parallel",
                     };
-                    let fun: Py<PyAny> = module.getattr(fun_name)?.into();
+                    let fun: Py<PyAny> = get_plot_fun(fun_name, py)?;
                     fun.call1(
                         py,
                         (
@@ -222,10 +226,8 @@ macro_rules! create_interface {
                 let data = HyperVolume::from_files(&all_serialise_data, &reference_point)
                     .map_err(|e| PyValueError::new_err(e.to_string()))?;
 
-                let py_plot = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/utils/plot.py"));
                 Python::with_gil(|py| {
-                    let module = PyModule::from_code_bound(py, py_plot, "plot.py", "utils.plot")?;
-                    let fun: Py<PyAny> = module.getattr("plot_convergence")?.into();
+                    let fun: Py<PyAny> = get_plot_fun("plot_convergence", py)?;
                     fun.call1(py, (data.generations(), data.values()))
                 })
             }
@@ -237,12 +239,36 @@ macro_rules! create_interface {
 create_interface!(NSGA2, RustNSGA2, NSGA2Arg);
 create_interface!(NSGA3, RustNSGA3, NSGA3Arg);
 
+#[pymethods]
+impl NSGA3 {
+    /// Refrence point plot using the points exported by the NSGA3 algorithm
+    pub fn plot_reference_points(&self) -> PyResult<PyObject> {
+        let algorithm_data = self.additional_data.as_ref().unwrap();
+        Python::with_gil(|py| {
+            let ref_points = algorithm_data.get("reference_points").unwrap().clone();
+            let fun: Py<PyAny> = get_plot_fun("plot_reference_points", py)?;
+            fun.call1(py, (ref_points,))
+        })
+    }
+}
+
+#[pyfunction]
+/// Reference point plot from vector
+pub fn plot_reference_points(ref_points: Vec<Vec<f64>>) -> PyResult<PyObject> {
+    Python::with_gil(|py| {
+        let fun: Py<PyAny> = get_plot_fun("plot_reference_points", py)?;
+        fun.call1(py, (ref_points,))
+    })
+}
+
 #[pymodule(name = "optirustic")]
 fn optirustic_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NSGA2>()?;
     m.add_class::<NSGA3>()?;
     m.add_class::<PyObjectiveDirection>()?;
     m.add_class::<PyRelationalOperator>()?;
+
+    m.add_function(wrap_pyfunction!(plot_reference_points, m)?)?;
 
     Ok(())
 }

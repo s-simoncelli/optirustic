@@ -3,31 +3,31 @@ from enum import Enum
 
 import matplotlib.pyplot as plt
 
-
 class ObjectiveDirection(Enum):
     """
-     A class describing the objective direction.
+    A class describing the objective direction.
     """
+
     Minimise = "minimise"
     """ The objective is minimised """
     Maximise = "maximise"
     """ The objective is maximised """
 
-
 class Objective:
     """
-     An objective set on the solved problem.
+    An objective set on the solved problem.
     """
+
     name: str
     """ The objective name. """
     direction: ObjectiveDirection
     """ Whether the objective should be minimised or maximised. """
 
-
 class RelationalOperator(Enum):
     """
-     Operator used to check a bounded constraint.
+    Operator used to check a bounded constraint.
     """
+
     EqualTo = "=="
     NotEqualTo = "!="
     LessOrEqualTo = "<="
@@ -35,11 +35,11 @@ class RelationalOperator(Enum):
     GreaterOrEqualTo = ">="
     GreaterThan = ">"
 
-
 class Constraint:
     """
-     A constraint set on the solved problem.
+    A constraint set on the solved problem.
     """
+
     name: str
     """ The constraint name """
     operator: RelationalOperator
@@ -48,21 +48,21 @@ class Constraint:
     target: float
     """ The constraint target """
 
-
 class VariableType(Enum):
     """
-     The type of variable
+    The type of variable
     """
+
     Real = "real"
     Integer = "integer"
     Boolean = "boolean"
     Choice = "choice"
 
-
 class Variable:
     """
-     A variable set on the solved problem.
+    A variable set on the solved problem.
     """
+
     name: str
     """ The variable name """
     var_type: VariableType
@@ -74,11 +74,11 @@ class Variable:
     """ The maximum bound. This is None if the variable
     does not support bounds. """
 
-
 class Problem:
     """
-     Class holding information about the solved problem.
+    Class holding information about the solved problem.
     """
+
     objectives: dict[str, Objective]
     """ The problem objectives. The list contains classes of Objective 
     instances that describe how each objective was configured. """
@@ -102,16 +102,15 @@ class Problem:
     number_of_variables: int
     """ The number of variables. """
 
-
 type VariableType = float | int | bool | str
-type DataType = float, int | list[DataType] | dict[str, DataType]
-
+type DataType = float | int | list[DataType] | dict[str, DataType]
 
 class Individual:
     """
-     An individual in the population containing the problem solution, and the objective
-     and constraint values.
+    An individual in the population containing the problem solution, and the objective
+    and constraint values.
     """
+
     variables: dict[str, VariableType]
     """ A dictionary with the variable names and values for the individual """
     objectives: dict[str, float]
@@ -151,11 +150,11 @@ class Individual:
         problem was optimised.
         """
 
-
 class AlgorithmData:
     """
-     Class holding the algorithm data.
+    Class holding the algorithm data.
     """
+
     problem: Problem
     """ The problem. This class holds information about the solved problem. """
     generation: int
@@ -214,7 +213,9 @@ class AlgorithmData:
         """
 
     @staticmethod
-    def estimate_reference_point_from_files(folder: str, offset: list[float | None]) -> list[float]:
+    def estimate_reference_point_from_files(
+        folder: str, offset: list[float | None]
+    ) -> list[float]:
         """
         Calculates a reference point by taking the maximum of each objective (or minimum
         if the objective is maximised) from the objective values exported in a JSON
@@ -240,7 +241,9 @@ class AlgorithmData:
         """
 
     @staticmethod
-    def convergence_data(folder: str, reference_point: list[float]) -> tuple[list[int], list[datetime], list[float]]:
+    def convergence_data(
+        folder: str, reference_point: list[float]
+    ) -> tuple[list[int], list[datetime], list[float]]:
         """
         Calculate the hyper-volume at different generations (using the serialised
         objective values in JSON files exported at different generations).
@@ -265,16 +268,30 @@ class AlgorithmData:
         :return: The figure object.
         """
 
-
 class NSGA2(AlgorithmData):
     """
-     Class to parse data exported with the NSGA2 algorithm.
+    Class to parse data exported with the NSGA2 algorithm.
     """
-    pass
 
+    pass
 
 class NSGA3(AlgorithmData):
     """
-     Class to parse data exported with the NSGA3 algorithm.
+    Class to parse data exported with the NSGA3 algorithm.
     """
-    pass
+
+    def plot_reference_points(self, reference_points: list[list[float]]) -> plt.Figure:
+        """
+        Generate a chart showing the reference point locations used by the algorithm and
+        generated with the Das & Darren (2019) method.
+        :param reference_points: The reference points.
+        :return: The figure object.
+        """
+
+def plot_reference_points(reference_points: list[list[float]]) -> plt.Figure:
+    """
+    Generate a chart showing the reference point locations (for example using the Das
+    & Darren (2019) method).
+    :param reference_points: The reference points.
+    :return: The figure object.
+    """

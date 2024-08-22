@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 
 
 def plot_2d(
-        objectives: dict[str, list[float]], algorithm: str, generation: int, pop_size: int
+    objectives: dict[str, list[float]], algorithm: str, generation: int, pop_size: int
 ) -> plt.Figure:
     """
     Plot the objective chart for a problem with 2 objectives.
@@ -30,10 +30,10 @@ def plot_2d(
 
 
 def plot_3d(
-        objectives: dict[str, list[float]],
-        algorithm: str,
-        generation: int,
-        pop_size: int,
+    objectives: dict[str, list[float]],
+    algorithm: str,
+    generation: int,
+    pop_size: int,
 ) -> plt.Figure:
     """
     Plot the objective chart for a problem with 2 objectives.
@@ -52,6 +52,7 @@ def plot_3d(
     ax.set_xlabel(names[0])
     ax.set_ylabel(names[1])
     ax.set_zlabel(names[2])
+    ax.view_init(azim=10)
     plt.title(
         f"Results for {algorithm} @ generation={generation} \n"
         f"Population size={pop_size}"
@@ -61,10 +62,10 @@ def plot_3d(
 
 
 def plot_parallel(
-        objectives: dict[str, list[float]],
-        algorithm: str,
-        generation: int,
-        pop_size: int,
+    objectives: dict[str, list[float]],
+    algorithm: str,
+    generation: int,
+    pop_size: int,
 ):
     names = list(objectives.keys())
     values = list(objectives.values())
@@ -78,9 +79,9 @@ def plot_parallel(
 
 
 def parallel_coordinate_plot(
-        data: list[list[float]],
-        objective_names: list[str],
-        color="red",
+    data: list[list[float]],
+    objective_names: list[str],
+    color="red",
 ) -> plt.Figure:
     """
     Render a parallel coordinate plot. This code was edited from
@@ -173,8 +174,38 @@ def plot_convergence(generations: list[int], values: list[float]) -> plt.Figure:
     ax.plot(generations, values, "k.-")
     ax.set_xlabel("Generation")
     ax.set_ylabel("Hyper-volume")
-    plt.title(
-        f"Convergence from {min(generations)} to {max(generations)} generations"
-    )
+    plt.title(f"Convergence from {min(generations)} to {max(generations)} generations")
 
+    return fig
+
+
+def plot_reference_points(reference_points: list[list[float]]) -> plt.Figure:
+    if len(reference_points) == 0:
+        raise ValueError("The reference point vector is empty")
+
+    number_of_objectives = len(reference_points[0])
+    names = [f"Objective #{i + 1}" for i in range(number_of_objectives)]
+    fig = plt.figure()
+
+    if number_of_objectives == 2:
+        ax = plt.subplot()
+
+        for point in reference_points:
+            ax.plot(*point, "k.")
+        ax.set_xlabel(names[0])
+        ax.set_ylabel(names[1])
+    elif number_of_objectives == 3:
+        ax = plt.axes(projection="3d")
+        for point in reference_points:
+            ax.scatter(*point, color="k", marker=".")
+        ax.set_xlabel(names[0])
+        ax.set_ylabel(names[1])
+        ax.set_zlabel(names[2])
+        ax.view_init(azim=10)
+    else:
+        parallel_coordinate_plot(reference_points, names, "black")
+
+    plt.title(
+        "Reference points - Das & Darren (2019)\n" f"{number_of_objectives} objectives"
+    )
     return fig

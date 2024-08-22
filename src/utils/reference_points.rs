@@ -1,10 +1,6 @@
-#[cfg(feature = "plot")]
-use std::error::Error;
-#[cfg(feature = "plot")]
+use std::fs;
 use std::path::PathBuf;
 
-#[cfg(feature = "plot")]
-use plotters::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::core::OError;
@@ -255,130 +251,32 @@ impl DasDarren1998 {
         }
     }
 
-    /// Generate and save a chart with the reference points. This is only available for problems with
-    /// 2 or 3 objectives.
+    /// Export a vector of reference point as JSON file.
     ///
     /// # Arguments
     ///
-    /// * `file_name`: The file path where to save the chart.
+    /// * `ref_points`: The reference point vector.
+    /// * `file`: The path and file where to save the serialised data.
     ///
     /// returns: `Result<(), OError>`
-    #[cfg(feature = "plot")]
-    pub fn plot(&self, file_name: &PathBuf) -> Result<(), OError> {
-        if self.number_of_objectives == 2 {
-            self.plot_2d(file_name)
-                .map_err(|e| OError::Generic(e.to_string()))
-        } else if self.number_of_objectives == 3 {
-            self.plot_3d(file_name)
-                .map_err(|e| OError::Generic(e.to_string()))
-        } else {
-            return Err(OError::Generic(
-                "Plotting is available when the number of objective is either 2 or 3".to_string(),
-            ));
-        }
-    }
+    /// ```
+    pub fn serialise(ref_points: &[Vec<f64>], file: &PathBuf) -> Result<(), OError> {
+        #[derive(Serialize)]
+        pub struct Points<'a>(pub &'a [Vec<f64>]);
+        let p = Points(ref_points);
 
-    /// Generate and save a 2D chart with the reference points.
-    ///
-    /// # Arguments
-    ///
-    /// * `file_name`: The file path where to save the chart.
-    ///
-    /// returns: `Result<(), Box<dyn Error>>`
-    #[cfg(feature = "plot")]
-    fn plot_2d(&self, file_name: &PathBuf) -> Result<(), Box<dyn Error>> {
-        let root = BitMapBackend::new(file_name, (800, 600)).into_drawing_area();
+        let data = serde_json::to_string_pretty(&p.0).map_err(|e| {
+            OError::AlgorithmExport(format!(
+                "The following error occurred while converting the history struct: {e}"
+            ))
+        })?;
 
-        root.fill(&WHITE)?;
+        fs::write(file, data).map_err(|e| {
+            OError::AlgorithmExport(format!(
+                "The following error occurred while exporting the history JSON file: {e}",
+            ))
+        })?;
 
-        let mut chart = ChartBuilder::on(&root)
-            .x_label_area_size(65)
-            .y_label_area_size(65)
-            .margin_top(5)
-            .margin_left(10)
-            .margin_right(30)
-            .margin_bottom(5)
-            .caption(
-                "Reference points - Das & Darren (2019)",
-                ("sans-serif", 30.0),
-            )
-            .build_cartesian_2d(0f64..1.2f64, 0f64..1.2f64)?;
-
-        chart
-            .configure_mesh()
-            .bold_line_style(WHITE.mix(0.3))
-            .y_desc("Objective #2")
-            .x_desc("Objective #1")
-            .axis_desc_style(("sans-serif", 25, &BLACK))
-            .label_style(("sans-serif", 20, &BLACK))
-            .draw()?;
-
-        chart.draw_series(self.get_weights().iter().map(|p| {
-            Circle::new(
-                (p[0], p[1]),
-                5,
-                ShapeStyle {
-                    color: Palette99::pick(1).to_rgba(),
-                    filled: true,
-                    stroke_width: 1,
-                },
-            )
-        }))?;
-
-        root.present()?;
-        Ok(())
-    }
-
-    /// Generate and save a 3D chart with the reference points.
-    ///
-    /// # Arguments
-    ///
-    /// * `file_name`: The file path where to save the chart.
-    ///
-    /// returns: `Result<(), Box<dyn Error>>`
-    #[cfg(feature = "plot")]
-    fn plot_3d(&self, file_name: &PathBuf) -> Result<(), Box<dyn Error>> {
-        let root = BitMapBackend::new(file_name, (800, 600)).into_drawing_area();
-
-        root.fill(&WHITE)?;
-
-        let mut chart = ChartBuilder::on(&root)
-            .x_label_area_size(65)
-            .y_label_area_size(65)
-            .margin_top(5)
-            .margin_left(10)
-            .margin_right(30)
-            .margin_bottom(5)
-            .caption(
-                "Reference points - Das & Darren (2019)",
-                ("sans-serif", 30.0),
-            )
-            .build_cartesian_3d(0f64..1.2f64, 0f64..1.2f64, 0f64..1.2f64)?;
-
-        chart.with_projection(|mut pb| {
-            pb.yaw = 0.5;
-            pb.into_matrix()
-        });
-
-        chart
-            .configure_axes()
-            .light_grid_style(BLACK.mix(0.15))
-            .max_light_lines(3)
-            .draw()?;
-
-        chart.draw_series(self.get_weights().iter().map(|p| {
-            Circle::new(
-                (p[0], p[1], p[2]),
-                5,
-                ShapeStyle {
-                    color: Palette99::pick(1).to_rgba(),
-                    filled: true,
-                    stroke_width: 1,
-                },
-            )
-        }))?;
-
-        root.present()?;
         Ok(())
     }
 }

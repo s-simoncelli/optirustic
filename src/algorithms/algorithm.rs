@@ -1,10 +1,6 @@
 use std::collections::HashMap;
-#[cfg(feature = "plot")]
-use std::ffi::OsStr;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::read_dir;
-#[cfg(feature = "plot")]
-use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
@@ -569,43 +565,6 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
             .map(|file| Self::read_json_file(file))
             .collect::<Result<Vec<_>, OError>>()?;
         Ok(results)
-    }
-
-    /// Generate and save a chart with the individual's objectives at the last generation.
-    ///
-    /// # Arguments
-    ///
-    /// * `_destination`: The folder where to save the image or images.
-    /// * `_image_name`: The name of the file(s).
-    ///
-    /// returns: `Result<(), OError>`
-    #[cfg(feature = "plot")]
-    fn plot_objectives<P: AsRef<OsStr>>(
-        &self,
-        _destination: P,
-        _image_name: &str,
-    ) -> Result<(), OError> {
-        Err(OError::Generic("Not available".to_string()))
-    }
-
-    /// Generate and save a chart with the individual's objectives taken from a JSOn file previously
-    /// exported with [`Self::save_to_json`].
-    ///
-    /// # Arguments
-    ///
-    /// * `_file`: The path to the JSON file.
-    /// * `_destination`: The folder where to save the image or images. If `None` the file is saved
-    ///   in the same folder as the JSON file.
-    /// * `_image_name`: The name of the file(s).
-    ///
-    /// returns: `Result<(), OError>`
-    #[cfg(feature = "plot")]
-    fn plot_from_result_file(
-        _file: &Path,
-        _destination: Option<&Path>,
-        _image_name: &str,
-    ) -> Result<(), OError> {
-        Err(OError::Generic("Not available".to_string()))
     }
 
     /// Seed the population using the values of variables, objectives and constraints exported
