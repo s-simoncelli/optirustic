@@ -106,7 +106,7 @@ impl Evaluator for SCHProblem {
 }
 ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#optirustic">back to top</a>)</p>
 
 ### Setup and run the genetic algorithm
 
@@ -158,7 +158,7 @@ and these are the plotted solutions:
     <img src="examples/results/SCH_2obj_NSGA2_solutions.png" width="300" alt="Results" />
 </div>
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#optirustic">back to top</a>)</p>
 
 # License
 
