@@ -1,6 +1,6 @@
 [package]
 name = "optirustic"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Stefano Simoncelli <16114781+s-simoncelli@users.noreply.github.com>"]
 edition = "2021"
 rust-version = "1.80"
@@ -9,12 +9,12 @@ repository = "https://github.com/s-simoncelli/optirustic"
 keywords = ["genetic-algorithm", "optimisation", "multiobjective", "nsga2", "nsga3"]
 categories = ["science", "algorithms"]
 readme = "README.md"
-license = "GPL-3.0-only"
+license = "MIT"
 
 [workspace]
 resolver = "2"
-members = ["libs/optirustic-macros", "libs/hv-fonseca-et-al-2006-sys", "libs/hv-wfg-sys"]
-default-members = ["libs/optirustic-macros", "libs/hv-fonseca-et-al-2006-sys", "libs/hv-wfg-sys"]
+members = ["libs/optirustic-macros", "libs/hv-fonseca-et-al-2006-sys"]
+default-members = ["libs/optirustic-macros", "libs/hv-fonseca-et-al-2006-sys"]
 exclude = ["optirustic-py"]
 
 [lib]
@@ -33,7 +33,6 @@ chrono = { version = "0.4.38", features = ["serde"] }
 ordered-float = "4.2.0"
 optirustic-macros = { path = "libs/optirustic-macros", version = "0.1.0" }
 hv-fonseca-et-al-2006-sys = { path = "libs/hv-fonseca-et-al-2006-sys", version = "2.0.2-rc.2" }
-hv-wfg-sys = { path = "libs/hv-wfg-sys", version = "0.1.1" }
 nalgebra = "0.33.0"
 
 [dev-dependencies]
