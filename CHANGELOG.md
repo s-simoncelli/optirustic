@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0
+
+- Removed crate `hv-wfg-sys`. The hyper-volume from `HyperVolumeWhile2012` is now calculated
+  using the Rust implementation of the While et al. (2012) approach from the paper. No public
+  API has been changed.
+- Replaced `GPL` license with `MIT` license.
+
 ## 0.5.0
 
 - Remove `plot` feature and `plotters` as dependency. Charts can now be generated via

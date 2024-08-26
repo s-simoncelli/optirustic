@@ -1,14 +1,14 @@
 pub use distance::Distance;
+pub use hv_wfg::HyperVolumeWhile2012;
 pub use hypervolume::{AllHyperVolumeFileData, HyperVolume, HyperVolumeFileData};
 pub use hypervolume_2d::HyperVolume2D;
 pub use hypervolume_fonseca_2006::HyperVolumeFonseca2006;
-pub use hypervolume_while_2012::HyperVolumeWhile2012;
 
 mod distance;
+mod hv_wfg;
 mod hypervolume;
 mod hypervolume_2d;
 mod hypervolume_fonseca_2006;
-mod hypervolume_while_2012;
 
 #[cfg(test)]
 pub(crate) mod test_utils {

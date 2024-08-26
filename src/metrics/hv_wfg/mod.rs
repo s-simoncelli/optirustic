@@ -2,11 +2,12 @@ use std::mem;
 
 use log::{debug, warn};
 
-use hv_wfg_sys::calculate_hv;
-
 use crate::core::{Individual, Individuals, OError};
+use crate::metrics::hv_wfg::wfg::{Optimisation, Wfg};
 use crate::metrics::hypervolume::{check_args, check_ref_point_coordinate};
 use crate::utils::fast_non_dominated_sort;
+
+mod wfg;
 
 /// Calculate the hyper-volume using the WFG algorithm proposed by [While et al. (2012)](http://dx.doi.org/10.1109/TEVC.2010.2077298)
 /// for a problem with `d` objectives and `n` individuals.
@@ -93,8 +94,9 @@ impl HyperVolumeWhile2012 {
     ///
     /// return: `Result<f64, OError>`
     pub fn compute(&mut self) -> Result<f64, OError> {
-        calculate_hv(&mut self.individuals, &mut self.reference_point)
-            .map_err(|e| OError::Metric(self.metric_name.clone(), e.to_string()))
+        let wfg = Wfg::new(&self.individuals, &self.reference_point, Optimisation::O2);
+        wfg.calculate()
+            .map_err(|e| OError::Metric(self.metric_name.clone(), e))
     }
 }
 
@@ -104,8 +106,8 @@ mod test {
 
     use crate::core::test_utils::individuals_from_obj_values_dummy;
     use crate::core::ObjectiveDirection;
-    use crate::metrics::hypervolume_while_2012::HyperVolumeWhile2012;
     use crate::metrics::test_utils::parse_pagmo_test_data_file;
+    use crate::metrics::HyperVolumeWhile2012;
 
     /// Run a test using a Pagmo file.
     ///
@@ -114,7 +116,7 @@ mod test {
     /// * `file`: The file name in the `test_data` folder.
     ///
     /// returns: ()
-    pub(crate) fn assert_test_file(file: &str) {
+    fn assert_test_file(file: &str) {
         let all_test_data = parse_pagmo_test_data_file(file).unwrap();
         let obj_count = all_test_data.first().unwrap().reference_point.len();
         let objective_direction = vec![ObjectiveDirection::Minimise; obj_count];
@@ -142,8 +144,8 @@ mod test {
     }
 
     #[test]
-    /// Test the `HyperVolumeWhile2012` struct using Pagmo c_max_t1_d5_n1024 test data.
-    /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
+    // /// Test the `HyperVolumeWhile2012` struct using Pagmo c_max_t1_d5_n1024 test data.
+    // /// See https://github.com/esa/pagmo2/tree/master/tests/hypervolume_test_data
     fn test_c_max_t1_d5_n1024() {
         assert_test_file("c_max_t1_d5_n1024");
     }
