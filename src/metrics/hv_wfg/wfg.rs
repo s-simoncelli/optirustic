@@ -28,6 +28,8 @@ struct Front {
     points: Vec<Individual>,
     /// The number of individuals in the front.
     number_of_individuals: usize,
+    /// The optimisation level
+    opt: Optimisation,
 }
 
 impl Front {
@@ -37,14 +39,16 @@ impl Front {
     ///
     /// * `number_of_individuals`: The number of individuals to add.
     /// * `number_of_objectives`: The number of objectives to add for each individual.
+    /// * `opt`: The optimisation level to use when sorting the data.
     ///
     /// returns: `Front`
-    fn empty(number_of_individuals: usize, number_of_objectives: usize) -> Self {
+    fn empty(number_of_individuals: usize, number_of_objectives: usize, opt: Optimisation) -> Self {
         let empty_ind = Individual(vec![0.0; number_of_objectives]);
         let points = vec![empty_ind; number_of_individuals];
         Front {
             points,
             number_of_individuals,
+            opt,
         }
     }
 
@@ -67,12 +71,11 @@ impl Front {
     ///
     /// # Arguments
     ///
-    /// * `opt`: The optimisation level.
     /// * `depth`: The depth of the optimisation (only used when `opt` is `1`).
     /// * `obj_count`: The number of objectives to process.
     ///
     /// returns: `Result<(), String> `
-    fn sort(&mut self, opt: &Optimisation, depth: i8, obj_count: usize) -> Result<(), String> {
+    fn sort(&mut self, depth: i8, obj_count: usize) -> Result<(), String> {
         let mut did_swap = true;
         let mut temp;
         while did_swap {
@@ -81,7 +84,7 @@ impl Front {
                 return Ok(());
             }
             for i in 0..=self.number_of_individuals - 2 {
-                if self.greater(&self.points[i], &self.points[i + 1], opt, depth, obj_count)? {
+                if self.greater(&self.points[i], &self.points[i + 1], depth, obj_count)? {
                     did_swap = true;
                     temp = self.points[i].clone();
                     self.points[i] = self.points[i + 1].clone();
@@ -112,7 +115,6 @@ impl Front {
     ///
     /// * `v1`: The first individual.
     /// * `v2`: The second individual.
-    /// * `opt`: The optimisation level.
     /// * `depth`: The depth of the optimisation (only used when `opt` is `1`).
     /// * `obj_count`: The number of objectives to process.
     ///
@@ -121,11 +123,10 @@ impl Front {
         &self,
         v1: &Individual,
         v2: &Individual,
-        opt: &Optimisation,
         depth: i8,
         obj_count: usize,
     ) -> Result<bool, String> {
-        let it = if opt.value() == 1 {
+        let it = if self.opt.value() == 1 {
             let max_it = obj_count - depth as usize - 1;
             (0..=max_it).rev()
         } else {
@@ -175,7 +176,7 @@ impl FrontSet {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Debug)]
 /// The level of optimisation to use when calculating the hyper-volume.
 pub enum Optimisation {
     /// Do not apply any optimisation
@@ -253,6 +254,7 @@ impl Wfg {
                 .map(|ind_values| Individual(ind_values.clone()))
                 .collect(),
             number_of_individuals,
+            opt: opt.clone(),
         };
 
         Self {
@@ -270,7 +272,11 @@ impl Wfg {
     pub fn calculate(&self) -> Result<f64, String> {
         let mut fs: Vec<Front>;
         if self.opt == Optimisation::O0 {
-            let empty_front = Front::empty(self.number_of_individuals, self.number_of_objectives);
+            let empty_front = Front::empty(
+                self.number_of_individuals,
+                self.number_of_objectives,
+                self.opt.clone(),
+            );
             fs = vec![empty_front; self.number_of_individuals];
         } else {
             // enable slicing to save a level of recursion. max_d is 0 if opt != 3
@@ -285,7 +291,7 @@ impl Wfg {
             for i in 0..max_obj {
                 let new_obj_num = self.number_of_objectives
                     - (i + 1) * (self.opt.value() as f32 / 2.0).floor() as usize;
-                let empty_front = Front::empty(max_ind, new_obj_num);
+                let empty_front = Front::empty(max_ind, new_obj_num, self.opt.clone());
                 fs.push(empty_front);
             }
         }
@@ -299,14 +305,14 @@ impl Wfg {
         let mut f = self.f.clone();
         if self.opt == Optimisation::O3 {
             return if self.number_of_objectives == 2 {
-                f.sort(&self.opt, 0, self.number_of_objectives)?;
-                self.hv_2d(&f)
+                f.sort(0, self.number_of_objectives)?;
+                self.volume_2d(&f)
             } else {
-                self.hv(&mut front_sets, &mut f, self.number_of_objectives)
+                self.volume(&mut front_sets, &mut f, self.number_of_objectives)
             };
         }
 
-        self.hv(&mut front_sets, &mut f, self.number_of_objectives)
+        self.volume(&mut front_sets, &mut f, self.number_of_objectives)
     }
 
     /// Return the hyper-volume for a 2D front.
@@ -316,7 +322,7 @@ impl Wfg {
     /// * `front`: The front with the objective values.
     ///
     /// returns: `f64`
-    fn hv_2d(&self, front: &Front) -> Result<f64, String> {
+    fn volume_2d(&self, front: &Front) -> Result<f64, String> {
         let x0 = front.ind(0)?.obj(0)?;
         let y0 = front.ind(0)?.obj(1)?;
         let mut volume = ((x0 - self.reference_point[0]) * (y0 - self.reference_point[1])).abs();
@@ -339,13 +345,18 @@ impl Wfg {
     /// * `obj_count`: The number of objectives.
     ///
     /// returns: `Result<f64, String>`
-    fn hv(&self, set: &mut FrontSet, front: &mut Front, obj_count: usize) -> Result<f64, String> {
+    fn volume(
+        &self,
+        set: &mut FrontSet,
+        front: &mut Front,
+        obj_count: usize,
+    ) -> Result<f64, String> {
         if self.opt > Optimisation::O0 {
-            front.sort(&self.opt, set.depth, obj_count)?;
+            front.sort(set.depth, obj_count)?;
         }
 
         if (self.opt == Optimisation::O2) & (obj_count == 2) {
-            return self.hv_2d(front);
+            return self.volume_2d(front);
         }
 
         let mut volume = 0.0;
@@ -386,9 +397,8 @@ impl Wfg {
 
         if front.number_of_individuals > ind_idx + 1 {
             self.limit_set(set, front, ind_idx, obj_count)?;
-            // let mut prev_front = set.prev().clone();
-            let mut prev_front = set.fronts[set.depth as usize - 1].clone();
-            volume -= self.hv(set, &mut prev_front, obj_count)?;
+            let mut prev_front = set.prev().clone();
+            volume -= self.volume(set, &mut prev_front, obj_count)?;
             set.decrease_depth();
         }
         Ok(volume)
@@ -430,51 +440,61 @@ impl Wfg {
         let d = set.depth as usize;
         if self.opt == Optimisation::O0 && ((set.depth > set.max_depth) || set.depth == 0) {
             set.max_depth = set.depth;
-            set.fronts[d] = Front::empty(self.number_of_individuals, obj_count);
+            set.fronts[d] = Front::empty(self.number_of_individuals, obj_count, self.opt.clone());
         }
 
-        let z = front.number_of_individuals - 1 - p;
-        for i in 0..z {
-            for j in 0..obj_count {
+        let max_rec_depth = front.number_of_individuals - 1 - p;
+        for ind_idx in 0..max_rec_depth {
+            for obj_idx in 0..obj_count {
                 set.fronts[d].update(
-                    i,
-                    j,
-                    self.get_dominated(front.ind(p)?.obj(j)?, front.ind(p + 1 + i)?.obj(j)?),
+                    ind_idx,
+                    obj_idx,
+                    self.get_dominated(
+                        front.ind(p)?.obj(obj_idx)?,
+                        front.ind(p + 1 + ind_idx)?.obj(obj_idx)?,
+                    ),
                 )?;
             }
         }
         set.fronts[d].number_of_individuals = 1;
 
-        for i in 1..z {
-            let mut j: usize = 0;
-            let mut keep = true;
-            while (j < set.fronts[d].number_of_individuals) && keep {
-                match self.nds(set.fronts[d].ind(i)?, set.fronts[d].ind(j)?, d, obj_count)? {
+        for ind_idx in 1..max_rec_depth {
+            let mut obj_idx: usize = 0;
+            let mut preserve_ind = true;
+            while (obj_idx < set.fronts[d].number_of_individuals) && preserve_ind {
+                match self.nds(
+                    set.fronts[d].ind(ind_idx)?,
+                    set.fronts[d].ind(obj_idx)?,
+                    d,
+                    obj_count,
+                )? {
                     Dominance::First => {
                         set.fronts[d].number_of_individuals -= 1;
-                        let t = set.fronts[d].ind(j)?.clone();
+                        let t = set.fronts[d].ind(obj_idx)?.clone();
                         let ind_count = set.fronts[d].number_of_individuals;
-                        set.fronts[d].points[j] = set.fronts[d].ind(ind_count)?.clone();
+                        set.fronts[d].points[obj_idx] = set.fronts[d].ind(ind_count)?.clone();
                         set.fronts[d].points[ind_count] = t;
                     }
                     Dominance::Skip => {
-                        j += 1;
+                        obj_idx += 1;
                     }
                     _ => {
-                        keep = false;
+                        preserve_ind = false;
                     }
                 }
             }
 
-            if keep {
+            // add the individual to the set
+            if preserve_ind {
                 let ind_count = set.fronts[d].number_of_individuals;
                 let t = set.fronts[d].ind(ind_count)?.clone();
-                set.fronts[d].points[ind_count] = set.fronts[d].ind(i)?.clone();
-                set.fronts[d].points[i] = t;
+                set.fronts[d].points[ind_count] = set.fronts[d].ind(ind_idx)?.clone();
+                set.fronts[d].points[ind_idx] = t;
                 set.fronts[d].number_of_individuals += 1;
             }
         }
 
+        // increase the depth to process another set
         set.increase_depth();
         Ok(())
     }
@@ -483,16 +503,16 @@ impl Wfg {
     ///
     /// # Arguments
     ///
-    /// * `p`:
-    /// * `q`:
-    /// * `depth`:
-    /// * `obj_count`:
+    /// * `i1`: The first individual.
+    /// * `q`: The second individual.
+    /// * `depth`: The recursion depth.
+    /// * `obj_count`: The number of objectives.
     ///
     /// returns: `Result<i8, String>`
     fn nds(
         &self,
-        p: &Individual,
-        q: &Individual,
+        i1: &Individual,
+        i2: &Individual,
         depth: usize,
         obj_count: usize,
     ) -> Result<Dominance, String> {
@@ -502,16 +522,16 @@ impl Wfg {
             (0..obj_count).rev()
         };
         for i in it {
-            if Self::dominates(p.obj(i)?, q.obj(i)?) {
+            if Self::dominates(i1.obj(i)?, i2.obj(i)?) {
                 for j in (0..i).rev() {
-                    if Self::dominates(q.obj(j)?, p.obj(j)?) {
+                    if Self::dominates(i2.obj(j)?, i1.obj(j)?) {
                         return Ok(Dominance::Skip);
                     }
                 }
                 return Ok(Dominance::First);
-            } else if Self::dominates(q.obj(i)?, p.obj(i)?) {
+            } else if Self::dominates(i2.obj(i)?, i1.obj(i)?) {
                 for j in (0..i).rev() {
-                    if Self::dominates(p.obj(j)?, q.obj(j)?) {
+                    if Self::dominates(i1.obj(j)?, i2.obj(j)?) {
                         return Ok(Dominance::Skip);
                     }
                 }
@@ -521,34 +541,33 @@ impl Wfg {
         Ok(Dominance::Equal)
     }
 
-    /// Get the dominated value between of two objective values from
-    /// tow individuals.
+    /// Get the dominated value between of two objective values from two individuals.
     ///
     /// # Arguments
     ///
-    /// * `x`: The first objective value.
-    /// * `y`: The second objective value.
+    /// * `o1`: The first objective value.
+    /// * `o2`: The second objective value.
     ///
     /// returns: `f64`
     /// ```
-    fn get_dominated(&self, x: f64, y: f64) -> f64 {
-        if Self::dominates(y, x) {
-            x
+    fn get_dominated(&self, o1: f64, o2: f64) -> f64 {
+        if Self::dominates(o2, o1) {
+            o1
         } else {
-            y
+            o2
         }
     }
 
-    /// Check whether `x` dominates `y`.
+    /// Check whether `o1` dominates `o2`.
     ///
     /// # Arguments
     ///
-    /// * `x`: The first objective value.
-    /// * `y`: The second objective value.
+    /// * `o1`: The first objective value.
+    /// * `o2`: The second objective value.
     ///
     /// returns: `bool`
-    fn dominates(x: f64, y: f64) -> bool {
-        x < y
+    fn dominates(o1: f64, o2: f64) -> bool {
+        o1 < o2
     }
 }
 
