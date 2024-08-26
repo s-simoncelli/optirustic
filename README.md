@@ -106,6 +106,8 @@ impl Evaluator for SCHProblem {
 }
 ```
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ### Setup and run the genetic algorithm
 
 The code below set up the `NSGA2` algorithm with `100` individuals and will
@@ -155,3 +157,9 @@ and these are the plotted solutions:
 <div style="text-align: center">
     <img src="examples/results/SCH_2obj_NSGA2_solutions.png" width="300" alt="Results" />
 </div>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+# License
+
+This project is licensed under the terms of the MIT license.
