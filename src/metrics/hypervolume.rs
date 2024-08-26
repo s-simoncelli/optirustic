@@ -569,7 +569,7 @@ mod test {
         let data = NSGA2::read_json_file(&file).unwrap();
 
         let found = HyperVolume::estimate_reference_point_from_file(&data, None).unwrap();
-        let expected = [0.999, 1.00];
+        let expected = [0.9999, 1.0000];
         assert_approx_array_eq(&found, &expected, Some(0.001));
     }
 }
