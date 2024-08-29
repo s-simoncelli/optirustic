@@ -100,3 +100,35 @@ NSGA2.plot_convergence(
 )
 plt.show()
 ```
+
+## Generate reference points
+To generate, plot and inspect the reference points for the `NSGA3` algorithm you can us:
+
+### One layer
+
+```python
+import matplotlib.pyplot as plt
+from optirustic import DasDarren1998
+
+ds = DasDarren1998(number_of_objectives=3, number_of_partitions=5)
+points = ds.calculate()
+ds.plot(points)
+plt.show()
+
+```
+### Two layers
+
+```python
+import matplotlib.pyplot as plt
+from optirustic import DasDarren1998
+
+two_layers = dict(
+    boundary_layer=3,
+    inner_layer=4,
+    scaling=None,
+)
+ds = DasDarren1998(number_of_objectives=3, number_of_partitions=two_layers)
+points = ds.calculate()
+ds.plot(points)
+plt.show()
+```

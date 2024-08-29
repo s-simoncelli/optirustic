@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use optirustic::core::{Constraint, RelationalOperator};
 
 /// Constraint
-#[pyclass(name = "PyRelationalOperator", eq, eq_int)]
+#[pyclass(name = "RelationalOperator", eq, eq_int)]
 #[derive(PartialEq)]
 pub enum PyRelationalOperator {
     EqualTo,

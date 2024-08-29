@@ -18,11 +18,13 @@ use crate::constraint::PyRelationalOperator;
 use crate::individual::{PyData, PyIndividual};
 use crate::objective::PyObjectiveDirection;
 use crate::problem::PyProblem;
+use crate::reference_points::PyDasDarren1998;
 
 mod constraint;
 mod individual;
 mod objective;
 mod problem;
+mod reference_points;
 mod variable;
 
 /// Get the python function from the utils.plot module
@@ -252,23 +254,13 @@ impl NSGA3 {
     }
 }
 
-#[pyfunction]
-/// Reference point plot from vector
-pub fn plot_reference_points(ref_points: Vec<Vec<f64>>) -> PyResult<PyObject> {
-    Python::with_gil(|py| {
-        let fun: Py<PyAny> = get_plot_fun("plot_reference_points", py)?;
-        fun.call1(py, (ref_points,))
-    })
-}
-
 #[pymodule(name = "optirustic")]
 fn optirustic_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NSGA2>()?;
     m.add_class::<NSGA3>()?;
     m.add_class::<PyObjectiveDirection>()?;
     m.add_class::<PyRelationalOperator>()?;
-
-    m.add_function(wrap_pyfunction!(plot_reference_points, m)?)?;
+    m.add_class::<PyDasDarren1998>()?;
 
     Ok(())
 }

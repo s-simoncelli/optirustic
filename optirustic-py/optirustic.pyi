@@ -1,5 +1,6 @@
 from datetime import timedelta, datetime
 from enum import Enum
+from typing import TypedDict
 
 import matplotlib.pyplot as plt
 
@@ -288,10 +289,58 @@ class NSGA3(AlgorithmData):
         :return: The figure object.
         """
 
-def plot_reference_points(reference_points: list[list[float]]) -> plt.Figure:
+class TwoLayerPartitions(TypedDict):
+    boundary_layer: int
+    """ This is the number of partitions to use in the boundary layer. """
+    inner_layer: int
+    """ This is the number of partitions to use in the inner layer. """
+    scaling: float | None
+    """ Control the size of the inner layer. This defaults to 0.5 which means that the
+    maximum points on each objectives axis will be located at 0.5 instead of 1 (as in 
+    the boundary layer). """
+
+class DasDarren1998:
     """
-    Generate a chart showing the reference point locations (for example using the Das
-    & Darren (2019) method).
-    :param reference_points: The reference points.
-    :return: The figure object.
+    Derive the reference points or weights using the methodology suggested in Section 5.2 in the
+    Das & Dennis (1998) paper (https://doi.org/10.1137/S1052623496307510)
     """
+
+    def __init__(
+        self, number_of_objectives: int, number_of_partitions: int | TwoLayerPartitions
+    ):
+        """
+        Derive the reference points or weights using the methodology suggested by
+        Das & Dennis (1998).
+        :param number_of_objectives: The number of problem objectives.
+        :param number_of_partitions: The number of uniform gaps between two consecutive
+        points along all objective axis on the hyperplane. With this option you can
+        create one or two layer of points with different spacing: To create:
+          - 1 layer or set of points with a constant uniform gaps use a 'int'.
+          - 2 layers of points with each layer having a different gap use a
+            dictionary with the following keys: inner_layer (the number of partitions
+            to use in the inner layer), boundary_layer (the number of partitions to
+            use in the boundary layer) and scaling (to control the size of the inner)
+            layer. This defaults to 0.5 which means that the maximum points on each
+            objectives axis will be located at 0.5 instead of 1 (as in the boundary layer
+        Use the 2nd approach if you are trying to solve a problem with many objectives
+        (4 or more) and want to reduce the number of reference points to use. Using two
+        layers allows  (1) setting a smaller number of reference points, (2) controlling
+        the point density in the inner area and (3) ensure a well-spaced point distribution.
+        """
+
+    def calculate(self) -> list[list[float]]:
+        """
+        Generate the vector of weights of reference points.
+        :return: The vector of weights of size `number_of_points`. Each  nested list,
+        of size equal to `number_of_objectives`, contains the relative coordinates
+        (between 0 and 1) of the points for each objective.
+        """
+
+    @staticmethod
+    def plot(reference_points: list[list[float]]) -> plt.Figure:
+        """
+        Generate a chart showing the reference point locations (for example using the Das
+        & Darren (2019) method).
+        :param reference_points: The reference points.
+        :return: The figure object.
+        """

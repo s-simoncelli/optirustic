@@ -2,14 +2,21 @@ import unittest
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-from optirustic import NSGA3, ObjectiveDirection, NSGA2
+from optirustic import (
+    NSGA3,
+    ObjectiveDirection,
+    NSGA2,
+    DasDarren1998,
+)
 
 
 class PythonTest(unittest.TestCase):
     root_folder = Path(__file__).parent.parent.parent
 
     def test_reader(self):
-        file = self.root_folder / "examples" / "results" / "DTLZ1_3obj_NSGA3_gen400.json"
+        file = (
+            self.root_folder / "examples" / "results" / "DTLZ1_3obj_NSGA3_gen400.json"
+        )
         data = NSGA3(file.as_posix())
         p = data.problem
 
@@ -33,21 +40,73 @@ class PythonTest(unittest.TestCase):
         self.assertAlmostEqual(data.hyper_volume([100, 100, 100]), 999999.97, 2)
 
     def test_plot(self):
-        self.assertTrue(isinstance(NSGA2(
-            (self.root_folder / "examples" / "results" / "SCH_2obj_NSGA2_gen250.json").as_posix()
-        ).plot(), plt.Figure))
+        self.assertTrue(
+            isinstance(
+                NSGA2(
+                    (
+                        self.root_folder
+                        / "examples"
+                        / "results"
+                        / "SCH_2obj_NSGA2_gen250.json"
+                    ).as_posix()
+                ).plot(),
+                plt.Figure,
+            )
+        )
 
-        self.assertTrue(isinstance(NSGA3(
-            (self.root_folder / "examples" / "results" / "DTLZ1_3obj_NSGA3_gen400.json").as_posix()
-        ).plot(), plt.Figure))
+        self.assertTrue(
+            isinstance(
+                NSGA3(
+                    (
+                        self.root_folder
+                        / "examples"
+                        / "results"
+                        / "DTLZ1_3obj_NSGA3_gen400.json"
+                    ).as_posix()
+                ).plot(),
+                plt.Figure,
+            )
+        )
 
-        self.assertTrue(isinstance(NSGA3(
-            (self.root_folder / "examples" / "results" / "DTLZ1_8obj_NSGA3_gen750.json").as_posix()
-        ).plot(), plt.Figure))
+        self.assertTrue(
+            isinstance(
+                NSGA3(
+                    (
+                        self.root_folder
+                        / "examples"
+                        / "results"
+                        / "DTLZ1_8obj_NSGA3_gen750.json"
+                    ).as_posix()
+                ).plot(),
+                plt.Figure,
+            )
+        )
 
-        self.assertTrue(isinstance(NSGA2.plot_convergence(
-            (self.root_folder / "examples" / "results" / "convergence").as_posix(), [10000, 10000]
-        ), plt.Figure))
+        self.assertTrue(
+            isinstance(
+                NSGA2.plot_convergence(
+                    (
+                        self.root_folder / "examples" / "results" / "convergence"
+                    ).as_posix(),
+                    [10000, 10000],
+                ),
+                plt.Figure,
+            )
+        )
+
+    def test_reference_points(self):
+        ds = DasDarren1998(3, 5)
+        points = ds.calculate()
+        self.assertEqual(len(points), 21)
+        self.assertTrue(isinstance(ds.plot(points), plt.Figure))
+
+        two_layers = dict(
+            boundary_layer=3,
+            inner_layer=4,
+            scaling=None,
+        )
+        ds = DasDarren1998(3, two_layers)
+        self.assertEqual(len(ds.calculate()), 25)
 
 
 if __name__ == "__main__":
