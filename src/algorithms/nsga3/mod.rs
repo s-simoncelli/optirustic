@@ -96,6 +96,8 @@ pub struct NSGA3 {
     /// The number of original reference points. This equals the size of `reference_points` if
     /// the `adaptive` option is set to `false`.
     number_of_or_reference_points: usize,
+    /// The gap between the reference points.
+    ref_point_gap: f64,
     /// The ideal point coordinates when the algorithm starts up to the current evolution
     ideal_point: Vec<f64>,
     /// The operator to use to select the individuals for reproduction. This is a binary tournament
@@ -216,6 +218,7 @@ impl NSGA3 {
             number_of_individuals,
             reference_points,
             number_of_or_reference_points,
+            ref_point_gap: das_darren.gap(),
             ideal_point: vec![f64::INFINITY; problem.number_of_objectives()],
             population,
             problem,
@@ -433,6 +436,7 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
                     &mut self.reference_points,
                     &mut rho_j,
                     self.number_of_or_reference_points,
+                    self.ref_point_gap,
                 )?;
                 a.calculate()?;
             }
@@ -482,7 +486,7 @@ mod test_problems {
         // see Table I
         let k: usize = 5;
         let number_variables: usize = number_objectives + k - 1; // M + k - 1 with k = 5 (Section Va)
-        let problem = DTLZ1Problem::create(number_variables, number_objectives).unwrap();
+        let problem = DTLZ1Problem::create(number_variables, number_objectives, false).unwrap();
         // The number of partitions used in the paper when from section 5
         let number_of_partitions = match number_objectives {
             3 => NumberOfPartitions::OneLayer(12),

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use log::debug;
 
 use crate::core::OError;
-use crate::utils::{vector_min, DasDarren1998, NumberOfPartitions};
+use crate::utils::{DasDarren1998, NumberOfPartitions};
 
 /// This implements the adaptive reference point procedure Jain and Deb (2013) in Section VII. This
 /// will identify non-useful points and re-position them to try to allocate one point for each
@@ -33,7 +33,7 @@ pub(crate) struct AdaptiveReferencePoints<'a> {
     /// `reference_points` and `rho_j` is an original one, created when the evolution started.
     number_of_or_reference_points: usize,
     /// The three points to add around an original reference point. They lie on the plane through
-    /// the origin
+    /// the origin.
     new_points_set: Vec<Vec<f64>>,
 }
 
@@ -46,34 +46,17 @@ impl<'a> AdaptiveReferencePoints<'a> {
     /// * `rho_j`: The map mapping the reference point index to the number of associated
     ///    individuals.
     /// * `number_of_or_reference_points`: The number of original reference points.
+    /// * `gap`: The gap to use to separate the new reference points to add. This may differ
+    ///    from the gap used to generate the original reference points.
     ///
     /// returns: `Result<AdaptiveReferencePoints, OError>`
     pub fn new(
         reference_points: &'a mut Vec<Vec<f64>>,
         rho_j: &'a mut HashMap<usize, usize>,
         number_of_or_reference_points: usize,
+        gap: f64,
     ) -> Result<Self, OError> {
         let number_of_objectives = reference_points.first().unwrap().len();
-
-        // measure the minimum gap between the points. This equal to 1 divided by the number of
-        // partitions for one layer. With two layer, this gives the minimum gap of the two layers.
-        let gap = (0..reference_points.len() - 1)
-            .flat_map(|p_id| {
-                (0..3)
-                    .filter_map(|c_id| {
-                        let d = f64::abs(
-                            reference_points[p_id][c_id] - reference_points[p_id + 1][c_id],
-                        );
-                        if d > 0.0 {
-                            Some(d)
-                        } else {
-                            None
-                        }
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .collect::<Vec<_>>();
-        let gap = vector_min(&gap)?;
 
         // create the 3 new points with the gap. These can be shifted with respect to the original
         // reference point later
@@ -181,7 +164,6 @@ impl<'a> AdaptiveReferencePoints<'a> {
             .map(|(_, counter)| if *counter == 1 { 1 } else { 0 })
             .sum();
 
-        println!("perfect_assoc_counter={perfect_assoc_counter}");
         // delete new points without association
         if perfect_assoc_counter == self.number_of_or_reference_points {
             let mut points_to_delete = vec![];
@@ -282,7 +264,9 @@ mod test {
             *rho_j.get_mut(&ref_point_index).unwrap() = 2_usize;
             let counter = ref_points.len();
 
-            let mut a = AdaptiveReferencePoints::new(&mut ref_points, &mut rho_j, counter).unwrap();
+            let mut a =
+                AdaptiveReferencePoints::new(&mut ref_points, &mut rho_j, counter, ds.gap())
+                    .unwrap();
             a.calculate().unwrap();
 
             // check point counter
@@ -331,7 +315,8 @@ mod test {
 
         let counter = ref_points.len();
 
-        let mut a = AdaptiveReferencePoints::new(&mut ref_points, &mut rho_j, counter).unwrap();
+        let mut a =
+            AdaptiveReferencePoints::new(&mut ref_points, &mut rho_j, counter, ds.gap()).unwrap();
         a.calculate().unwrap();
 
         // one point ([0.33333333 0.13333333 0.53333333]) is in common
@@ -362,7 +347,8 @@ mod test {
         // TODO point 21 will be deleted
         let counter = ref_points.len();
         println!("{:?}", counter);
-        let mut a = AdaptiveReferencePoints::new(&mut ref_points, &mut rho_j, or_counter).unwrap();
+        let mut a = AdaptiveReferencePoints::new(&mut ref_points, &mut rho_j, or_counter, ds.gap())
+            .unwrap();
         a.calculate().unwrap();
 
         // one additional point is preserved
