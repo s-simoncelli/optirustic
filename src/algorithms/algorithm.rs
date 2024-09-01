@@ -100,6 +100,7 @@ impl<T: Serialize> TryInto<AlgorithmExport> for AlgorithmSerialisedExport<T> {
             generation: self.generation,
             algorithm: self.algorithm,
             took: self.took,
+            additional_data: self.additional_data.unwrap_or_default(),
         };
         Ok(data)
     }
@@ -118,6 +119,8 @@ pub struct AlgorithmExport {
     pub algorithm: String,
     /// The time the algorithm took to reach the current generation.
     pub took: Elapsed,
+    /// Additional data stored in the algorithm (such as reference points for [`NSGA3`]).
+    pub additional_data: HashMap<String, DataValue>,
 }
 
 impl AlgorithmExport {
@@ -437,6 +440,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
                 minutes,
                 seconds,
             },
+            additional_data: self.additional_export_data().unwrap_or_default(),
         }
     }
 

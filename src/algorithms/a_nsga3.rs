@@ -75,7 +75,7 @@ mod test_problems {
 
         let expected_vars = vec![0.5; number_variables];
         let mut invalid_individuals: usize = 0;
-        for ind in results.individuals {
+        for ind in &results.individuals {
             let obj_sum: f64 = ind.get_objective_values().unwrap().iter().sum();
             // objective target sum is 1
             let outside_range_data = approx_eq!(f64, obj_sum, 1.0, epsilon = 0.01);
@@ -98,6 +98,41 @@ mod test_problems {
         // about 90% of solutions are ideal
         if invalid_individuals > 10 {
             panic!("Found {invalid_individuals} individuals not meeting the ideal solution");
+        }
+
+        // all new associated reference points have at least one associated individuals. These
+        // are only the points within the optimal Pareto front (when objective is <= 0.5)
+        let new_assoc_ref_points: Vec<_> = results
+            .individuals
+            .iter()
+            .filter_map(|i| {
+                let index = i
+                    .get_data("reference_point_index")
+                    .unwrap()
+                    .as_usize()
+                    .unwrap();
+                if index > 92 {
+                    Some(index)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        for (ri, r) in results.additional_data["reference_points"]
+            .as_data_vec()
+            .unwrap()
+            .iter()
+            .enumerate()
+        {
+            if r.as_f64_vec().unwrap().iter().all(|coord| *coord <= 0.5) && ri > 92 {
+                if !new_assoc_ref_points.contains(&ri) {
+                    panic!(
+                        "Reference point #{ri} ({:?}) is not associated with any individual",
+                        ri
+                    );
+                }
+            }
         }
     }
 }
