@@ -18,7 +18,10 @@ evolutionary algorithms (MOEAs). It allows you to:
 - export the population history as JSON and resume its evolution from file
 - generate charts with the dedicated [Python package](https://pypi.org/project/optirustic/)
 
-At the moment, it comes with the `NSGA2` and `NSGA3` algorithms.
+The library comes with the following
+algorithms: [`NSGA2`](https://docs.rs/optirustic/latest/optirustic/algorithms/struct.NSGA2.html),
+[`NSGA3`](https://docs.rs/optirustic/latest/optirustic/algorithms/struct.NSGA3.html) and
+[`AdaptiveNSGA3`](https://docs.rs/optirustic/latest/optirustic/algorithms/struct.AdaptiveNSGA3.html).
 
 The API documentation is available on [docs.rs](https://docs.rs/optirustic/).
 Examples showcasing this library's features are available in
@@ -159,6 +162,18 @@ and these are the plotted solutions:
 </div>
 
 <p align="right">(<a href="#optirustic">back to top</a>)</p>
+
+### Plotting and inspecting data
+
+With the library, you can set
+the [`export_history`](https://docs.rs/optirustic/latest/optirustic/algorithms/struct.NSGA2Arg.html#structfield.export_history)
+option, to export serialised results as JSON files as the algorithm evolves, or
+call [`save_to_json`](https://docs.rs/optirustic/latest/optirustic/algorithms/trait.Algorithm.html#method.save_to_json)
+to export the results at the last population evolution.
+
+This crate comes with a companion [Python package](./optirustic-py) to inspect the results
+and easily plot the Pareto front or the algorithm convergence. This is how all the charts within
+this README file were generated. Have a look at the `py` file in the [example folder](./examples).
 
 # License
 

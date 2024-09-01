@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.0
+
+- Added new Python API to generate reference points with `DasDarren1998`. The new class
+  allows getting the weights for the `NSGA3` algorithm and plotting them. See the Python
+  type hints for name and description of the new class methods.
+- Added `AdaptiveNSGA3` to use the adaptive approach to handle the reference points. This
+  implements the new algorithm from Jain and Deb (2014) (doi.org/10.1109/TEVC.2013.2281534)
+  to handle problems where not all reference points intersect the optimal Pareto front. This
+  helps to reduce crowding and enhance the solution quality. See the
+  new [example file](./examples/nsga3_inverted_dtlz1.rs)
+  and [results](./examples/results/DTLZ1_3obj_Adaptive_NSGA3_gen400_obj_vs_ref_points.png).
+- The algorithm additional data are now exported in `AlgorithExport` in the `Export additional_data in AlgorithmExport`
+  field. This contains, for example, the reference points for `NSGA3`.
+
 ## 0.6.0
 
 - Removed crate `hv-wfg-sys`. The hyper-volume from `HyperVolumeWhile2012` is now calculated

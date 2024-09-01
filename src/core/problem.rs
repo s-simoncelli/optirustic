@@ -815,6 +815,8 @@ pub mod builtin_problems {
         n_vars: usize,
         /// The number of objectives.
         n_objectives: usize,
+        /// Whether to invert the problem
+        invert: bool,
     }
 
     impl DTLZ1Problem {
@@ -824,7 +826,11 @@ pub mod builtin_problems {
         ///
         /// * `n_vars`: The number of variables.
         /// * `n_objectives`: The number of objectives.
-        pub fn create(n_vars: usize, n_objectives: usize) -> Result<Problem, OError> {
+        /// * `invert`: Whether to invert the problem based on Section VIIIA of Jain and Deb (2014)'s
+        ///    paper.
+        ///
+        /// returns: `Result<Problem, OError>`
+        pub fn create(n_vars: usize, n_objectives: usize, invert: bool) -> Result<Problem, OError> {
             // if k must be > 0, then n + 1 >= M
             if n_vars + 1 < n_objectives {
                 return Err(OError::Generic(
@@ -853,6 +859,7 @@ pub mod builtin_problems {
             let e = Box::new(DTLZ1Problem {
                 n_vars,
                 n_objectives,
+                invert,
             });
             Problem::new(objectives, variables, Some(constraints), e)
         }
@@ -908,7 +915,11 @@ pub mod builtin_problems {
                         .as_real()?;
                     1.0 - x
                 };
-                objectives.insert(format!("f{o}"), 0.5 * prod * delta * (1.0 + g));
+                let mut obj_value = 0.5 * prod * delta * (1.0 + g);
+                if self.invert {
+                    obj_value = 0.5 * (1.0 + g) - obj_value;
+                }
+                objectives.insert(format!("f{o}"), obj_value);
             }
             Ok(EvaluationResult {
                 constraints: Some(constraints),
@@ -1067,7 +1078,7 @@ mod test {
     #[test]
     /// Test the DTLZ1 problem implementation with the optimal solution
     fn test_dtlz1_optimal_solutions() {
-        let problem = Arc::new(DTLZ1Problem::create(4, 3).unwrap());
+        let problem = Arc::new(DTLZ1Problem::create(4, 3, false).unwrap());
         let mut individual = Individual::new(problem.clone());
         individual
             .update_variable("x1", VariableValue::Real(0.2))
@@ -1114,7 +1125,7 @@ mod test {
         let all_expected_objectives = read_csv_test_file(&obj_file, None);
 
         for (expected_objectives, vars) in all_expected_objectives.iter().zip(all_vars) {
-            let problem = Arc::new(DTLZ1Problem::create(vars.len(), 3).unwrap());
+            let problem = Arc::new(DTLZ1Problem::create(vars.len(), 3, false).unwrap());
             let mut individual = Individual::new(problem.clone());
             for (i, var) in vars.iter().enumerate() {
                 individual

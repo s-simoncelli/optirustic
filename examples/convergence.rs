@@ -23,7 +23,7 @@ use optirustic::metrics::HyperVolume;
 ///
 /// Make sure to compile this in release mode to speed up the calculation:
 ///
-/// `cargo run --example convergence --release`
+/// `cargo run --example convergence -p optirustic --release`
 fn main() -> Result<(), OError> {
     let problem = SCHProblem::create()?;
     let out_path = PathBuf::from(&env::current_dir().expect("Cannot fetch current directory"))

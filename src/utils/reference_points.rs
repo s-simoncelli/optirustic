@@ -143,6 +143,21 @@ impl DasDarren1998 {
         }
     }
 
+    /// Get the gap between the points. For a two layer system, this returns the average gap between
+    /// the inner and boundary layer.
+    ///
+    /// returns: `f64`
+    pub fn gap(&self) -> f64 {
+        match &self.number_of_partitions {
+            NumberOfPartitions::OneLayer(l) => 1.0 / *l as f64,
+            NumberOfPartitions::TwoLayers(l) => {
+                let g1 = 1.0 / l.inner_layer as f64;
+                let g2 = 1.0 / l.boundary_layer as f64;
+                (g1 + g2) / 2.0
+            }
+        }
+    }
+
     /// Generate the vector of weights of reference points.
     ///
     /// return: `Vec<Vec<f64>>`. The vector of weights of size `self.number_of_points`. Each
@@ -259,7 +274,6 @@ impl DasDarren1998 {
     /// * `file`: The path and file where to save the serialised data.
     ///
     /// returns: `Result<(), OError>`
-    /// ```
     pub fn serialise(ref_points: &[Vec<f64>], file: &PathBuf) -> Result<(), OError> {
         #[derive(Serialize)]
         pub struct Points<'a>(pub &'a [Vec<f64>]);

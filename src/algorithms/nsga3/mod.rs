@@ -7,6 +7,7 @@ use rand::RngCore;
 
 use optirustic_macros::{as_algorithm, as_algorithm_args, impl_algorithm_trait_items};
 
+use crate::algorithms::nsga3::adaptive_ref_points::AdaptiveReferencePoints;
 use crate::algorithms::nsga3::associate::AssociateToRefPoint;
 use crate::algorithms::nsga3::niching::Niching;
 use crate::algorithms::nsga3::normalise::Normalise;
@@ -19,6 +20,7 @@ use crate::operators::{
 };
 use crate::utils::{fast_non_dominated_sort, DasDarren1998, NumberOfPartitions};
 
+mod adaptive_ref_points;
 mod associate;
 mod niching;
 mod normalise;
@@ -91,6 +93,11 @@ pub struct NSGA3Arg {
 pub struct NSGA3 {
     /// The vector of reference points
     reference_points: Vec<Vec<f64>>,
+    /// The number of original reference points. This equals the size of `reference_points` if
+    /// the `adaptive` option is set to `false`.
+    number_of_or_reference_points: usize,
+    /// The gap between the reference points.
+    ref_point_gap: f64,
     /// The ideal point coordinates when the algorithm starts up to the current evolution
     ideal_point: Vec<f64>,
     /// The operator to use to select the individuals for reproduction. This is a binary tournament
@@ -103,6 +110,9 @@ pub struct NSGA3 {
     mutation_operator: PolynomialMutation,
     /// The seed to use.
     rng: Box<dyn RngCore>,
+    /// Whether to use the reference point adaptive approach and convert the algorithm from `NSGA3`
+    /// to `A-NSGA3`.
+    adaptive: bool,
 }
 
 impl NSGA3 {
@@ -111,11 +121,27 @@ impl NSGA3 {
     /// # Arguments
     ///
     /// * `problem`: The problem being solved.
-    /// * `args`: The [`NSGA3Arg`] arguments to customise the algorithm behaviour.
+    /// * `options`: The [`NSGA3Arg`] arguments to customise the algorithm behaviour.
+    /// * `adaptive`: Whether to use the adaptive approach to handle the reference points. Normally
+    /// reference points are fixed and never change position, and `NSGA3` will try to associate one
+    /// individual to each reference point. However, there are some problems where the reference lines
+    /// never intersects the Pareto front and no Pareto-optimal solutions are associated to those
+    /// reference points. The reference points intersecting the front may have too many points
+    /// associated and create crowded solutions.
+    /// To improve the solutions for these kind of problems, when this option is set to `true`, new
+    /// reference points will adaptively be added around the provided points to reduce crowding and
+    /// force one solution to be associated to preferably only on reference direction.
+    /// This option converts `NSGA3` to [`crate::algorithms::AdaptiveNSGA3`] (where `A` stands for
+    /// adaptive) and it is explained in Section VII of Jain and Deb (2013). For a detailed
+    /// explanation about the implementation see `AdaptiveReferencePoints`.
     ///
     /// returns: `NSGA3`.
-    pub fn new(problem: Problem, options: NSGA3Arg) -> Result<Self, OError> {
-        let name = "NSGA3".to_string();
+    pub fn new(problem: Problem, options: NSGA3Arg, adaptive: bool) -> Result<Self, OError> {
+        let name = if !adaptive {
+            "NSGA3".to_string()
+        } else {
+            "AdaptiveNSGA3".to_string()
+        };
         let nsga3_args = options.clone();
 
         let das_darren = DasDarren1998::new(
@@ -123,9 +149,11 @@ impl NSGA3 {
             &options.number_of_partitions,
         )?;
         let reference_points = das_darren.get_weights();
+        let number_of_or_reference_points = reference_points.len();
+
         info!(
             "Created {} reference directions",
-            das_darren.number_of_points()
+            number_of_or_reference_points
         );
 
         // create the population
@@ -189,6 +217,8 @@ impl NSGA3 {
         Ok(Self {
             number_of_individuals,
             reference_points,
+            number_of_or_reference_points,
+            ref_point_gap: das_darren.gap(),
             ideal_point: vec![f64::INFINITY; problem.number_of_objectives()],
             population,
             problem,
@@ -202,6 +232,7 @@ impl NSGA3 {
             export_history: options.export_history,
             rng: get_rng(options.seed),
             args: nsga3_args,
+            adaptive,
         })
     }
 
@@ -398,6 +429,17 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
 
             // update the population
             self.population = selected_individuals;
+
+            // add new refernece points
+            if self.adaptive {
+                let mut a = AdaptiveReferencePoints::new(
+                    &mut self.reference_points,
+                    &mut rho_j,
+                    self.number_of_or_reference_points,
+                    self.ref_point_gap,
+                )?;
+                a.calculate()?;
+            }
         } else {
             // update the population
             self.population = new_population;
@@ -444,7 +486,7 @@ mod test_problems {
         // see Table I
         let k: usize = 5;
         let number_variables: usize = number_objectives + k - 1; // M + k - 1 with k = 5 (Section Va)
-        let problem = DTLZ1Problem::create(number_variables, number_objectives).unwrap();
+        let problem = DTLZ1Problem::create(number_variables, number_objectives, false).unwrap();
         // The number of partitions used in the paper when from section 5
         let number_of_partitions = match number_objectives {
             3 => NumberOfPartitions::OneLayer(12),
@@ -502,7 +544,7 @@ mod test_problems {
             seed: Some(1),
         };
 
-        let mut algo = NSGA3::new(problem, args).unwrap();
+        let mut algo = NSGA3::new(problem, args, false).unwrap();
         assert_eq!(algo.reference_points().len(), expected_ref_points);
 
         algo.run().unwrap();
@@ -601,7 +643,7 @@ mod test_problems {
             seed: Some(1),
         };
 
-        let mut algo = NSGA3::new(problem, args).unwrap();
+        let mut algo = NSGA3::new(problem, args, false).unwrap();
         assert_eq!(algo.reference_points().len(), 91);
 
         algo.run().unwrap();

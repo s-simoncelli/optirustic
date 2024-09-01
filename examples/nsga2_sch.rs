@@ -16,7 +16,7 @@ use optirustic::core::builtin_problems::SCHProblem;
 ///
 /// Make sure to compile this in release mode to speed up the calculation:
 ///
-/// `cargo run --example nsga2 --release`
+/// `cargo run --example nsga2 -p optirustic --release`
 fn main() -> Result<(), Box<dyn Error>> {
     // Add log
     env_logger::builder().filter_level(LevelFilter::Info).init();
