@@ -11,6 +11,8 @@
   helps to reduce crowding and enhance the solution quality. See the
   new [example file](./examples/nsga3_inverted_dtlz1.rs)
   and [results](./examples/results/DTLZ1_3obj_Adaptive_NSGA3_gen400_obj_vs_ref_points.png).
+- The algorithm additional data are now exported in `AlgorithExport` in the `Export additional_data in AlgorithmExport`
+  field. This contains, for example, the reference points for `NSGA3`.
 
 ## 0.6.0
 
