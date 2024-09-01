@@ -259,7 +259,6 @@ impl DasDarren1998 {
     /// * `file`: The path and file where to save the serialised data.
     ///
     /// returns: `Result<(), OError>`
-    /// ```
     pub fn serialise(ref_points: &[Vec<f64>], file: &PathBuf) -> Result<(), OError> {
         #[derive(Serialize)]
         pub struct Points<'a>(pub &'a [Vec<f64>]);
