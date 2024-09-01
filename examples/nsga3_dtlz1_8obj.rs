@@ -15,7 +15,7 @@ use optirustic::utils::{NumberOfPartitions, TwoLayerPartitions};
 ///
 /// Make sure to compile this in release mode to speed up the calculation:
 ///
-/// `cargo run --example nsga3_dtlz1_8obj --release`
+/// `cargo run --example nsga3_dtlz1_8obj -p optirustic --release`
 fn main() -> Result<(), Box<dyn Error>> {
     // Add log
     env_logger::builder().filter_level(LevelFilter::Info).init();

@@ -18,7 +18,7 @@ use optirustic::utils::{DasDarren1998, NumberOfPartitions};
 ///
 /// Make sure to compile this in release mode to speed up the calculation:
 ///
-/// `cargo run --example nsga3_dtlz1 --release`
+/// `cargo run --example nsga3_dtlz1 -p optirustic --release`
 fn main() -> Result<(), Box<dyn Error>> {
     // Add log
     env_logger::builder().filter_level(LevelFilter::Info).init();
