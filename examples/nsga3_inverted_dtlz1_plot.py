@@ -55,8 +55,6 @@ ax.scatter(
     label="Normalised objectives",
 )
 
-# TODO highlight or ref points vs new
-
 ax.set_xlabel(obj_names[0])
 ax.set_ylabel(obj_names[1])
 ax.set_zlabel(obj_names[2])

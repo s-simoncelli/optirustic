@@ -8,7 +8,9 @@
 - Added `AdaptiveNSGA3` to use the adaptive approach to handle the reference points. This
   implements the new algorithm from Jain and Deb (2014) (doi.org/10.1109/TEVC.2013.2281534)
   to handle problems where not all reference points intersect the optimal Pareto front. This
-  helps to reduce crowding and enhance the solution quality.
+  helps to reduce crowding and enhance the solution quality. See the
+  new [example file](./examples/nsga3_inverted_dtlz1.rs)
+  and [results](./examples/results/DTLZ1_3obj_Adaptive_NSGA3_gen400_obj_vs_ref_points.png).
 
 ## 0.6.0
 
