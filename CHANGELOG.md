@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.0
+## 1.0.0
 
 - Added new Python API to generate reference points with `DasDarren1998`. The new class
   allows getting the weights for the `NSGA3` algorithm and plotting them. See the Python

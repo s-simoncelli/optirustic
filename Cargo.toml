@@ -1,6 +1,6 @@
 [package]
 name = "optirustic"
-version = "0.6.0"
+version = "1.0.0"
 authors = ["Stefano Simoncelli <16114781+s-simoncelli@users.noreply.github.com>"]
 edition = "2021"
 rust-version = "1.80"

@@ -62,7 +62,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // Initialise the algorithm
-    let mut algo = NSGA3::new(problem, args).unwrap();
+    let mut algo = NSGA3::new(problem, args, false).unwrap();
 
     // Run the algorithm
     algo.run()?;

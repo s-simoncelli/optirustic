@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let k: usize = 5;
     let number_variables: usize = number_objectives + k - 1;
     // Get the built-in problem
-    let problem = DTLZ1Problem::create(number_variables, number_objectives)?;
+    let problem = DTLZ1Problem::create(number_variables, number_objectives, false)?;
 
     // Set the number of partitions to create the reference points for the NSGA3 algorithm. This
     // uses one layer of 12 uniform gaps
@@ -64,7 +64,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // Initialise the algorithm
-    let mut algo = NSGA3::new(problem, args).unwrap();
+    let mut algo = NSGA3::new(problem, args, false).unwrap();
 
     // Run the algorithm
     algo.run()?;

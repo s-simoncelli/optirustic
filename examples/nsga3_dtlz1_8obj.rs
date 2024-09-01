@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let number_objectives = 8;
     let k: usize = 5;
     let number_variables: usize = number_objectives + k - 1; // M + k - 1 with k = 5 (Section Va)
-    let problem = DTLZ1Problem::create(number_variables, number_objectives)?;
+    let problem = DTLZ1Problem::create(number_variables, number_objectives, false)?;
     // The number of partitions used in the paper when from section 5
     let number_of_partitions = NumberOfPartitions::TwoLayers(TwoLayerPartitions {
         boundary_layer: 3,
@@ -54,7 +54,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // Initialise the algorithm
-    let mut algo = NSGA3::new(problem, args).unwrap();
+    let mut algo = NSGA3::new(problem, args, false).unwrap();
 
     // Run the algorithm
     algo.run()?;
