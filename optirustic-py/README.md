@@ -9,7 +9,7 @@ exported with the `optirustic` crate. It lets you:
 
 # Installation
 
-The package can be installed from Pypi:
+The package can be installed from [PyPi](https://pypi.org/project/optirustic/):
 
 ```
 pip install optirustic_py
@@ -102,6 +102,7 @@ plt.show()
 ```
 
 ## Generate reference points
+
 To generate, plot and inspect the reference points for the `NSGA3` algorithm you can us:
 
 ### One layer
@@ -116,6 +117,7 @@ ds.plot(points)
 plt.show()
 
 ```
+
 ### Two layers
 
 ```python
