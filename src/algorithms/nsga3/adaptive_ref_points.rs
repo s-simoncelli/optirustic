@@ -18,6 +18,7 @@ use crate::utils::{vector_min, DasDarren1998, NumberOfPartitions};
 ///    to 1 (ideal case), all new included points with rho_j=0 are deleted. Original points with
 ///    no association and new points with rho_j=1 are preserved.
 ///
+/// Implemented based on:
 /// > Jain, Himanshu & Deb, Kalyanmoy. (2014). An Evolutionary Many-Objective Optimization
 /// > Algorithm Using Reference-Point Based Non dominated Sorting Approach, Part II: Handling
 /// > Constraints and Extending to an Adaptive Approach. Evolutionary Computation, IEEE
