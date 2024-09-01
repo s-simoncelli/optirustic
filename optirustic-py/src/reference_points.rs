@@ -28,7 +28,6 @@ pub struct PyDasDarren1998 {
     number_of_partitions: PyNumberOfPartitions,
 }
 
-// TODO number_of_partitions number or dict
 #[pymethods]
 impl PyDasDarren1998 {
     #[new]
