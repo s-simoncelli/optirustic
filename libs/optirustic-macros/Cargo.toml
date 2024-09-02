@@ -1,6 +1,6 @@
 [package]
 name = "optirustic-macros"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 repository = "https://github.com/s-simoncelli/optirustic"
 authors = ["Stefano Simoncelli <16114781+s-simoncelli@users.noreply.github.com>"]
