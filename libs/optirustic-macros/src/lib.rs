@@ -92,7 +92,7 @@ pub fn as_algorithm_args(_attrs: TokenStream, input: TokenStream) -> TokenStream
 }
 
 /// This macro adds the following private fields to the struct defining an algorithm:
-/// `problem`, `number_of_individuals`, `population`, `generation`,`stopping_condition`,
+/// `problem`, `number_of_individuals`, `population`, `generation`,`stopping_condition`, `number_of_function_evaluations`,
 /// `start_time`, `export_history` and `parallel`.
 ///
 /// It also implements the `Display` trait.
@@ -140,6 +140,14 @@ pub fn as_algorithm(attrs: TokenStream, input: TokenStream) -> TokenStream {
                             generation: usize
                         })
                         .expect("Cannot add `generation` field"),
+                );
+                fields.named.push(
+                    syn::Field::parse_named
+                        .parse2(quote! {
+                            /// The number of function evaluations.
+                            number_of_function_evaluations: usize
+                        })
+                        .expect("Cannot add `number_of_function_evaluations` field"),
                 );
                 fields.named.push(
                     syn::Field::parse_named
@@ -205,7 +213,7 @@ pub fn as_algorithm(attrs: TokenStream, input: TokenStream) -> TokenStream {
 /// This macro adds common items when the `Algorithm` trait is implemented for a new algorithm
 /// struct. This adds the following items: `Algorithm::name()`, `Algorithm::stopping_condition()`
 /// `Algorithm::start_time()`, `Algorithm::problem()`,  `Algorithm::population()`,
-/// `Algorithm::generation()` and `Algorithm::export_history()`.
+/// `Algorithm::generation()`, `Algorithm::number_of_function_evaluations()` and `Algorithm::export_history()`.
 ///
 #[proc_macro_attribute]
 pub fn impl_algorithm_trait_items(attrs: TokenStream, input: TokenStream) -> TokenStream {
@@ -282,7 +290,16 @@ pub fn impl_algorithm_trait_items(attrs: TokenStream, input: TokenStream) -> Tok
             )
             .into(),
         )
-        .expect("Failed to parse `export_history` item"),
+        .expect("Failed to parse `generation` item"),
+        syn::parse::<syn::ImplItem>(
+            quote!(
+                fn number_of_function_evaluations(&self) -> usize {
+                    self.number_of_function_evaluations
+                }
+            )
+            .into(),
+        )
+        .expect("Failed to parse `number_of_function_evaluations` item"),
         syn::parse::<syn::ImplItem>(
             quote!(
                 fn algorithm_options(&self) -> #arg_type {

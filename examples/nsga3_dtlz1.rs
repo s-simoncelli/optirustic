@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use log::LevelFilter;
 
 use optirustic::algorithms::{
-    Algorithm, MaxGeneration, NSGA3Arg, Nsga3NumberOfIndividuals, StoppingConditionType, NSGA3,
+    Algorithm, MaxGenerationValue, NSGA3Arg, Nsga3NumberOfIndividuals, StoppingConditionType, NSGA3,
 };
 use optirustic::core::builtin_problems::DTLZ1Problem;
 use optirustic::operators::SimulatedBinaryCrossoverArgs;
@@ -56,7 +56,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         crossover_operator_options: Some(crossover_operator_options),
         mutation_operator_options: None,
         // stop at generation 400
-        stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(400)),
+        stopping_condition: StoppingConditionType::MaxGeneration(MaxGenerationValue(400)),
         parallel: None,
         export_history: None,
         // to reproduce results

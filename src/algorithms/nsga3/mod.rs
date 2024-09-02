@@ -226,6 +226,7 @@ impl NSGA3 {
             crossover_operator,
             mutation_operator,
             generation: 0,
+            number_of_function_evaluations: 0,
             stopping_condition: options.stopping_condition,
             start_time: Instant::now(),
             parallel: options.parallel.unwrap_or(true),
@@ -298,9 +299,15 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
     fn initialise(&mut self) -> Result<(), OError> {
         info!("Evaluating initial population");
         if self.parallel {
-            NSGA3::do_parallel_evaluation(self.population.individuals_as_mut())?;
+            NSGA3::do_parallel_evaluation(
+                self.population.individuals_as_mut(),
+                &mut self.number_of_function_evaluations,
+            )?;
         } else {
-            NSGA3::do_evaluation(self.population.individuals_as_mut())?;
+            NSGA3::do_evaluation(
+                self.population.individuals_as_mut(),
+                &mut self.number_of_function_evaluations,
+            )?;
         }
 
         info!("Initial evaluation completed");
@@ -344,9 +351,15 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
 
         debug!("Evaluating population");
         if self.parallel {
-            NSGA3::do_parallel_evaluation(self.population.individuals_as_mut())?;
+            NSGA3::do_parallel_evaluation(
+                self.population.individuals_as_mut(),
+                &mut self.number_of_function_evaluations,
+            )?;
         } else {
-            NSGA3::do_evaluation(self.population.individuals_as_mut())?;
+            NSGA3::do_evaluation(
+                self.population.individuals_as_mut(),
+                &mut self.number_of_function_evaluations,
+            )?;
         }
         debug!("Evaluation done");
 
@@ -474,7 +487,8 @@ mod test_problems {
     use optirustic_macros::test_with_retries;
 
     use crate::algorithms::{
-        Algorithm, MaxGeneration, NSGA3Arg, Nsga3NumberOfIndividuals, StoppingConditionType, NSGA3,
+        Algorithm, MaxGenerationValue, NSGA3Arg, Nsga3NumberOfIndividuals, StoppingConditionType,
+        NSGA3,
     };
     use crate::core::builtin_problems::{DTLZ1Problem, DTLZ2Problem};
     use crate::core::test_utils::{assert_approx_array_eq, check_value_in_range};
@@ -538,7 +552,7 @@ mod test_problems {
             crossover_operator_options: Some(crossover_operator_options),
             mutation_operator_options: Some(mutation_operator_options),
             // see Table III
-            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(max_gen)),
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGenerationValue(max_gen)),
             parallel: None,
             export_history: None,
             seed: Some(1),
@@ -637,7 +651,7 @@ mod test_problems {
             crossover_operator_options: Some(crossover_operator_options),
             mutation_operator_options: Some(mutation_operator_options),
             // see Table III
-            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(400)),
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGenerationValue(400)),
             parallel: None,
             export_history: None,
             seed: Some(1),
