@@ -68,9 +68,9 @@ pub enum StoppingConditionType {
     MaxGeneration(MaxGenerationValue),
     /// Set a maximum number of function evaluations
     MaxFunctionEvaluations(MaxFunctionEvaluationValue),
-    /// Stop when at least on condition is met
+    /// Stop when at least on condition is met (this acts as an OR operator)
     Any(Vec<StoppingConditionType>),
-    /// Stop when all on conditions are met
+    /// Stop when all conditions are met (this acts as an AND operator)
     All(Vec<StoppingConditionType>),
 }
 

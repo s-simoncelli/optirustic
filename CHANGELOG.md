@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.0
+
+- Added `number_of_function_evaluations` field in algorithms and serialised data. This fields
+  calculate the number of times individual's objectives and constraints are evaluated during an
+  evolution.
+- Renamed struct to specify stopping condition values. For example,
+  the `StoppingConditionType::MaxGeneration(MaxGeneration(250))`
+  can be defined as `StoppingConditionType::MaxGeneration(MaxGenerationValue(250))`. This is done to avoid confusion
+  between the enum `StoppingConditionType` value and the value of the stopping condition.
+- Added the following new stopping conditions: `MaxFunctionEvaluations`, `Any` and `All`. The first one stops the
+  evolution
+  after a maximum number of functon evaluations. The second and third allows to combine multiple condition. For example,
+  they allow to stop the algorithm when either a specific duration or evolution number are reached (using `Any`).
+
 ## 1.0.0
 
 - Added new Python API to generate reference points with `DasDarren1998`. The new class
