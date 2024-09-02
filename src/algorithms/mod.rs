@@ -3,7 +3,7 @@ pub use algorithm::{Algorithm, AlgorithmExport, AlgorithmSerialisedExport, Expor
 pub use nsga2::{NSGA2Arg, NSGA2};
 pub use nsga3::{NSGA3Arg, Nsga3NumberOfIndividuals, NSGA3};
 pub use stopping_condition::{
-    MaxDuration, MaxGeneration, StoppingCondition, StoppingConditionType,
+    MaxDurationValue, MaxGenerationValue, StoppingCondition, StoppingConditionType,
 };
 
 mod a_nsga3;

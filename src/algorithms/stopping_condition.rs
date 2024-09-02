@@ -18,9 +18,9 @@ pub trait StoppingCondition<T: PartialOrd> {
 
 /// Number of generations after which a genetic algorithm terminates.
 #[derive(Serialize, Deserialize, Clone)]
-pub struct MaxGeneration(pub usize);
+pub struct MaxGenerationValue(pub usize);
 
-impl StoppingCondition<usize> for MaxGeneration {
+impl StoppingCondition<usize> for MaxGenerationValue {
     fn target(&self) -> usize {
         self.0
     }
@@ -30,11 +30,25 @@ impl StoppingCondition<usize> for MaxGeneration {
     }
 }
 
+/// Number of function evaluations after which a genetic algorithm terminates.
+#[derive(Serialize, Deserialize, Clone)]
+pub struct MaxFunctionEvaluationValue(pub usize);
+
+impl StoppingCondition<usize> for MaxFunctionEvaluationValue {
+    fn target(&self) -> usize {
+        self.0
+    }
+
+    fn name() -> String {
+        "maximum number of function evaluations".to_string()
+    }
+}
+
 /// Elapsed time after which a genetic algorithm terminates.
 #[derive(Serialize, Deserialize, Clone)]
-pub struct MaxDuration(pub Duration);
+pub struct MaxDurationValue(pub Duration);
 
-impl StoppingCondition<Duration> for MaxDuration {
+impl StoppingCondition<Duration> for MaxDurationValue {
     fn target(&self) -> Duration {
         self.0
     }
@@ -49,17 +63,50 @@ impl StoppingCondition<Duration> for MaxDuration {
 #[derive(Serialize, Deserialize, Clone)]
 pub enum StoppingConditionType {
     /// Set a maximum duration
-    MaxDuration(MaxDuration),
+    MaxDuration(MaxDurationValue),
     /// Set a maximum number of generations
-    MaxGeneration(MaxGeneration),
+    MaxGeneration(MaxGenerationValue),
+    /// Set a maximum number of function evaluations
+    MaxFunctionEvaluations(MaxFunctionEvaluationValue),
+    /// Stop when at least on condition is met (this acts as an OR operator)
+    Any(Vec<StoppingConditionType>),
+    /// Stop when all conditions are met (this acts as an AND operator)
+    All(Vec<StoppingConditionType>),
 }
 
 impl StoppingConditionType {
     /// A name describing the stopping condition.
+    ///
+    /// returns: `String`
     pub fn name(&self) -> String {
         match self {
-            StoppingConditionType::MaxDuration(_) => MaxDuration::name(),
-            StoppingConditionType::MaxGeneration(_) => MaxGeneration::name(),
+            StoppingConditionType::MaxDuration(_) => MaxDurationValue::name(),
+            StoppingConditionType::MaxGeneration(_) => MaxGenerationValue::name(),
+            StoppingConditionType::MaxFunctionEvaluations(_) => MaxFunctionEvaluationValue::name(),
+            StoppingConditionType::Any(s) => s
+                .iter()
+                .map(|cond| cond.name())
+                .collect::<Vec<String>>()
+                .join(" OR "),
+            StoppingConditionType::All(s) => s
+                .iter()
+                .map(|cond| cond.name())
+                .collect::<Vec<String>>()
+                .join(" AND "),
         }
+    }
+
+    /// Check whether the stopping condition is a vector and has nested vector in it.
+    ///
+    /// # Arguments
+    ///
+    /// * `conditions`: A vector of stopping conditions.
+    ///
+    /// returns: `bool`
+    pub fn has_nested_vector(conditions: &[StoppingConditionType]) -> bool {
+        conditions.iter().any(|c| match c {
+            StoppingConditionType::Any(_) | StoppingConditionType::All(_) => true,
+            _ => false,
+        })
     }
 }

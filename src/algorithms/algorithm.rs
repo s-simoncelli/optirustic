@@ -40,6 +40,9 @@ pub struct AlgorithmSerialisedExport<T: Serialize> {
     pub individuals: Vec<IndividualExport>,
     /// The generation the export was collected at.
     pub generation: usize,
+    /// The number of function evaluations
+    #[serde(default)]
+    pub number_of_function_evaluations: usize,
     /// The algorithm name.
     pub algorithm: String,
     /// Any additional data exported by the algorithm.
@@ -99,6 +102,7 @@ impl<T: Serialize> TryInto<AlgorithmExport> for AlgorithmSerialisedExport<T> {
             individuals: self.individuals()?,
             generation: self.generation,
             algorithm: self.algorithm,
+            number_of_function_evaluations: self.number_of_function_evaluations,
             took: self.took,
             additional_data: self.additional_data.unwrap_or_default(),
         };
@@ -115,6 +119,8 @@ pub struct AlgorithmExport {
     pub individuals: Vec<Individual>,
     /// The generation number.
     pub generation: usize,
+    /// The number of function evaluations
+    pub number_of_function_evaluations: usize,
     /// The algorithm name used to evolve the individuals.
     pub algorithm: String,
     /// The time the algorithm took to reach the current generation.
@@ -222,6 +228,14 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
     /// return: `usize`.
     fn generation(&self) -> usize;
 
+    /// Return the number of function evaluations. This is the number of times the algorithm evaluates
+    /// an individual's objectives and constraints using [`Algorithm::evaluate_individual`]. If no
+    /// new solutions/individuals are chosen by an algorithm, this counter will not increase, as past
+    /// solutions are already evaluated.
+    ///
+    /// return: `usize`.
+    fn number_of_function_evaluations(&self) -> usize;
+
     /// Return the algorithm name.
     ///
     /// return: `String`.
@@ -282,39 +296,50 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
     }
 
     /// Evaluate the objectives and constraints for unevaluated individuals in the population. This
-    /// updates the individual data only and runs the evaluation function in threads. This returns
-    /// an error if the evaluation function fails or the evaluation function does not provide a
-    /// value for a problem constraints or objectives for one individual.
+    /// updates the individual data only, runs the evaluation function in threads and increase the
+    /// `nfe` counter by the number of evaluated individuals.
+    /// This returns an error if the evaluation function fails or the evaluation function does not
+    /// provide a value for a problem constraints or objectives for one individual.
     ///
     /// # Arguments
     ///
     /// * `individuals`: The individuals to evaluate.
+    /// * `nfe`: The reference to the number of function evaluation counter.
     ///
     /// return `Result<(), OError>`
-    fn do_parallel_evaluation(individuals: &mut [Individual]) -> Result<(), OError> {
+    fn do_parallel_evaluation(
+        individuals: &mut [Individual],
+        nfe: &mut usize,
+    ) -> Result<(), OError> {
+        let delta_nfe = Self::count_unevaluated(individuals);
         individuals
             .into_par_iter()
             .enumerate()
             .try_for_each(|(idx, i)| Self::evaluate_individual(idx, i))?;
+        *nfe += delta_nfe;
         Ok(())
     }
 
     /// Evaluate the objectives and constraints for unevaluated individuals in the population. This
-    /// updates the individual data only and runs the evaluation function in a plain loop. This
-    /// returns an error if the evaluation function fails or the evaluation function does not
+    /// updates the individual data only, runs the evaluation function in a plain loop and increase
+    /// the `nfe` counter by the number of evaluated individuals.
+    /// This returns an error if the evaluation function fails or the evaluation function does not
     /// provide a value for a problem constraints or objectives for one individual.
     /// Evaluation may be performed in threads using [`Self::do_parallel_evaluation`].
     ///
     /// # Arguments
     ///
     /// * `individuals`: The individuals to evaluate.
+    /// * `nfe`: The reference to the number of function evaluation counter.
     ///
-    /// return `Result<(), OError>`
-    fn do_evaluation(individuals: &mut [Individual]) -> Result<(), OError> {
+    /// return `Result<usize, OError>`.
+    fn do_evaluation(individuals: &mut [Individual], nfe: &mut usize) -> Result<(), OError> {
+        let delta_nfe = Self::count_unevaluated(individuals);
         individuals
             .iter_mut()
             .enumerate()
             .try_for_each(|(idx, i)| Self::evaluate_individual(idx, i))?;
+        *nfe += delta_nfe;
         Ok(())
     }
 
@@ -369,6 +394,25 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
         Ok(())
     }
 
+    /// Count the number on unevaluated individuals.
+    ///
+    /// # Arguments
+    ///
+    /// * `individuals`: The individuals to check.
+    ///
+    /// returns: `usize`
+    fn count_unevaluated(individuals: &[Individual]) -> usize {
+        individuals
+            .iter()
+            .filter_map(|i| {
+                if !i.is_evaluated() {
+                    Some(1_usize)
+                } else {
+                    None
+                }
+            })
+            .sum()
+    }
     /// Run the algorithm.
     ///
     /// return: `Result<(), OError>`
@@ -406,10 +450,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
 
             // Termination
             let cond = self.stopping_condition();
-            let terminate = match &cond {
-                StoppingConditionType::MaxDuration(t) => t.is_met(Instant::now().elapsed()),
-                StoppingConditionType::MaxGeneration(t) => t.is_met(self.generation()),
-            };
+            let terminate = self.is_stopping_condition_met(cond)?;
             if terminate {
                 // save last file
                 if let Some(export) = self.export_history() {
@@ -425,6 +466,47 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
         Ok(())
     }
 
+    /// Check if the given stopping condition is met.
+    ///
+    /// # Arguments
+    ///
+    /// * `condition`: The stopping condition type.
+    ///
+    /// returns: `Result<bool, OError>`
+    fn is_stopping_condition_met(&self, condition: &StoppingConditionType) -> Result<bool, OError> {
+        let is_met = match condition {
+            StoppingConditionType::MaxDuration(cond) => cond.is_met(Instant::now().elapsed()),
+            StoppingConditionType::MaxGeneration(cond) => cond.is_met(self.generation()),
+            StoppingConditionType::MaxFunctionEvaluations(cond) => {
+                cond.is_met(self.number_of_function_evaluations())
+            }
+            StoppingConditionType::Any(conditions) => {
+                if StoppingConditionType::has_nested_vector(conditions) {
+                    return Err(OError::AlgorithmRun(
+                        self.name(),
+                        "A vector of stopping condition vector is not allowed".to_string(),
+                    ));
+                }
+                conditions
+                    .iter()
+                    .any(|c| self.is_stopping_condition_met(c).unwrap())
+            }
+            StoppingConditionType::All(conditions) => {
+                if StoppingConditionType::has_nested_vector(conditions) {
+                    return Err(OError::AlgorithmRun(
+                        self.name(),
+                        "A vector of stopping condition vector is not allowed".to_string(),
+                    ));
+                }
+
+                conditions
+                    .iter()
+                    .all(|c| self.is_stopping_condition_met(c).unwrap())
+            }
+        };
+        Ok(is_met)
+    }
+
     /// Get the results of the run.
     ///
     /// return: `AlgorithmExport`.
@@ -434,6 +516,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
             problem: self.problem(),
             individuals: self.population().individuals().to_vec(),
             generation: self.generation(),
+            number_of_function_evaluations: self.number_of_function_evaluations(),
             algorithm: self.name(),
             took: Elapsed {
                 hours,
@@ -464,6 +547,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
             problem: self.problem().serialise(),
             individuals: self.population().serialise(),
             generation: self.generation(),
+            number_of_function_evaluations: self.number_of_function_evaluations(),
             algorithm: self.name(),
             additional_data: self.additional_export_data(),
             took: Elapsed {
@@ -627,7 +711,10 @@ mod test {
     use std::path::Path;
     use std::sync::Arc;
 
-    use crate::algorithms::{Algorithm, NSGA2};
+    use crate::algorithms::stopping_condition::MaxFunctionEvaluationValue;
+    use crate::algorithms::{
+        Algorithm, MaxGenerationValue, NSGA2Arg, StoppingConditionType, NSGA2,
+    };
     use crate::core::builtin_problems::{SCHProblem, ZTD1Problem};
 
     #[test]
@@ -676,5 +763,75 @@ mod test {
             .unwrap()
             .to_string()
             .contains("number of variables from the history file"));
+    }
+
+    #[test]
+    /// Test StoppingConditionType::MaxGeneration
+    fn test_stopping_condition_max_generation() {
+        let problem = SCHProblem::create().unwrap();
+        let args = NSGA2Arg {
+            number_of_individuals: 10,
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGenerationValue(20)),
+            crossover_operator_options: None,
+            mutation_operator_options: None,
+            parallel: Some(false),
+            export_history: None,
+            resume_from_file: None,
+            seed: Some(10),
+        };
+        let mut algo = NSGA2::new(problem, args).unwrap();
+        algo.run().unwrap();
+        let results = algo.get_results();
+
+        assert_eq!(results.generation, 20);
+    }
+
+    #[test]
+    /// Test StoppingConditionType::MaxFunctionEvaluations
+    fn test_stopping_condition_max_nfe() {
+        let problem = SCHProblem::create().unwrap();
+        let args = NSGA2Arg {
+            number_of_individuals: 10,
+            stopping_condition: StoppingConditionType::MaxFunctionEvaluations(
+                MaxFunctionEvaluationValue(20),
+            ),
+            crossover_operator_options: None,
+            mutation_operator_options: None,
+            parallel: Some(false),
+            export_history: None,
+            resume_from_file: None,
+            seed: Some(10),
+        };
+        let mut algo = NSGA2::new(problem, args).unwrap();
+        algo.run().unwrap();
+        let results = algo.get_results();
+
+        assert_eq!(results.number_of_function_evaluations, 20);
+        assert_eq!(results.generation, 2);
+    }
+
+    #[test]
+    /// Test StoppingConditionType::Any
+    fn test_stopping_condition_any() {
+        let problem = SCHProblem::create().unwrap();
+        let args = NSGA2Arg {
+            number_of_individuals: 10,
+            stopping_condition: StoppingConditionType::Any(vec![
+                StoppingConditionType::MaxFunctionEvaluations(MaxFunctionEvaluationValue(20)),
+                StoppingConditionType::MaxGeneration(MaxGenerationValue(10)),
+            ]),
+            crossover_operator_options: None,
+            mutation_operator_options: None,
+            parallel: Some(false),
+            export_history: None,
+            resume_from_file: None,
+            seed: Some(10),
+        };
+        let mut algo = NSGA2::new(problem, args).unwrap();
+        algo.run().unwrap();
+        let results = algo.get_results();
+
+        assert_eq!(results.number_of_function_evaluations, 20);
+        assert_eq!(results.generation, 2);
     }
 }

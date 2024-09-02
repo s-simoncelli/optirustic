@@ -32,7 +32,7 @@ mod test_problems {
     use optirustic_macros::test_with_retries;
 
     use crate::algorithms::{
-        AdaptiveNSGA3, Algorithm, MaxGeneration, NSGA3Arg, Nsga3NumberOfIndividuals,
+        AdaptiveNSGA3, Algorithm, MaxGenerationValue, NSGA3Arg, Nsga3NumberOfIndividuals,
         StoppingConditionType,
     };
     use crate::core::builtin_problems::DTLZ1Problem;
@@ -61,7 +61,7 @@ mod test_problems {
             number_of_partitions,
             crossover_operator_options: Some(crossover_operator_options),
             mutation_operator_options: Some(mutation_operator_options),
-            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(400)),
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGenerationValue(400)),
             parallel: None,
             export_history: None,
             seed: Some(1),

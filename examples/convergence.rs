@@ -2,7 +2,7 @@ use std::env;
 use std::path::PathBuf;
 
 use optirustic::algorithms::{
-    Algorithm, ExportHistory, MaxGeneration, NSGA2Arg, StoppingConditionType, NSGA2,
+    Algorithm, ExportHistory, MaxGenerationValue, NSGA2Arg, StoppingConditionType, NSGA2,
 };
 use optirustic::core::builtin_problems::SCHProblem;
 use optirustic::core::OError;
@@ -35,7 +35,7 @@ fn main() -> Result<(), OError> {
     let export_history = ExportHistory::new(100, &out_path)?;
     let args = NSGA2Arg {
         number_of_individuals: 10,
-        stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
+        stopping_condition: StoppingConditionType::MaxGeneration(MaxGenerationValue(1000)),
         crossover_operator_options: None,
         mutation_operator_options: None,
         parallel: Some(false),

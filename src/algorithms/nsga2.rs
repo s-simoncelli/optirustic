@@ -142,6 +142,7 @@ impl NSGA2 {
             crossover_operator,
             mutation_operator,
             generation: 0,
+            number_of_function_evaluations: 0,
             stopping_condition: options.stopping_condition,
             start_time: Instant::now(),
             parallel: options.parallel.unwrap_or(true),
@@ -280,9 +281,15 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
     fn initialise(&mut self) -> Result<(), OError> {
         info!("Evaluating initial population");
         if self.parallel {
-            NSGA2::do_parallel_evaluation(self.population.individuals_as_mut())?;
+            NSGA2::do_parallel_evaluation(
+                self.population.individuals_as_mut(),
+                &mut self.number_of_function_evaluations,
+            )?;
         } else {
-            NSGA2::do_evaluation(self.population.individuals_as_mut())?;
+            NSGA2::do_evaluation(
+                self.population.individuals_as_mut(),
+                &mut self.number_of_function_evaluations,
+            )?;
         }
 
         debug!("Calculating rank");
@@ -330,9 +337,15 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
 
         debug!("Evaluating population");
         if self.parallel {
-            NSGA2::do_parallel_evaluation(self.population.individuals_as_mut())?;
+            NSGA2::do_parallel_evaluation(
+                self.population.individuals_as_mut(),
+                &mut self.number_of_function_evaluations,
+            )?;
         } else {
-            NSGA2::do_evaluation(self.population.individuals_as_mut())?;
+            NSGA2::do_evaluation(
+                self.population.individuals_as_mut(),
+                &mut self.number_of_function_evaluations,
+            )?;
         }
         debug!("Evaluation done");
 
@@ -645,7 +658,9 @@ mod test_sorting {
 mod test_problems {
     use optirustic_macros::test_with_retries;
 
-    use crate::algorithms::{Algorithm, MaxGeneration, NSGA2Arg, StoppingConditionType, NSGA2};
+    use crate::algorithms::{
+        Algorithm, MaxGenerationValue, NSGA2Arg, StoppingConditionType, NSGA2,
+    };
     use crate::core::builtin_problems::{
         SCHProblem, ZTD1Problem, ZTD2Problem, ZTD3Problem, ZTD4Problem,
     };
@@ -660,7 +675,7 @@ mod test_problems {
         let problem = SCHProblem::create().unwrap();
         let args = NSGA2Arg {
             number_of_individuals: 10,
-            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGenerationValue(1000)),
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
@@ -688,7 +703,7 @@ mod test_problems {
         let problem = ZTD1Problem::create(number_of_individuals).unwrap();
         let args = NSGA2Arg {
             number_of_individuals,
-            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(2500)),
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGenerationValue(2500)),
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
@@ -735,7 +750,7 @@ mod test_problems {
         let problem = ZTD2Problem::create(number_of_individuals).unwrap();
         let args = NSGA2Arg {
             number_of_individuals,
-            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(2500)),
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGenerationValue(2500)),
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
@@ -787,7 +802,7 @@ mod test_problems {
         let problem = ZTD3Problem::create(number_of_individuals).unwrap();
         let args = NSGA2Arg {
             number_of_individuals,
-            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(2500)),
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGenerationValue(2500)),
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
@@ -838,7 +853,7 @@ mod test_problems {
         let number_of_individuals: usize = 10;
         let args = NSGA2Arg {
             number_of_individuals,
-            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(3000)),
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGenerationValue(3000)),
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
@@ -892,7 +907,7 @@ mod test_problems {
         let problem = ZTD4Problem::create(number_of_individuals).unwrap();
         let args = NSGA2Arg {
             number_of_individuals,
-            stopping_condition: StoppingConditionType::MaxGeneration(MaxGeneration(1000)),
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGenerationValue(1000)),
             crossover_operator_options: None,
             mutation_operator_options: None,
             parallel: Some(false),
