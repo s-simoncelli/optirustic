@@ -711,7 +711,10 @@ mod test {
     use std::path::Path;
     use std::sync::Arc;
 
-    use crate::algorithms::{Algorithm, NSGA2};
+    use crate::algorithms::stopping_condition::MaxFunctionEvaluationValue;
+    use crate::algorithms::{
+        Algorithm, MaxGenerationValue, NSGA2Arg, StoppingConditionType, NSGA2,
+    };
     use crate::core::builtin_problems::{SCHProblem, ZTD1Problem};
 
     #[test]
@@ -760,5 +763,75 @@ mod test {
             .unwrap()
             .to_string()
             .contains("number of variables from the history file"));
+    }
+
+    #[test]
+    /// Test StoppingConditionType::MaxGeneration
+    fn test_stopping_condition_max_generation() {
+        let problem = SCHProblem::create().unwrap();
+        let args = NSGA2Arg {
+            number_of_individuals: 10,
+            stopping_condition: StoppingConditionType::MaxGeneration(MaxGenerationValue(20)),
+            crossover_operator_options: None,
+            mutation_operator_options: None,
+            parallel: Some(false),
+            export_history: None,
+            resume_from_file: None,
+            seed: Some(10),
+        };
+        let mut algo = NSGA2::new(problem, args).unwrap();
+        algo.run().unwrap();
+        let results = algo.get_results();
+
+        assert_eq!(results.generation, 20);
+    }
+
+    #[test]
+    /// Test StoppingConditionType::MaxFunctionEvaluations
+    fn test_stopping_condition_max_nfe() {
+        let problem = SCHProblem::create().unwrap();
+        let args = NSGA2Arg {
+            number_of_individuals: 10,
+            stopping_condition: StoppingConditionType::MaxFunctionEvaluations(
+                MaxFunctionEvaluationValue(20),
+            ),
+            crossover_operator_options: None,
+            mutation_operator_options: None,
+            parallel: Some(false),
+            export_history: None,
+            resume_from_file: None,
+            seed: Some(10),
+        };
+        let mut algo = NSGA2::new(problem, args).unwrap();
+        algo.run().unwrap();
+        let results = algo.get_results();
+
+        assert_eq!(results.number_of_function_evaluations, 20);
+        assert_eq!(results.generation, 2);
+    }
+
+    #[test]
+    /// Test StoppingConditionType::Any
+    fn test_stopping_condition_any() {
+        let problem = SCHProblem::create().unwrap();
+        let args = NSGA2Arg {
+            number_of_individuals: 10,
+            stopping_condition: StoppingConditionType::Any(vec![
+                StoppingConditionType::MaxFunctionEvaluations(MaxFunctionEvaluationValue(20)),
+                StoppingConditionType::MaxGeneration(MaxGenerationValue(10)),
+            ]),
+            crossover_operator_options: None,
+            mutation_operator_options: None,
+            parallel: Some(false),
+            export_history: None,
+            resume_from_file: None,
+            seed: Some(10),
+        };
+        let mut algo = NSGA2::new(problem, args).unwrap();
+        algo.run().unwrap();
+        let results = algo.get_results();
+
+        assert_eq!(results.number_of_function_evaluations, 20);
+        assert_eq!(results.generation, 2);
     }
 }
