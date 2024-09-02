@@ -12,7 +12,7 @@ exported with the `optirustic` crate. It lets you:
 The package can be installed from [PyPi](https://pypi.org/project/optirustic/):
 
 ```
-pip install optirustic_py
+pip install optirustic
 ```
 
 # Usage
