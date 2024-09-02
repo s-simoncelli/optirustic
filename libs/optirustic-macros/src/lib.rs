@@ -145,9 +145,9 @@ pub fn as_algorithm(attrs: TokenStream, input: TokenStream) -> TokenStream {
                     syn::Field::parse_named
                         .parse2(quote! {
                             /// The number of function evaluations.
-                            number_of_function_evaluations: usize
+                            nfe: usize
                         })
-                        .expect("Cannot add `number_of_function_evaluations` field"),
+                        .expect("Cannot add `nfe` field"),
                 );
                 fields.named.push(
                     syn::Field::parse_named
@@ -294,7 +294,7 @@ pub fn impl_algorithm_trait_items(attrs: TokenStream, input: TokenStream) -> Tok
         syn::parse::<syn::ImplItem>(
             quote!(
                 fn number_of_function_evaluations(&self) -> usize {
-                    self.number_of_function_evaluations
+                    self.nfe
                 }
             )
             .into(),

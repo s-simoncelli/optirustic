@@ -142,7 +142,7 @@ impl NSGA2 {
             crossover_operator,
             mutation_operator,
             generation: 0,
-            number_of_function_evaluations: 0,
+            nfe: 0,
             stopping_condition: options.stopping_condition,
             start_time: Instant::now(),
             parallel: options.parallel.unwrap_or(true),
@@ -281,15 +281,9 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
     fn initialise(&mut self) -> Result<(), OError> {
         info!("Evaluating initial population");
         if self.parallel {
-            NSGA2::do_parallel_evaluation(
-                self.population.individuals_as_mut(),
-                &mut self.number_of_function_evaluations,
-            )?;
+            NSGA2::do_parallel_evaluation(self.population.individuals_as_mut(), &mut self.nfe)?;
         } else {
-            NSGA2::do_evaluation(
-                self.population.individuals_as_mut(),
-                &mut self.number_of_function_evaluations,
-            )?;
+            NSGA2::do_evaluation(self.population.individuals_as_mut(), &mut self.nfe)?;
         }
 
         debug!("Calculating rank");
@@ -337,15 +331,9 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
 
         debug!("Evaluating population");
         if self.parallel {
-            NSGA2::do_parallel_evaluation(
-                self.population.individuals_as_mut(),
-                &mut self.number_of_function_evaluations,
-            )?;
+            NSGA2::do_parallel_evaluation(self.population.individuals_as_mut(), &mut self.nfe)?;
         } else {
-            NSGA2::do_evaluation(
-                self.population.individuals_as_mut(),
-                &mut self.number_of_function_evaluations,
-            )?;
+            NSGA2::do_evaluation(self.population.individuals_as_mut(), &mut self.nfe)?;
         }
         debug!("Evaluation done");
 
