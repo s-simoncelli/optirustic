@@ -39,12 +39,6 @@ pub struct NSGA2Arg {
     /// restart the evolution from a previous generation; you can use any history file (exported
     /// when the field `export_history`) or the file exported when the stopping condition was reached.
     pub resume_from_file: Option<PathBuf>,
-    /// The seed used in the random number generator (RNG). You can specify a seed in case you want
-    /// to try to reproduce results. NSGA2 is a stochastic algorithm that relies on a RNG at
-    /// different steps (when population is initially generated, during selection, crossover and
-    /// mutation) and, as such, may lead to slightly different solutions. The seed is randomly
-    /// picked if this is `None`.
-    pub seed: Option<u64>,
 }
 
 /// The Non-dominated Sorting Genetic Algorithm (NSGA2).

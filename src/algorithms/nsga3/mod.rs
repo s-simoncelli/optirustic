@@ -68,12 +68,6 @@ pub struct NSGA3Arg {
     /// divided by the number of real variables in the problem (i.e., each variable will have the
     /// same probability of being mutated).
     pub mutation_operator_options: Option<PolynomialMutationArgs>,
-    /// The seed used in the random number generator (RNG). You can specify a seed in case you want
-    /// to try to reproduce results. NSGA2 is a stochastic algorithm that relies on an RNG at
-    /// different steps (when population is initially generated, during selection, crossover and
-    /// mutation) and, as such, may lead to slightly different solutions. The seed is randomly
-    /// picked if this is `None`.
-    pub seed: Option<u64>,
 }
 
 /// The Non-dominated Sorting Genetic Algorithm (NSGA3).

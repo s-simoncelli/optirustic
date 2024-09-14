@@ -76,6 +76,19 @@ pub fn as_algorithm_args(_attrs: TokenStream, input: TokenStream) -> TokenStream
                         })
                         .expect("Cannot add `export_history` field"),
                 );
+
+                fields.named.push(
+                    syn::Field::parse_named
+                        .parse2(quote! {
+                            /// The seed used in the random number generator (RNG). You can specify a seed in case you want
+                            /// to try to reproduce results. NSGA2 is a stochastic algorithm that relies on a RNG at
+                            /// different steps (when population is initially generated, during selection, crossover and
+                            /// mutation) and, as such, may lead to slightly different solutions. The seed is randomly
+                            /// picked if this is `None`.
+                            pub seed: Option<u64>
+                        })
+                        .expect("Cannot add `seed` field"),
+                );
             }
 
             let expand = quote! {
