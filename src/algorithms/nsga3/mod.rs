@@ -18,7 +18,7 @@ use crate::operators::{
     Crossover, Mutation, ParetoConstrainedDominance, PolynomialMutation, PolynomialMutationArgs,
     Selector, SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
 };
-use crate::utils::{fast_non_dominated_sort, DasDarren1998, NumberOfPartitions};
+use crate::utils::{DasDarren1998, FastNonDominatedSort, NumberOfPartitions};
 
 mod adaptive_ref_points;
 mod associate;
@@ -92,7 +92,7 @@ pub struct NSGA3 {
     number_of_or_reference_points: usize,
     /// The gap between the reference points.
     ref_point_gap: f64,
-    /// The ideal point coordinates when the algorithm starts up to the current evolution
+    /// The ideal point coordinates when the algorithm starts, up to the current evolution
     ideal_point: Vec<f64>,
     /// The operator to use to select the individuals for reproduction. This is a binary tournament
     /// selector ([`TournamentSelector`]) with the [`ParetoConstrainedDominance`] comparison operator.
@@ -346,7 +346,8 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
         debug!("Evaluation done");
 
         debug!("Calculating fronts and ranks for new population");
-        let sorting_results = fast_non_dominated_sort(self.population.individuals_as_mut(), false)?;
+        let sorting_results =
+            FastNonDominatedSort::sort(self.population.individuals_as_mut(), false)?;
         debug!("Collected {} fronts", sorting_results.fronts.len());
 
         debug!("Selecting best individuals");

@@ -5,7 +5,7 @@ use log::{debug, warn};
 use crate::core::{Individual, Individuals, OError};
 use crate::metrics::hv_wfg::wfg::{Optimisation, Wfg};
 use crate::metrics::hypervolume::{check_args, check_ref_point_coordinate};
-use crate::utils::fast_non_dominated_sort;
+use crate::utils::FastNonDominatedSort;
 
 mod wfg;
 
@@ -13,7 +13,7 @@ mod wfg;
 /// for a problem with `d` objectives and `n` individuals.
 ///
 /// **IMPLEMENTATION NOTES**:
-/// 1) Dominated and unfeasible solutions are excluded using the NSGA2 [`crate::utils::fast_non_dominated_sort()`]
+/// 1) Dominated and unfeasible solutions are excluded using the NSGA2 [`FastNonDominatedSort`]
 ///    algorithm in order to get the Pareto front. As assumed in the paper, non-dominated points do
 ///    not contribute do the metric.
 /// 2) The coordinates of maximised objectives of the reference point are multiplied by -1 as the
@@ -59,7 +59,7 @@ impl HyperVolumeWhile2012 {
 
         // get non-dominated front with feasible solutions only
         let num_individuals = individuals.len();
-        let mut front_data = fast_non_dominated_sort(individuals, true)?;
+        let mut front_data = FastNonDominatedSort::sort(individuals, true)?;
         let individuals = mem::take(&mut front_data.fronts[0]);
 
         if num_individuals != individuals.len() {

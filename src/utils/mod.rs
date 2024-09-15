@@ -6,7 +6,7 @@ pub use algebra::{
     dot_product, perpendicular_distance, solve_linear_system, vector_magnitude,
     LinearSolverTolerance,
 };
-pub use fast_non_dominated_sort::{fast_non_dominated_sort, NonDominatedSortResults};
+pub use fast_non_dominated_sort::{FastNonDominatedSort, NonDominatedSortResults};
 pub use reference_points::{DasDarren1998, NumberOfPartitions, TwoLayerPartitions};
 
 use crate::core::OError;

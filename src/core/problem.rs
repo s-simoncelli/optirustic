@@ -404,7 +404,7 @@ pub mod builtin_problems {
         ObjectiveDirection, Problem, RelationalOperator, VariableType,
     };
 
-    /// The Schaffer’s study (SCH) problem.
+    /// The Schaffer’s study (SCH) problem with 2 objectives.
     #[derive(Debug)]
     pub struct SCHProblem;
 

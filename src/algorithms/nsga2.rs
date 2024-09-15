@@ -14,7 +14,7 @@ use crate::operators::{
     Crossover, CrowdedComparison, Mutation, PolynomialMutation, PolynomialMutationArgs, Selector,
     SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
 };
-use crate::utils::{argsort, fast_non_dominated_sort, vector_max, vector_min, Sort};
+use crate::utils::{argsort, vector_max, vector_min, FastNonDominatedSort, Sort};
 
 /// Input arguments for the NSGA2 algorithm.
 #[as_algorithm_args]
@@ -279,7 +279,7 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
         }
 
         debug!("Calculating rank");
-        fast_non_dominated_sort(self.population.individuals_as_mut(), false)?;
+        FastNonDominatedSort::sort(self.population.individuals_as_mut(), false)?;
 
         debug!("Calculating crowding distance");
         NSGA2::set_crowding_distance(self.population.individuals_as_mut())?;
@@ -330,7 +330,8 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
         debug!("Evaluation done");
 
         debug!("Calculating fronts and ranks for new population");
-        let sorting_results = fast_non_dominated_sort(self.population.individuals_as_mut(), false)?;
+        let sorting_results =
+            FastNonDominatedSort::sort(self.population.individuals_as_mut(), false)?;
         debug!("Collected {} fronts", sorting_results.fronts.len());
 
         debug!("Selecting best individuals");

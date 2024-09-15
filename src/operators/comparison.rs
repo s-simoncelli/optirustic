@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 
 use crate::core::{Individual, OError};
+use crate::utils::FastNonDominatedSort;
 
 /// The preferred solution with the `BinaryComparisonOperator`.
 #[derive(Debug, PartialOrd, PartialEq)]
@@ -118,7 +119,7 @@ impl BinaryComparisonOperator for ParetoConstrainedDominance {
 ///    - ${distance}_i > {distance}_j$
 ///
 /// where $rank_x$ is the rank from the fast non-dominated sort algorithm (see
-/// [`crate::utils::fast_non_dominated_sort()`]) and $distance_x$ is the crowding distance using
+/// [`FastNonDominatedSort::sort`]) and $distance_x$ is the crowding distance using
 /// neighboring solutions.
 ///
 /// Implemented based on:
@@ -153,7 +154,7 @@ impl BinaryComparisonOperator for CrowdedComparison {
         second_solution: &Individual,
     ) -> Result<PreferredSolution, OError> {
         let name = "CrowdedComparison".to_string();
-        let rank1 = match first_solution.get_data("rank") {
+        let rank1 = match first_solution.get_data(&FastNonDominatedSort::rank_key()) {
             Err(_) => {
                 return Err(OError::ComparisonOperator(
                     name,
@@ -162,7 +163,7 @@ impl BinaryComparisonOperator for CrowdedComparison {
             }
             Ok(r) => r.as_integer()?,
         };
-        let rank2 = match second_solution.get_data("rank") {
+        let rank2 = match second_solution.get_data(&FastNonDominatedSort::rank_key()) {
             Err(_) => {
                 return Err(OError::ComparisonOperator(
                     name,
@@ -498,6 +499,7 @@ mod test_crowded_comparison {
     };
     use crate::operators::comparison::CrowdedComparison;
     use crate::operators::{BinaryComparisonOperator, PreferredSolution};
+    use crate::utils::FastNonDominatedSort;
 
     #[test]
     fn test_different_rank() {
@@ -510,8 +512,8 @@ mod test_crowded_comparison {
 
         let mut solution1 = Individual::new(problem.clone());
         let mut solution2 = Individual::new(problem.clone());
-        solution1.set_data("rank", DataValue::Integer(1));
-        solution2.set_data("rank", DataValue::Integer(4));
+        solution1.set_data(&FastNonDominatedSort::rank_key(), DataValue::Integer(1));
+        solution2.set_data(&FastNonDominatedSort::rank_key(), DataValue::Integer(4));
 
         // Sol 1 dominates
         assert_eq!(
@@ -520,7 +522,7 @@ mod test_crowded_comparison {
         );
 
         // Sol 2 dominates
-        solution1.set_data("rank", DataValue::Integer(5));
+        solution1.set_data(&FastNonDominatedSort::rank_key(), DataValue::Integer(5));
         assert_eq!(
             CrowdedComparison::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::Second
@@ -538,11 +540,11 @@ mod test_crowded_comparison {
 
         let mut solution1 = Individual::new(problem.clone());
         let mut solution2 = Individual::new(problem.clone());
-        solution1.set_data("rank", DataValue::Integer(1));
-        solution2.set_data("rank", DataValue::Integer(1));
+        solution1.set_data(&FastNonDominatedSort::rank_key(), DataValue::Integer(1));
+        solution2.set_data(&FastNonDominatedSort::rank_key(), DataValue::Integer(1));
 
-        solution1.set_data("crowding_distance", DataValue::Real(10.5));
-        solution2.set_data("crowding_distance", DataValue::Real(0.32));
+        solution1.set_data(&CrowdedComparison::distance_key(), DataValue::Real(10.5));
+        solution2.set_data(&CrowdedComparison::distance_key(), DataValue::Real(0.32));
         // Sol 1 dominates
         assert_eq!(
             CrowdedComparison::compare(&solution1, &solution2).unwrap(),
@@ -550,7 +552,7 @@ mod test_crowded_comparison {
         );
 
         // Sol 2 dominates
-        solution2.set_data("crowding_distance", DataValue::Real(100.32));
+        solution2.set_data(&CrowdedComparison::distance_key(), DataValue::Real(100.32));
         assert_eq!(
             CrowdedComparison::compare(&solution1, &solution2).unwrap(),
             PreferredSolution::Second
