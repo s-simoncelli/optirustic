@@ -85,6 +85,17 @@ impl DataValue {
             Err(OError::WrongDataType("vector of f64".to_string()))
         }
     }
+    /// Get the mutable value if the data is of vector of f64. This returns an error if the data
+    /// is not a vector.
+    ///
+    /// returns: `Result<&mut Vec<f64, OError>`
+    pub fn as_mut_f64_vec(&mut self) -> Result<&mut Vec<f64>, OError> {
+        if let DataValue::Vector(v) = self {
+            Ok(v)
+        } else {
+            Err(OError::WrongDataType("vector of f64".to_string()))
+        }
+    }
 
     /// Get the value if the data is of vector of data. This returns an error if the data is not a
     /// data vector.
@@ -97,6 +108,19 @@ impl DataValue {
             Err(OError::WrongDataType("vector of data".to_string()))
         }
     }
+
+    /// Get the mutable value if the data is of vector of data. This returns an error if the data
+    /// is not a data vector.
+    ///
+    /// returns: `Result<&mut Vec<DataValue>, OError>`
+    pub fn as_mut_data_vec(&mut self) -> Result<&mut Vec<DataValue>, OError> {
+        if let DataValue::DataVector(v) = self {
+            Ok(v)
+        } else {
+            Err(OError::WrongDataType("vector of data".to_string()))
+        }
+    }
+
     /// Get the value if the data is a mao. This returns an error if the data is not a map.
     ///
     /// returns: `Result<HashMap<String, DataValue>, OError>`
