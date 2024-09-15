@@ -472,6 +472,17 @@ impl Individual {
             .ok_or(OError::WrongDataName(name.to_string()))
     }
 
+    /// Check if an individual has custom data set for a `name`.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The name of the data.
+    ///
+    /// returns: `bool`
+    pub fn has_data(&self, name: &str) -> bool {
+        self.data.contains_key(name)
+    }
+
     /// Export all the solution data (constraint and objective values, constraint violation and
     /// feasibility).
     ///
