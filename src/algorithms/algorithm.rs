@@ -125,7 +125,7 @@ pub struct AlgorithmExport {
     pub algorithm: String,
     /// The time the algorithm took to reach the current generation.
     pub took: Elapsed,
-    /// Additional data stored in the algorithm (such as reference points for [`NSGA3`]).
+    /// Additional data stored in the algorithm (such as reference points for [`crate::algorithms::NSGA3`]).
     pub additional_data: HashMap<String, DataValue>,
 }
 

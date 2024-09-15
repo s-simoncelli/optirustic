@@ -29,18 +29,16 @@ pub struct NonDominatedSortResults {
 /// > K. Deb, A. Pratap, S. Agarwal and T. Meyarivan, "A fast and elitist multi-objective genetic
 /// > algorithm: NSGA-II," in IEEE Transactions on Evolutionary Computation, vol. 6, no. 2, pp.
 /// > 182-197, April 2002, doi: 10.1109/4235.996017.
-pub struct FastNonDominatedSort<'a> {
-    individuals: &'a mut [Individual],
-    first_front_only: bool,
-}
+pub struct FastNonDominatedSort;
 
-impl<'a> FastNonDominatedSort<'a> {
+impl FastNonDominatedSort {
     /// Get the key where the rank is stored in an individual's data.
     ///
     /// returns: `String`
     pub fn rank_key() -> String {
         "rank".into()
     }
+
     /// Sort the fronts.
     ///
     /// # Arguments
@@ -52,7 +50,7 @@ impl<'a> FastNonDominatedSort<'a> {
     ///
     /// returns: `Result<NonDominatedSortResults, OError>`.
     pub fn sort(
-        individuals: &'a mut [Individual],
+        individuals: &mut [Individual],
         first_front_only: bool,
     ) -> Result<NonDominatedSortResults, OError> {
         if individuals.len() < 2 {

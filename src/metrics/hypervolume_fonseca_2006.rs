@@ -6,7 +6,7 @@ use hv_fonseca_et_al_2006_sys::calculate_hv;
 
 use crate::core::{Individual, Individuals, OError};
 use crate::metrics::hypervolume::{check_args, check_ref_point_coordinate};
-use crate::utils::{fast_non_dominated_sort, FastNonDominatedSort};
+use crate::utils::FastNonDominatedSort;
 
 /// Calculate the hyper-volume using the algorithm proposed by [Fonseca et al. (2006)](http://dx.doi.org/10.1109/CEC.2006.1688440)
 /// for a problem with `d` objectives and `n` individuals. The function calls version 4 of the
