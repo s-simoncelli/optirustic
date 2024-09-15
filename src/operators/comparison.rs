@@ -119,8 +119,9 @@ impl BinaryComparisonOperator for ParetoConstrainedDominance {
 ///    - ${distance}_i > {distance}_j$
 ///
 /// where $rank_x$ is the rank from the fast non-dominated sort algorithm (see
-/// [`FastNonDominatedSort::sort`]) and $distance_x$ is the crowding distance using
-/// neighboring solutions.
+/// [`FastNonDominatedSort::sort`]) and $distance_x$ is the crowding distance using neighboring
+/// solutions. The operator expects the crowding distance to be stored in the individual's data in
+/// the [`CrowdedComparison::distance_key`] key.
 ///
 /// Implemented based on:
 /// > K. Deb, A. Pratap, S. Agarwal and T. Meyarivan, "A fast and elitist multi-objective genetic
@@ -135,6 +136,19 @@ impl CrowdedComparison {
     /// returns: `String`.
     pub fn distance_key() -> String {
         "crowding_distance".into()
+    }
+
+    /// Get the distance stored in an individual.
+    ///
+    /// # Arguments
+    ///
+    /// * `individual`: The individual.
+    ///
+    /// returns: `Result<f64, OError>`
+    pub fn get_distance(individual: &Individual) -> Result<f64, OError> {
+        individual
+            .get_data(&CrowdedComparison::distance_key())?
+            .as_real()
     }
 }
 

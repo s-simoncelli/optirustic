@@ -369,16 +369,9 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
             // Sort in descending order. Prioritise individuals with the largest distance to
             // prevent crowding
             last_front.sort_by(|i, o| {
-                i.get_data(&CrowdedComparison::distance_key())
+                CrowdedComparison::get_distance(&i)
                     .unwrap()
-                    .as_real()
-                    .unwrap()
-                    .total_cmp(
-                        &o.get_data(&CrowdedComparison::distance_key())
-                            .unwrap()
-                            .as_real()
-                            .unwrap(),
-                    )
+                    .total_cmp(&CrowdedComparison::get_distance(&o).unwrap())
             });
             last_front.reverse();
 
