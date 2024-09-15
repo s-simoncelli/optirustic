@@ -128,6 +128,15 @@ impl BinaryComparisonOperator for ParetoConstrainedDominance {
 ///
 pub struct CrowdedComparison;
 
+impl CrowdedComparison {
+    /// Get the key where the crowding distance is stored in an individual's data.
+    ///
+    /// returns: `String`.
+    pub fn distance_key() -> String {
+        "crowding_distance".into()
+    }
+}
+
 impl BinaryComparisonOperator for CrowdedComparison {
     /// Get the crowded comparison relation between two solutions with rank and crowding distance
     /// data. This returns an error if the data does not exist on either solutions.
@@ -166,7 +175,7 @@ impl BinaryComparisonOperator for CrowdedComparison {
         match rank1.cmp(&rank2) {
             Ordering::Less => Ok(PreferredSolution::First),
             Ordering::Equal => {
-                let d1 = match first_solution.get_data("crowding_distance") {
+                let d1 = match first_solution.get_data(&CrowdedComparison::distance_key()) {
                     Err(_) => {
                         return Err(OError::ComparisonOperator(
                             name,
@@ -178,7 +187,7 @@ impl BinaryComparisonOperator for CrowdedComparison {
                     }
                     Ok(r) => r.as_real()?,
                 };
-                let d2 = match second_solution.get_data("crowding_distance") {
+                let d2 = match second_solution.get_data(&CrowdedComparison::distance_key()) {
                     Err(_) => {
                         return Err(OError::ComparisonOperator(
                             name,

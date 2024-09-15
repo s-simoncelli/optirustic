@@ -16,9 +16,6 @@ use crate::operators::{
 };
 use crate::utils::{argsort, fast_non_dominated_sort, vector_max, vector_min, Sort};
 
-/// The data key where the crowding distance is stored for each [`Individual`].
-const CROWDING_DIST_KEY: &str = "crowding_distance";
-
 /// Input arguments for the NSGA2 algorithm.
 #[as_algorithm_args]
 pub struct NSGA2Arg {
@@ -187,7 +184,7 @@ impl NSGA2 {
 
     /// Calculate the crowding distance (with complexity $O(M * log(N))$, where `M` is the number of
     /// objectives and `N` the number of individuals). This set the distance on the individual's data,
-    /// to retrieve it, use `Individual::set_data("crowding_distance").unwrap()`.
+    /// to retrieve it, use `Individual::get_data(&CrowdedComparison::distance_key()).unwrap()`.
     /// > NOTE: the individuals must be a non-dominated front.
     ///
     /// Implemented based on paragraph 3B in:
@@ -207,7 +204,7 @@ impl NSGA2 {
         // if there are enough point set distance to + infinite
         if total_individuals < 3 {
             for individual in individuals {
-                individual.set_data(CROWDING_DIST_KEY, inf.clone());
+                individual.set_data(&CrowdedComparison::distance_key(), inf.clone());
             }
             debug!("Setting crowding distance to Inf for all individuals. At least 3 individuals are needed");
 
@@ -215,7 +212,7 @@ impl NSGA2 {
         }
 
         for individual in individuals.iter_mut() {
-            individual.set_data(CROWDING_DIST_KEY, DataValue::Real(0.0));
+            individual.set_data(&CrowdedComparison::distance_key(), DataValue::Real(0.0));
         }
 
         let problem = individuals.individual(0)?.problem();
@@ -226,7 +223,7 @@ impl NSGA2 {
             // set all to infinite if distance is too small
             if delta_range.abs() < f64::EPSILON {
                 for individual in &mut *individuals {
-                    individual.set_data(CROWDING_DIST_KEY, inf.clone());
+                    individual.set_data(&CrowdedComparison::distance_key(), inf.clone());
                 }
                 debug!("Setting crowding distance to Inf for all individuals. The min/max range is too small");
                 return Ok(());
@@ -239,24 +236,25 @@ impl NSGA2 {
             // assign infinite distance to the boundary points
             individuals
                 .individual_as_mut(sorted_idx[0])?
-                .set_data(CROWDING_DIST_KEY, inf.clone());
+                .set_data(&CrowdedComparison::distance_key(), inf.clone());
             individuals
                 .individual_as_mut(sorted_idx[total_individuals - 1])?
-                .set_data(CROWDING_DIST_KEY, inf.clone());
+                .set_data(&CrowdedComparison::distance_key(), inf.clone());
 
             for obj_i in 1..(total_individuals - 1) {
                 // get the corresponding individual to sorted objective
                 let ind_i = sorted_idx[obj_i];
                 let current_distance = individuals
                     .individual(ind_i)?
-                    .get_data(CROWDING_DIST_KEY)
+                    .get_data(&CrowdedComparison::distance_key())
                     .unwrap_or(DataValue::Real(0.0));
 
                 if let DataValue::Real(current_distance) = current_distance {
                     let delta = (obj_values[obj_i + 1] - obj_values[obj_i - 1]) / delta_range;
-                    individuals
-                        .individual_as_mut(ind_i)?
-                        .set_data(CROWDING_DIST_KEY, DataValue::Real(current_distance + delta));
+                    individuals.individual_as_mut(ind_i)?.set_data(
+                        &CrowdedComparison::distance_key(),
+                        DataValue::Real(current_distance + delta),
+                    );
                 }
             }
         }
@@ -370,11 +368,16 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
             // Sort in descending order. Prioritise individuals with the largest distance to
             // prevent crowding
             last_front.sort_by(|i, o| {
-                i.get_data(CROWDING_DIST_KEY)
+                i.get_data(&CrowdedComparison::distance_key())
                     .unwrap()
                     .as_real()
                     .unwrap()
-                    .total_cmp(&o.get_data(CROWDING_DIST_KEY).unwrap().as_real().unwrap())
+                    .total_cmp(
+                        &o.get_data(&CrowdedComparison::distance_key())
+                            .unwrap()
+                            .as_real()
+                            .unwrap(),
+                    )
             });
             last_front.reverse();
 
@@ -397,10 +400,10 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
 mod test_sorting {
     use float_cmp::assert_approx_eq;
 
-    use crate::algorithms::nsga2::CROWDING_DIST_KEY;
     use crate::algorithms::NSGA2;
     use crate::core::test_utils::individuals_from_obj_values_dummy;
     use crate::core::{DataValue, Individuals, ObjectiveDirection};
+    use crate::operators::CrowdedComparison;
 
     #[test]
     /// Test the crowding distance algorithm (not enough points).
@@ -414,7 +417,7 @@ mod test_sorting {
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
         for i in individuals {
             assert_eq!(
-                i.get_data(CROWDING_DIST_KEY).unwrap(),
+                i.get_data(&CrowdedComparison::distance_key()).unwrap(),
                 DataValue::Real(f64::MAX)
             );
         }
@@ -437,7 +440,7 @@ mod test_sorting {
         NSGA2::set_crowding_distance(&mut individuals).unwrap();
         for i in individuals {
             assert_eq!(
-                i.get_data(CROWDING_DIST_KEY).unwrap(),
+                i.get_data(&CrowdedComparison::distance_key()).unwrap(),
                 DataValue::Real(f64::MAX)
             );
         }
@@ -464,7 +467,7 @@ mod test_sorting {
                     .as_mut_slice()
                     .individual(0)
                     .unwrap()
-                    .get_data(CROWDING_DIST_KEY)
+                    .get_data(&CrowdedComparison::distance_key())
                     .unwrap(),
                 DataValue::Real(2.0)
             );
@@ -474,7 +477,7 @@ mod test_sorting {
                     .as_mut_slice()
                     .individual(1)
                     .unwrap()
-                    .get_data(CROWDING_DIST_KEY)
+                    .get_data(&CrowdedComparison::distance_key())
                     .unwrap(),
                 DataValue::Real(f64::MAX)
             );
@@ -483,7 +486,7 @@ mod test_sorting {
                     .as_mut_slice()
                     .individual(2)
                     .unwrap()
-                    .get_data(CROWDING_DIST_KEY)
+                    .get_data(&CrowdedComparison::distance_key())
                     .unwrap(),
                 DataValue::Real(f64::MAX)
             );
@@ -514,7 +517,7 @@ mod test_sorting {
                 .as_mut_slice()
                 .individual(0)
                 .unwrap()
-                .get_data(CROWDING_DIST_KEY)
+                .get_data(&CrowdedComparison::distance_key())
                 .unwrap(),
             DataValue::Real(3.0)
         );
@@ -523,7 +526,7 @@ mod test_sorting {
                 .as_mut_slice()
                 .individual(1)
                 .unwrap()
-                .get_data(CROWDING_DIST_KEY)
+                .get_data(&CrowdedComparison::distance_key())
                 .unwrap(),
             DataValue::Real(f64::MAX)
         );
@@ -532,7 +535,7 @@ mod test_sorting {
                 .as_mut_slice()
                 .individual(2)
                 .unwrap()
-                .get_data(CROWDING_DIST_KEY)
+                .get_data(&CrowdedComparison::distance_key())
                 .unwrap(),
             DataValue::Real(f64::MAX)
         );
@@ -559,7 +562,7 @@ mod test_sorting {
                 .as_mut_slice()
                 .individual(0)
                 .unwrap()
-                .get_data(CROWDING_DIST_KEY)
+                .get_data(&CrowdedComparison::distance_key())
                 .unwrap(),
             DataValue::Real(f64::MAX)
         );
@@ -568,7 +571,7 @@ mod test_sorting {
                 .as_mut_slice()
                 .individual(1)
                 .unwrap()
-                .get_data(CROWDING_DIST_KEY)
+                .get_data(&CrowdedComparison::distance_key())
                 .unwrap(),
             DataValue::Real(1.0)
         );
@@ -577,7 +580,7 @@ mod test_sorting {
                 .as_mut_slice()
                 .individual(2)
                 .unwrap()
-                .get_data(CROWDING_DIST_KEY)
+                .get_data(&CrowdedComparison::distance_key())
                 .unwrap(),
             DataValue::Real(1.5)
         );
@@ -586,7 +589,7 @@ mod test_sorting {
                 .as_mut_slice()
                 .individual(3)
                 .unwrap()
-                .get_data(CROWDING_DIST_KEY)
+                .get_data(&CrowdedComparison::distance_key())
                 .unwrap(),
             DataValue::Real(f64::MAX)
         );
@@ -625,7 +628,7 @@ mod test_sorting {
                     .as_mut_slice()
                     .individual(idx)
                     .unwrap()
-                    .get_data(CROWDING_DIST_KEY)
+                    .get_data(&CrowdedComparison::distance_key())
                     .unwrap()
                     .as_real()
                     .unwrap(),
