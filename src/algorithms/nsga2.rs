@@ -7,6 +7,8 @@ use std::path::PathBuf;
 use nsga_rs_macros::{as_algorithm, as_algorithm_args, impl_algorithm_trait_items};
 use rayon::ThreadPool;
 
+#[cfg(feature = "python")]
+use crate::algorithms::PyStoppingConditionMap;
 use crate::algorithms::{Algorithm, NumThreads};
 use crate::core::utils::get_rng;
 use crate::core::{DataValue, Individual, Individuals, IndividualsMut, OError};
@@ -16,7 +18,6 @@ use crate::operators::{
 };
 use crate::utils::{argsort, fast_non_dominated_sort, vector_max, vector_min, Sort};
 
-// use crate::algorithms::stopping_condition::{PyStoppingConditionType};
 #[cfg(feature = "python")]
 use pyo3::prelude::*;
 
@@ -25,31 +26,9 @@ pub const CROWDING_DIST_KEY: &str = "crowding_distance";
 
 /// Input arguments for the NSGA2 algorithm.
 #[as_algorithm_args]
-#[cfg_attr(feature = "python", pyclass(get_all, from_py_object))]
 pub struct NSGA2Arg {
     /// The number of individuals to use in the population. This must be a multiple of `2`.
     pub number_of_individuals: usize,
-    /// The options of the Simulated Binary Crossover (SBX) operator. This operator is used to
-    /// generate new children by recombining the variables of parent solutions. This defaults to
-    /// [`SimulatedBinaryCrossoverArgs::default()`].
-    pub crossover_operator_options: Option<SimulatedBinaryCrossoverArgs>,
-    /// The options to Polynomial Mutation (PM) operator used to mutate the variables of an
-    /// individual. This defaults to [`PolynomialMutationArgs::default()`],
-    /// with a distribution index or index parameter of `20` and variable probability equal `1`
-    /// divided by the number of real variables in the problem (i.e., each variable will have the
-    /// same probability of being mutated).
-    pub mutation_operator_options: Option<PolynomialMutationArgs>,
-    /// Instead of initialising the population with random variables, see the initial population
-    /// with  the variable values from a JSON files exported with this tool. This option lets you
-    /// restart the evolution from a previous generation; you can use any history file (exported
-    /// when the field `export_history`) or the file exported when the stopping condition was reached.
-    pub resume_from_file: Option<PathBuf>,
-    /// The seed used in the random number generator (RNG). You can specify a seed in case you want
-    /// to try to reproduce results. NSGA2 is a stochastic algorithm that relies on a RNG at
-    /// different steps (when population is initially generated, during selection, crossover and
-    /// mutation) and, as such, may lead to slightly different solutions. The seed is randomly
-    /// picked if this is `None`.
-    pub seed: Option<u64>,
 }
 
 #[cfg(feature = "python")]
@@ -59,7 +38,7 @@ impl NSGA2Arg {
     #[pyo3(signature = (number_of_individuals, stopping_condition, crossover_operator_options=None, mutation_operator_options=None, resume_from_file=None, threads=None, export_history=None, seed=None))]
     fn py_new(
         number_of_individuals: usize,
-        stopping_condition: StoppingCondition,
+        stopping_condition: PyStoppingConditionMap,
         crossover_operator_options: Option<SimulatedBinaryCrossoverArgs>,
         mutation_operator_options: Option<PolynomialMutationArgs>,
         resume_from_file: Option<PathBuf>,
@@ -74,7 +53,7 @@ impl NSGA2Arg {
             mutation_operator_options,
             resume_from_file,
             seed,
-            stopping_condition,
+            stopping_condition: stopping_condition.into(),
             threads,
             export_history,
         })

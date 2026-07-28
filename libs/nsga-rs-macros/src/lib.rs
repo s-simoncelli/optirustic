@@ -38,16 +38,46 @@ pub fn test_with_retries(attrs: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 /// Register new fields on a struct that contains algorithm options. This macro adds:
-///  - the Serialize, Deserialize, Clone traits to the structure to make it serialisable and
-///    de-serialisable.
-///  - add the following fields: stopping_condition (`StoppingCondition`), threads (`NumThreads`)
-///    and export_history (`Option<ExportHistory>`).
+///  - the `Serialize`, `Deserialize`, `Clone` traits to the structure to make it
+///     serialisable and de-serialisable.
+///  - the `#[cfg_attr(feature = "python", pyclass(get_all, from_py_object))]` macro for
+///    Python feature.
+///  - add the following fields:
+///      - crossover_operator_options ([`Option<SimulatedBinaryCrossoverArgs>`])
+///      - mutation_operator_options ([`Option<PolynomialMutationArgs>`])
+///      - stopping_condition ([`StoppingCondition`])
+///      - threads ([`NumThreads`])
+///      - export_history ([`ExportHistory`])
+///      - resume_from_file ([`Option<PathBuf>`])
+///      - seed ([`Option<u64>`])
 #[proc_macro_attribute]
 pub fn as_algorithm_args(_attrs: TokenStream, input: TokenStream) -> TokenStream {
     let mut ast = parse_macro_input!(input as DeriveInput);
     match &mut ast.data {
         syn::Data::Struct(ref mut struct_data) => {
             if let syn::Fields::Named(fields) = &mut struct_data.fields {
+                fields.named.push(
+                    syn::Field::parse_named
+                        .parse2(quote! {
+                            /// The options of the Simulated Binary Crossover (SBX) operator. This operator is used to
+                            /// generate new children by recombining the variables of parent solutions. This defaults to
+                            /// [`SimulatedBinaryCrossoverArgs::default()`].
+                            pub crossover_operator_options: Option<SimulatedBinaryCrossoverArgs>
+                        })
+                        .expect("Cannot add `crossover_operator_options` field"),
+                );
+                fields.named.push(
+                    syn::Field::parse_named
+                        .parse2(quote! {
+                        /// The options to Polynomial Mutation (PM) operator used to mutate the variables of an
+                        /// individual. This defaults to [`PolynomialMutationArgs::default()`],
+                        /// with a distribution index or index parameter of `20` and variable probability equal `1`
+                        /// divided by the number of real variables in the problem (i.e., each variable will have the
+                        /// same probability of being mutated).
+                            pub mutation_operator_options: Option<PolynomialMutationArgs>
+                        })
+                        .expect("Cannot add `mutation_operator_options` field"),
+                );
                 fields.named.push(
                     syn::Field::parse_named
                         .parse2(quote! {
@@ -59,7 +89,30 @@ pub fn as_algorithm_args(_attrs: TokenStream, input: TokenStream) -> TokenStream
                 fields.named.push(
                     syn::Field::parse_named
                         .parse2(quote! {
-                            /// The number of threads to use to parallel evaluate the objective and constraint
+                            /// Instead of initialising the population with random variables, see the initial population
+                            /// with  the variable values from a JSON files exported with this tool. This option lets you
+                            /// restart the evolution from a previous generation; you can use any history file (exported
+                            /// when the field `export_history`) or the file exported when the stopping condition was reached.
+                            pub resume_from_file: Option<PathBuf>
+                        })
+                        .expect("Cannot add `resume_from_file` field"),
+                );
+                fields.named.push(
+                    syn::Field::parse_named
+                        .parse2(quote! {
+                            /// The seed used in the random number generator (RNG). You can specify a seed in case you want
+                            /// to try to reproduce results. NSGA2 is a stochastic algorithm that relies on a RNG at
+                            /// different steps (when population is initially generated, during selection, crossover and
+                            /// mutation) and, as such, may lead to slightly different solutions. The seed is randomly
+                            /// picked if this is `None`.
+                            pub seed: Option<u64>
+                        })
+                        .expect("Cannot add `seed` field"),
+                );
+                fields.named.push(
+                    syn::Field::parse_named
+                        .parse2(quote! {
+                            /// The number of threads to use to parallel evaluate the objectives and constraints
                             /// in [`Problem::evaluator`]. If the evaluation function takes a long time to run,
                             /// it is advisable to set this option.
                             pub threads: NumThreads
@@ -83,6 +136,7 @@ pub fn as_algorithm_args(_attrs: TokenStream, input: TokenStream) -> TokenStream
                 use serde::{Deserialize, Serialize};
 
                 #[derive(Serialize, Deserialize, Clone)]
+                #[cfg_attr(feature = "python", pyclass(get_all, from_py_object))]
                 #ast
             };
             expand.into()
