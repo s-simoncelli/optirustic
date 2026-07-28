@@ -875,6 +875,9 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
                     .iter()
                     .all(|c| self.is_stopping_condition_met(c).unwrap())
             }
+            StoppingCondition::Function(custom_stopping_condition) => {
+                custom_stopping_condition.is_met()
+            }
         };
         Ok(is_met)
     }
