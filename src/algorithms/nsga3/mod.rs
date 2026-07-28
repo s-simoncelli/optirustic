@@ -205,7 +205,7 @@ impl NSGA3 {
     /// implementation see [`AdaptiveReferencePoints`].
     ///
     /// returns: `NSGA3`.
-    pub fn new(problem: Problem, options: NSGA3Arg, adaptive: bool) -> Result<Self, OError> {
+    pub fn new(problem: Arc<Problem>, options: NSGA3Arg, adaptive: bool) -> Result<Self, OError> {
         let name = if !adaptive {
             "NSGA3".to_string()
         } else {
@@ -264,7 +264,6 @@ impl NSGA3 {
             );
         }
 
-        let problem = Arc::new(problem);
         let population = if let Some(init_file) = options.resume_from_file {
             info!("Loading initial population from {:?}", init_file);
             NSGA3::seed_population_from_file(
@@ -558,6 +557,7 @@ crate::algorithms::create_py_reader_interface!(NSGA3Data, NSGA3, NSGA3Arg);
 #[cfg(test)]
 mod test_problems {
     use float_cmp::{approx_eq, assert_approx_eq};
+    use std::sync::Arc;
 
     use nsga_rs_macros::test_with_retries;
 
@@ -633,7 +633,7 @@ mod test_problems {
             seed: Some(1),
         };
 
-        let mut algo = NSGA3::new(problem, args, false).unwrap();
+        let mut algo = NSGA3::new(Arc::new(problem), args, false).unwrap();
         assert_eq!(algo.reference_points().len(), expected_ref_points);
 
         algo.run().unwrap();
@@ -733,7 +733,7 @@ mod test_problems {
             seed: Some(1),
         };
 
-        let mut algo = NSGA3::new(problem, args, false).unwrap();
+        let mut algo = NSGA3::new(Arc::new(problem), args, false).unwrap();
         assert_eq!(algo.reference_points().len(), 91);
 
         algo.run().unwrap();

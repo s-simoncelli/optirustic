@@ -1412,7 +1412,7 @@ mod test {
             resume_from_file: None,
             seed: Some(10),
         };
-        let mut algo = NSGA2::new(problem, args).unwrap();
+        let mut algo = NSGA2::new(Arc::new(problem), args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -1433,7 +1433,7 @@ mod test {
             resume_from_file: None,
             seed: Some(10),
         };
-        let mut algo = NSGA2::new(problem, args).unwrap();
+        let mut algo = NSGA2::new(Arc::new(problem), args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -1458,7 +1458,7 @@ mod test {
             resume_from_file: None,
             seed: Some(10),
         };
-        let mut algo = NSGA2::new(problem, args).unwrap();
+        let mut algo = NSGA2::new(Arc::new(problem), args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 

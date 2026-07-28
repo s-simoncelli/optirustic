@@ -1,6 +1,7 @@
 use std::env;
 use std::error::Error;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use gnuplot::PlotOption::{Caption, Color, PointSize, PointSymbol};
 use gnuplot::{AxesCommon, Figure};
@@ -61,7 +62,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // Initialise the algorithm
-    let mut algo = AdaptiveNSGA3::new(problem, args).unwrap();
+    let mut algo = AdaptiveNSGA3::new(Arc::new(problem), args).unwrap();
 
     // Run the algorithm
     algo.run()?;

@@ -1,6 +1,7 @@
 use std::env;
 use std::error::Error;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use gnuplot::PlotOption::{Caption, Color, LineWidth, PointSymbol};
 use gnuplot::{AutoOption, AxesCommon, Figure};
@@ -44,7 +45,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         resume_from_file: None,
         seed: Some(10),
     };
-    let mut algo = NSGA2::new(problem, args)?;
+    let mut algo = NSGA2::new(Arc::new(problem), args)?;
     algo.run()?;
 
     // Export serialised results at last generation

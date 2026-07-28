@@ -1,5 +1,6 @@
 use std::env;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use nsga_rs::algorithms::{
     Algorithm, ExportHistory, NSGA2Arg, NumThreads, StoppingCondition, NSGA2,
@@ -43,7 +44,7 @@ fn main() -> Result<(), OError> {
         resume_from_file: None,
         seed: Some(10),
     };
-    let mut algo = NSGA2::new(problem, args)?;
+    let mut algo = NSGA2::new(Arc::new(problem), args)?;
     algo.run()?;
     let mut results = algo.get_results();
 

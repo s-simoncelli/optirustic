@@ -1,6 +1,7 @@
 use std::env;
 use std::error::Error;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use log::LevelFilter;
 
@@ -63,7 +64,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // Initialise the algorithm
-    let mut algo = NSGA3::new(problem, args, false).unwrap();
+    let mut algo = NSGA3::new(Arc::new(problem), args, false).unwrap();
 
     // Run the algorithm
     algo.run()?;

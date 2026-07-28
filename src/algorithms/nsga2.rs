@@ -112,7 +112,7 @@ impl NSGA2 {
     /// * `args`: The [`NSGA2Arg`] arguments to customise the algorithm behaviour.
     ///
     /// returns: `NSGA2`.
-    pub fn new(problem: Problem, options: NSGA2Arg) -> Result<Self, OError> {
+    pub fn new(problem: Arc<Problem>, options: NSGA2Arg) -> Result<Self, OError> {
         let name = "NSGA2".to_string();
         if options.number_of_individuals < 3 {
             return Err(OError::AlgorithmInit(
@@ -130,7 +130,6 @@ impl NSGA2 {
         }
 
         let nsga2_args = options.clone();
-        let problem = Arc::new(problem);
         let population = if let Some(init_file) = options.resume_from_file {
             info!("Loading initial population from {:?}", init_file);
             NSGA2::seed_population_from_file(
@@ -674,6 +673,7 @@ mod test_sorting {
 #[cfg(test)]
 mod test_problems {
     use nsga_rs_macros::test_with_retries;
+    use std::sync::Arc;
 
     use crate::algorithms::{Algorithm, NSGA2Arg, NumThreads, StoppingCondition, NSGA2};
     use crate::core::builtin_problems::{
@@ -698,7 +698,7 @@ mod test_problems {
             resume_from_file: None,
             seed: Some(10),
         };
-        let mut algo = NSGA2::new(problem, args).unwrap();
+        let mut algo = NSGA2::new(Arc::new(problem), args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -726,7 +726,7 @@ mod test_problems {
             resume_from_file: None,
             seed: Some(1),
         };
-        let mut algo = NSGA2::new(problem, args).unwrap();
+        let mut algo = NSGA2::new(Arc::new(problem), args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -773,7 +773,7 @@ mod test_problems {
             resume_from_file: None,
             seed: Some(1),
         };
-        let mut algo = NSGA2::new(problem, args).unwrap();
+        let mut algo = NSGA2::new(Arc::new(problem), args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -825,7 +825,7 @@ mod test_problems {
             resume_from_file: None,
             seed: Some(1),
         };
-        let mut algo = NSGA2::new(problem, args).unwrap();
+        let mut algo = NSGA2::new(Arc::new(problem), args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -877,7 +877,7 @@ mod test_problems {
             seed: Some(1),
         };
         let problem = ZTD4Problem::create(number_of_individuals).unwrap();
-        let mut algo = NSGA2::new(problem, args.clone()).unwrap();
+        let mut algo = NSGA2::new(Arc::new(problem), args.clone()).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 
@@ -930,7 +930,7 @@ mod test_problems {
             resume_from_file: None,
             seed: Some(1),
         };
-        let mut algo = NSGA2::new(problem, args).unwrap();
+        let mut algo = NSGA2::new(Arc::new(problem), args).unwrap();
         algo.run().unwrap();
         let results = algo.get_results();
 

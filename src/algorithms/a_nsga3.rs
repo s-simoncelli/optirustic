@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::algorithms::{NSGA3Arg, NSGA3};
 use crate::core::{OError, Problem};
 
@@ -20,13 +22,15 @@ impl AdaptiveNSGA3 {
     /// Initialise the [`NSGA3`] algorithm with `adaptive` option set to `true`.
     ///
     /// returns: `NSGA3`
-    pub fn new(problem: Problem, options: NSGA3Arg) -> Result<NSGA3, OError> {
+    pub fn new(problem: Arc<Problem>, options: NSGA3Arg) -> Result<NSGA3, OError> {
         NSGA3::new(problem, options, true)
     }
 }
 
 #[cfg(test)]
 mod test_problems {
+    use std::sync::Arc;
+
     use float_cmp::approx_eq;
 
     use nsga_rs_macros::test_with_retries;
@@ -67,7 +71,7 @@ mod test_problems {
             resume_from_file: None,
         };
 
-        let mut algo = AdaptiveNSGA3::new(problem, args).unwrap();
+        let mut algo = AdaptiveNSGA3::new(Arc::new(problem), args).unwrap();
         assert_eq!(algo.reference_points().len(), expected_ref_points);
 
         algo.run().unwrap();
