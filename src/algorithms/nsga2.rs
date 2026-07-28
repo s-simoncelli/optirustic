@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter};
 use std::ops::Rem;
 use std::path::PathBuf;
 
-use nsga_rs_macros::{as_algorithm, as_algorithm_args, impl_algorithm_trait_items};
+use nsga_rs_macros::{algorithm, algorithm_args, algorithm_trait_items};
 use rayon::ThreadPool;
 
 #[cfg(feature = "python")]
@@ -25,7 +25,7 @@ use pyo3::prelude::*;
 pub const CROWDING_DIST_KEY: &str = "crowding_distance";
 
 /// Input arguments for the NSGA2 algorithm.
-#[as_algorithm_args]
+#[algorithm_args]
 pub struct NSGA2Arg {
     /// The number of individuals to use in the population. This must be a multiple of `2`.
     pub number_of_individuals: usize,
@@ -89,7 +89,7 @@ impl NSGA2Arg {
 /// ```rust
 #[doc = include_str!("../../examples/nsga2_zdt1.rs")]
 /// ```
-#[as_algorithm(NSGA2Arg)]
+#[algorithm(NSGA2Arg)]
 pub struct NSGA2 {
     /// The operator to use to select the individuals for reproduction. This is a binary tournament
     /// selector ([`TournamentSelector`]) with the [`CrowdedComparison`] comparison operator.
@@ -296,7 +296,7 @@ impl NSGA2 {
 }
 
 /// Implementation of Section IIIC of the paper.
-#[impl_algorithm_trait_items(NSGA2Arg)]
+#[algorithm_trait_items(NSGA2Arg)]
 impl Algorithm<NSGA2Arg> for NSGA2 {
     /// This assesses the initial random population and sets the individual's ranks and crowding
     /// distance needed in [`self.evolve`].

@@ -20,7 +20,7 @@ use crate::operators::{
     Selector, SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs, TournamentSelector,
 };
 use crate::utils::{fast_non_dominated_sort, DasDarren1998, NumberOfPartitions};
-use nsga_rs_macros::{as_algorithm, as_algorithm_args, impl_algorithm_trait_items};
+use nsga_rs_macros::{algorithm, algorithm_args, algorithm_trait_items};
 
 #[cfg(feature = "python")]
 use pyo3::exceptions::PyTypeError;
@@ -93,7 +93,7 @@ impl<'py> IntoPyObject<'py> for Nsga3NumberOfIndividuals {
 /// to prevent the problem explained in Section IIa point #3 in the paper. With many objectives,
 /// "two distant parent solutions are likely to produce offspring solutions that are also distant
 /// from parents", which should prevented.
-#[as_algorithm_args]
+#[algorithm_args]
 pub struct NSGA3Arg {
     /// The number of individuals in the population.
     pub number_of_individuals: Nsga3NumberOfIndividuals,
@@ -158,7 +158,7 @@ impl NSGA3Arg {
 /// ```rust
 #[doc = include_str!("../../../examples/nsga3_dtlz1.rs")]
 /// ```
-#[as_algorithm(NSGA3Arg)]
+#[algorithm(NSGA3Arg)]
 pub struct NSGA3 {
     /// The vector of reference points
     reference_points: Vec<Vec<f64>>,
@@ -370,7 +370,7 @@ impl NSGA3 {
 }
 
 /// Implementation of Section IV of the paper.
-#[impl_algorithm_trait_items(NSGA3Arg)]
+#[algorithm_trait_items(NSGA3Arg)]
 impl Algorithm<NSGA3Arg> for NSGA3 {
     /// This assesses the initial random population.
     ///

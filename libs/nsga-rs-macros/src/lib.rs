@@ -51,7 +51,7 @@ pub fn test_with_retries(attrs: TokenStream, item: TokenStream) -> TokenStream {
 ///      - resume_from_file ([`Option<PathBuf>`])
 ///      - seed ([`Option<u64>`])
 #[proc_macro_attribute]
-pub fn as_algorithm_args(_attrs: TokenStream, input: TokenStream) -> TokenStream {
+pub fn algorithm_args(_attrs: TokenStream, input: TokenStream) -> TokenStream {
     let mut ast = parse_macro_input!(input as DeriveInput);
     match &mut ast.data {
         syn::Data::Struct(ref mut struct_data) => {
@@ -152,7 +152,7 @@ pub fn as_algorithm_args(_attrs: TokenStream, input: TokenStream) -> TokenStream
 /// It also implements the `Display` trait.
 ///
 #[proc_macro_attribute]
-pub fn as_algorithm(attrs: TokenStream, input: TokenStream) -> TokenStream {
+pub fn algorithm(attrs: TokenStream, input: TokenStream) -> TokenStream {
     let mut ast = parse_macro_input!(input as DeriveInput);
     let name = &ast.ident;
 
@@ -271,7 +271,7 @@ pub fn as_algorithm(attrs: TokenStream, input: TokenStream) -> TokenStream {
 /// `Algorithm::build_thread_pool()` and `Algorithm::export_history()`.
 ///
 #[proc_macro_attribute]
-pub fn impl_algorithm_trait_items(attrs: TokenStream, input: TokenStream) -> TokenStream {
+pub fn algorithm_trait_items(attrs: TokenStream, input: TokenStream) -> TokenStream {
     let mut ast = parse_macro_input!(input as syn::ItemImpl);
     let name = if let syn::Type::Path(tp) = &*ast.self_ty {
         tp.path.clone()
