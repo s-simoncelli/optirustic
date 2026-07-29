@@ -1,3 +1,9 @@
+use crate::operators::{PolynomialMutationArgs, SimulatedBinaryCrossoverArgs};
+use chrono::{DateTime, Utc};
+use log::{debug, info};
+use rayon::{prelude::*, ThreadPool};
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::read_dir;
@@ -5,12 +11,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Instant, SystemTime};
 use std::{fmt, fs};
-
-use chrono::{DateTime, Utc};
-use log::{debug, info};
-use rayon::{prelude::*, ThreadPool};
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "python")]
 use crate::algorithms::{NSGA2Arg, NSGA3Arg};
@@ -571,6 +571,11 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
     /// return: `u32`.
     fn generation(&self) -> u32;
 
+    /// Return the reference to the current step of the algorithm evolution.
+    ///
+    /// return: `&u32`.
+    fn generation_as_ref(&self) -> &u32;
+
     /// Return the number of function evaluations. This is the number of times the algorithm evaluates
     /// an individual's objectives and constraints using [`Algorithm::evaluate_individual`]. If no
     /// new solutions/individuals are chosen by an algorithm, this counter will not increase, as past
@@ -875,9 +880,10 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
                     .iter()
                     .all(|c| self.is_stopping_condition_met(c).unwrap())
             }
-            StoppingCondition::Function(custom_stopping_condition) => {
-                custom_stopping_condition.is_met()
-            }
+            StoppingCondition::Function(custom_stopping_condition) => custom_stopping_condition
+                .try_lock()
+                .expect("Cannot get condition")
+                .is_met(),
         };
         Ok(is_met)
     }
@@ -1093,9 +1099,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
 /// # define the NSGA2 options
 /// args = NSGA2Arg(
 ///     number_of_individuals=10,
-///     stopping_condition=StoppingCondition(
-///         condition=StoppingConditionValue.max_duration(3)
-///     )
+///     stopping_condition=StoppingCondition.max_duration(3)
 /// )
 ///
 /// # initialise the enum
@@ -1282,6 +1286,45 @@ macro_rules! create_py_reader_interface {
 // Export macro to parent module
 #[cfg(feature = "python")]
 pub(crate) use create_py_reader_interface;
+
+/// Get a string listing the algorithm options.
+///
+/// # Arguments
+///
+/// * `problem`: The problem.
+/// * `crossover_options`: The crossover operator options.
+/// * `mutation_options`: The mutation operator options.
+///
+/// returns: `String`
+pub fn algorithm_options_as_str(
+    problem: &Arc<Problem>,
+    crossover_options: &SimulatedBinaryCrossoverArgs,
+    mutation_options: &PolynomialMutationArgs,
+) -> String {
+    let mut log_opts: String = "Algorithm options are:\n".to_owned();
+    log_opts.push_str(
+            format!("\t* Number of variables {:>13}\n\t* Number of objectives {:>12}\n\t* Number of constraints {:>11}\n",
+                    problem.number_of_variables(),
+                    problem.number_of_objectives(),
+                    problem.number_of_constraints()
+            ).as_str()
+        );
+    log_opts.push_str(
+            format!(
+                "\t* Crossover distribution index {:>5}\n\t* Crossover probability {:>11}\n\t* Crossover var probability {:>9}\n",
+                crossover_options.distribution_index, crossover_options.crossover_probability, crossover_options.variable_probability,
+            )
+                .as_str(),
+        );
+    log_opts.push_str(
+        format!(
+            "\t* Mutation index parameter {:>9}\n\t* Mutation var probability {:>10}",
+            mutation_options.index_parameter, mutation_options.variable_probability,
+        )
+        .as_str(),
+    );
+    log_opts
+}
 
 // Custom Py object conversion
 #[cfg(feature = "python")]

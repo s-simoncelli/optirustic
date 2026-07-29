@@ -348,6 +348,15 @@ pub fn algorithm_trait_items(attrs: TokenStream, input: TokenStream) -> TokenStr
         .expect("Failed to parse `generation` item"),
         syn::parse::<syn::ImplItem>(
             quote!(
+                fn generation_as_ref(&self) -> &u32 {
+                    &self.generation
+                }
+            )
+            .into(),
+        )
+        .expect("Failed to parse `generation_as_ref` item"),
+        syn::parse::<syn::ImplItem>(
+            quote!(
                 fn number_of_function_evaluations(&self) -> u32 {
                     self.nfe
                 }
