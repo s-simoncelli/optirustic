@@ -1,6 +1,4 @@
-pub use comparison::{
-    BinaryComparisonOperator, CrowdedComparison, ParetoConstrainedDominance, PreferredSolution,
-};
+pub use comparison::{BinaryComparisonOperator, CrowdedComparison, ParetoConstrainedDominance};
 pub use crossover::{Crossover, SimulatedBinaryCrossover, SimulatedBinaryCrossoverArgs};
 pub use mutation::{Mutation, PolynomialMutation, PolynomialMutationArgs};
 pub use selector::{Selector, TournamentSelector};

@@ -4,7 +4,8 @@ use rand::prelude::IndexedRandom;
 use rand::RngCore;
 
 use crate::core::{Individual, OError};
-use crate::operators::{BinaryComparisonOperator, PreferredSolution};
+use crate::operators::BinaryComparisonOperator;
+use crate::utils::PreferredSolution;
 
 /// A trait implementing methods to choose individuals from a population for reproduction.
 pub trait Selector {

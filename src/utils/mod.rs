@@ -3,6 +3,7 @@ pub use algebra::{
     LinearSolverTolerance,
 };
 pub use fast_non_dominated_sort::{fast_non_dominated_sort, NonDominatedSortResults, RANK_KEY};
+pub use pareto_dominance::{get_pareto_constrained_dominance, PreferredSolution};
 pub use reference_points::{DasDarren1998, NumberOfPartitions, TwoLayerPartitions};
 use std::cmp::Ordering;
 use std::collections::{BTreeSet, HashMap};
@@ -12,6 +13,7 @@ use crate::core::OError;
 
 mod algebra;
 mod fast_non_dominated_sort;
+mod pareto_dominance;
 mod reference_points;
 
 /// Define the sort type

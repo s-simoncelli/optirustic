@@ -1,5 +1,6 @@
 use crate::core::{DataValue, Individual, OError};
-use crate::operators::{BinaryComparisonOperator, ParetoConstrainedDominance, PreferredSolution};
+use crate::operators::{BinaryComparisonOperator, ParetoConstrainedDominance};
+use crate::utils::PreferredSolution;
 
 /// Outputs of the non-dominated sort algorithm.
 #[derive(Debug)]
