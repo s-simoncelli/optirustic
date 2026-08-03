@@ -1,15 +1,14 @@
 use log::{debug, info};
+use nsga_rs_macros::{algorithm, algorithm_args, algorithm_trait_items};
 use rand::RngCore;
+use rayon::ThreadPool;
 use std::fmt::{Display, Formatter};
 use std::ops::Rem;
 use std::path::PathBuf;
 
-use nsga_rs_macros::{algorithm, algorithm_args, algorithm_trait_items};
-use rayon::ThreadPool;
-
 #[cfg(feature = "python")]
 use crate::algorithms::PyStoppingConditionMap;
-use crate::algorithms::{Algorithm, NumThreads};
+use crate::algorithms::{algorithm_options_as_str, Algorithm, NumThreads};
 use crate::core::utils::get_rng;
 use crate::core::{DataValue, Individual, Individuals, IndividualsMut, OError};
 use crate::operators::{
@@ -90,7 +89,7 @@ impl NSGA2Arg {
 #[doc = include_str!("../../examples/nsga2_zdt1.rs")]
 /// ```
 #[algorithm(NSGA2Arg)]
-pub struct NSGA2 {
+pub struct NSGA2<'a> {
     /// The operator to use to select the individuals for reproduction. This is a binary tournament
     /// selector ([`TournamentSelector`]) with the [`CrowdedComparison`] comparison operator.
     selector_operator: TournamentSelector<CrowdedComparison>,
@@ -101,9 +100,12 @@ pub struct NSGA2 {
     mutation_operator: PolynomialMutation,
     /// The seed to use.
     rng: Box<dyn RngCore>,
+    /// A callback function to run after each evolution completed by [`NSGA2::evolve()`]. This
+    /// can be set using [`NSGA2::set_after_evolve()`].
+    after_evolve: Option<Box<dyn FnMut(&NSGA2) + 'a>>,
 }
 
-impl NSGA2 {
+impl<'a> NSGA2<'a> {
     /// Initialise the NSGA2 algorithm.
     ///
     /// # Arguments
@@ -154,7 +156,7 @@ impl NSGA2 {
 
         info!(
             "{}",
-            Self::algorithm_option_str(&problem, &crossover_options, &mutation_options)
+            algorithm_options_as_str(&problem, &crossover_options, &mutation_options)
         );
 
         Ok(Self {
@@ -172,46 +174,8 @@ impl NSGA2 {
             export_history: options.export_history,
             rng: get_rng(options.seed),
             args: nsga2_args,
+            after_evolve: None,
         })
-    }
-
-    /// Get a string listing the algorithm options.
-    ///
-    /// # Arguments
-    ///
-    /// * `problem`: The problem.
-    /// * `crossover_options`: The crossover operator options.
-    /// * `mutation_options`: The mutation operator options.
-    ///
-    /// returns: `String`
-    pub fn algorithm_option_str(
-        problem: &Arc<Problem>,
-        crossover_options: &SimulatedBinaryCrossoverArgs,
-        mutation_options: &PolynomialMutationArgs,
-    ) -> String {
-        let mut log_opts: String = "Algorithm options are:\n".to_owned();
-        log_opts.push_str(
-            format!("\t* Number of variables {:>13}\n\t* Number of objectives {:>12}\n\t* Number of constraints {:>11}\n",
-                    problem.number_of_variables(),
-                    problem.number_of_objectives(),
-                    problem.number_of_constraints()
-            ).as_str()
-        );
-        log_opts.push_str(
-            format!(
-                "\t* Crossover distribution index {:>5}\n\t* Crossover probability {:>11}\n\t* Crossover var probability {:>9}\n",
-                crossover_options.distribution_index, crossover_options.crossover_probability, crossover_options.variable_probability,
-            )
-                .as_str(),
-        );
-        log_opts.push_str(
-            format!(
-                "\t* Mutation index parameter {:>9}\n\t* Mutation var probability {:>10}",
-                mutation_options.index_parameter, mutation_options.variable_probability,
-            )
-            .as_str(),
-        );
-        log_opts
     }
 
     /// Calculate the crowding distance (with complexity $O(M * log(N))$, where `M` is the number of
@@ -292,11 +256,37 @@ impl NSGA2 {
 
         Ok(())
     }
+
+    /// Set a callback function to execute after [`NSGA2::evolve()`] is called and a
+    /// new population generation is created. The function can access the data of the
+    /// algorithm (such as the individual's data).
+    ///
+    /// # Arguments
+    ///
+    /// * `callback`: A callback function accepting `&NSGA2`.
+    ///
+    /// returns: `Result<(), OError>`
+    pub(crate) fn set_after_evolve(&mut self, callback: Box<dyn FnMut(&NSGA2) + 'a>) {
+        self.after_evolve = Some(callback);
+    }
+
+    /// Add a new stopping condition after the algorithm is initialised. This is combined
+    /// with any existing condition using [`StoppingCondition::Any`].
+    ///
+    /// # Arguments
+    ///
+    /// * `stopping_condition`: The new condition to add.
+    ///
+    /// returns: `Result<(), OError>`
+    pub(crate) fn set_stopping_condition_as_any(&mut self, stopping_condition: StoppingCondition) {
+        self.stopping_condition =
+            StoppingCondition::Any(vec![self.stopping_condition.clone(), stopping_condition]);
+    }
 }
 
 /// Implementation of Section IIIC of the paper.
 #[algorithm_trait_items(NSGA2Arg)]
-impl Algorithm<NSGA2Arg> for NSGA2 {
+impl<'a> Algorithm<NSGA2Arg> for NSGA2<'a> {
     /// This assesses the initial random population and sets the individual's ranks and crowding
     /// distance needed in [`self.evolve`].
     ///
@@ -311,7 +301,7 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
         )?;
 
         debug!("Calculating rank");
-        fast_non_dominated_sort(self.population.individuals_as_mut(), false)?;
+        fast_non_dominated_sort(self.population.individuals_as_mut(), false, None)?;
 
         debug!("Calculating crowding distance");
         NSGA2::set_crowding_distance(self.population.individuals_as_mut())?;
@@ -362,7 +352,8 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
         debug!("Evaluation done");
 
         debug!("Calculating fronts and ranks for new population");
-        let sorting_results = fast_non_dominated_sort(self.population.individuals_as_mut(), false)?;
+        let sorting_results =
+            fast_non_dominated_sort(self.population.individuals_as_mut(), false, None)?;
         debug!("Collected {} fronts", sorting_results.fronts.len());
 
         debug!("Selecting best individuals");
@@ -419,6 +410,11 @@ impl Algorithm<NSGA2Arg> for NSGA2 {
         NSGA2::set_crowding_distance(self.population.individuals_as_mut())?;
 
         self.generation += 1;
+
+        if let Some(mut after_evolve) = self.after_evolve.take() {
+            after_evolve(self);
+            self.after_evolve = Some(after_evolve);
+        }
         Ok(())
     }
 }
