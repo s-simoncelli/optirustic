@@ -66,7 +66,7 @@ impl HyperVolumeFonseca2006 {
 
         // get non-dominated front with feasible solutions only
         let num_individuals = individuals.len();
-        let mut front_data = fast_non_dominated_sort(individuals, true)?;
+        let mut front_data = fast_non_dominated_sort(individuals, true, None)?;
         let individuals = mem::take(&mut front_data.fronts[0]);
 
         if num_individuals != individuals.len() {

@@ -1,6 +1,5 @@
 use crate::core::{DataValue, Individual, OError};
-use crate::operators::{BinaryComparisonOperator, ParetoConstrainedDominance};
-use crate::utils::PreferredSolution;
+use crate::utils::{get_pareto_constrained_dominance, PreferredSolution};
 
 /// Outputs of the non-dominated sort algorithm.
 #[derive(Debug)]
@@ -40,11 +39,16 @@ pub const RANK_KEY: &str = "rank";
 /// * `first_front_only`: Return the first front only with the rank 1 (i.e. containing only
 ///    non-dominated individuals). If you need only the first front set this to true to avoid
 ///    ranking the remaining individuals.
+/// * `data_field_name`: Whether to use the vector of data stored in the individual with
+///    the given name instead of the objective vector. This assumes the data vector has the
+///    same size of the objectives and the values are stored in the same order as the
+///    objective names in [`Problem`].
 ///
 /// returns: `Result<NonDominatedSortResults, OError>`.
 pub fn fast_non_dominated_sort(
     individuals: &mut [Individual],
     first_front_only: bool,
+    data_field_name: Option<String>,
 ) -> Result<NonDominatedSortResults, OError> {
     if individuals.len() < 2 {
         return Err(OError::SurvivalOperator(
@@ -71,7 +75,11 @@ pub fn fast_non_dominated_sort(
 
     for pi in 0..individuals.len() {
         for qi in pi..individuals.len() {
-            match ParetoConstrainedDominance::compare(&individuals[pi], &individuals[qi])? {
+            match get_pareto_constrained_dominance(
+                &individuals[pi],
+                &individuals[qi],
+                data_field_name.clone(),
+            )? {
                 PreferredSolution::First => {
                     // `p` dominates `q` - add `q` to the set of solutions dominated by `p`
                     dominated_solutions[pi].push(qi);
@@ -187,7 +195,7 @@ mod test {
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Minimise],
             None,
         );
-        let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
+        let result = fast_non_dominated_sort(&mut individuals, false, None).unwrap();
 
         // non-dominated front
         let expected_first = vec![0, 1, 2, 4, 7, 9];
@@ -249,7 +257,7 @@ mod test {
             &[ObjectiveDirection::Maximise, ObjectiveDirection::Minimise],
             None,
         );
-        let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
+        let result = fast_non_dominated_sort(&mut individuals, false, None).unwrap();
 
         // non-dominated front
         let expected_first = (0..=5).collect::<Vec<usize>>();
@@ -285,7 +293,7 @@ mod test {
             &[ObjectiveDirection::Minimise, ObjectiveDirection::Maximise],
             None,
         );
-        let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
+        let result = fast_non_dominated_sort(&mut individuals, false, None).unwrap();
 
         // non-dominated front
         let expected_first = vec![0, 1, 6];
@@ -323,7 +331,7 @@ mod test {
             ],
             None,
         );
-        let result = fast_non_dominated_sort(&mut individuals, false).unwrap();
+        let result = fast_non_dominated_sort(&mut individuals, false, None).unwrap();
 
         // non-dominated front
         let expected_first = vec![1, 2];

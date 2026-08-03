@@ -12,7 +12,7 @@ use crate::algorithms::nsga3::niching::Niching;
 use crate::algorithms::nsga3::normalise::Normalise;
 #[cfg(feature = "python")]
 use crate::algorithms::PyStoppingConditionMap;
-use crate::algorithms::{Algorithm, NumThreads, NSGA2};
+use crate::algorithms::{algorithm_options_as_str, Algorithm, NumThreads};
 use crate::core::utils::get_rng;
 use crate::core::{DataValue, Individual, OError};
 use crate::operators::{
@@ -289,7 +289,7 @@ impl NSGA3 {
 
         info!(
             "{}",
-            NSGA2::algorithm_option_str(&problem, &crossover_options, &mutation_options)
+            algorithm_options_as_str(&problem, &crossover_options, &mutation_options)
         );
 
         Ok(Self {
@@ -430,7 +430,8 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
         debug!("Evaluation done");
 
         debug!("Calculating fronts and ranks for new population");
-        let sorting_results = fast_non_dominated_sort(self.population.individuals_as_mut(), false)?;
+        let sorting_results =
+            fast_non_dominated_sort(self.population.individuals_as_mut(), false, None)?;
         debug!("Collected {} fronts", sorting_results.fronts.len());
 
         debug!("Selecting best individuals");

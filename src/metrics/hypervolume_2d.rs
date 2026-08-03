@@ -67,7 +67,7 @@ impl HyperVolume2D {
 
         // get non-dominated front
         let problem = individuals[0].problem();
-        let mut front_data = fast_non_dominated_sort(individuals, true)?;
+        let mut front_data = fast_non_dominated_sort(individuals, true, None)?;
         let individuals = mem::take(&mut front_data.fronts[0]);
 
         // change sign for reference point coordinate. All methods below assume that objectives are minimised.
