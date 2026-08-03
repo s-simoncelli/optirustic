@@ -18,6 +18,8 @@ pub enum DataValue {
     USize(usize),
     /// The value for a vector of floating-point numbers.
     Vector(Vec<f64>),
+    /// The value for a vector of integer `i64` numbers.
+    IntVector(Vec<i64>),
     /// The value for a vector of nested data.
     DataVector(Vec<DataValue>),
     /// The value for a Hashmap
@@ -34,6 +36,7 @@ impl Serialize for DataValue {
             DataValue::Integer(v) => serializer.serialize_i64(*v),
             DataValue::USize(v) => serializer.serialize_u64(*v as u64),
             DataValue::Vector(v) => serializer.collect_seq(v),
+            DataValue::IntVector(v) => serializer.collect_seq(v),
             DataValue::DataVector(v) => serializer.collect_seq(v),
             DataValue::Map(v) => serializer.collect_map(v),
         }
@@ -47,6 +50,7 @@ impl PartialEq for DataValue {
             (DataValue::Integer(s), DataValue::Integer(o)) => *s == *o,
             (DataValue::USize(s), DataValue::USize(o)) => s == o,
             (DataValue::Vector(s), DataValue::Vector(o)) => s == o,
+            (DataValue::IntVector(s), DataValue::IntVector(o)) => s == o,
             _ => false,
         }
     }
@@ -85,6 +89,18 @@ impl DataValue {
             Ok(v)
         } else {
             Err(OError::WrongDataType("vector of f64".to_string()))
+        }
+    }
+
+    /// Get the value if the data is of vector of `i64`. This returns an error if the data is not a
+    /// vector.
+    ///
+    /// returns: `Result<&Vec<i64, OError>`
+    pub fn as_i64_vec(&self) -> Result<&Vec<i64>, OError> {
+        if let DataValue::IntVector(v) = self {
+            Ok(v)
+        } else {
+            Err(OError::WrongDataType("vector of i64".to_string()))
         }
     }
 
