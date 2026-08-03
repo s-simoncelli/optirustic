@@ -155,6 +155,7 @@ pub fn algorithm_args(_attrs: TokenStream, input: TokenStream) -> TokenStream {
 pub fn algorithm(attrs: TokenStream, input: TokenStream) -> TokenStream {
     let mut ast = parse_macro_input!(input as DeriveInput);
     let name = &ast.ident;
+    let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
 
     let arg_type = syn::punctuated::Punctuated::<syn::Path, syn::Token![,]>::parse_terminated
         .parse(attrs)
@@ -252,7 +253,7 @@ pub fn algorithm(attrs: TokenStream, input: TokenStream) -> TokenStream {
 
                 #ast
 
-                impl Display for #name {
+                impl #impl_generics Display for #name  #ty_generics #where_clause {
                     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
                         f.write_str(self.name().as_str())
                     }
