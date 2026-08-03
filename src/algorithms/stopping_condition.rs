@@ -1,13 +1,17 @@
 use serde::{Deserialize, Serialize};
-use std::{fmt::Display, sync::Arc};
+use std::{
+    fmt::Display,
+    sync::{Arc, Mutex},
+};
 
 /// A trait to use to define a custom stopping condition function.
+/// NOTE: `Send`/`Sync` traits are required for Python support.
 pub trait CustomStoppingCondition: Sync + Send {
     /// Define a unique name to the condition.
     fn name(&self) -> String;
 
-    /// Return `true` to stop the algorithm, `false` otherwise`
-    fn is_met(&self) -> bool;
+    /// Return `true` to stop the algorithm, `false` otherwise`.
+    fn is_met(&mut self, generation: u32, nfe: u32) -> bool;
 }
 
 /// The type of stopping condition. Pick one type to inform the algorithm how/when it should
@@ -26,8 +30,13 @@ pub enum StoppingCondition {
     Any(Vec<StoppingCondition>),
     /// Stop when all conditions are met (this acts as an AND operator).
     All(Vec<StoppingCondition>),
+    /// Stop when a function returns `true`.
+    // NOTE: this uses `Arc` as all algorithm options must implement `Send`/`Sync` for
+    // Python support. `Mutex` is required too to allow user to mutate whatever struct
+    // implements the [`CustomStoppingCondition`] trait. This is not actually send in
+    // the individual threads.
     #[serde(skip_serializing, skip_deserializing)]
-    Function(Arc<dyn CustomStoppingCondition>),
+    Function(Arc<Mutex<dyn CustomStoppingCondition>>),
 }
 
 impl StoppingCondition {
@@ -53,7 +62,13 @@ impl StoppingCondition {
                 .collect::<Vec<String>>()
                 .join(" AND "),
             StoppingCondition::Function(custom_stopping_condition) => {
-                format!("Custom condition {}", custom_stopping_condition.name())
+                format!(
+                    "Custom condition {}",
+                    custom_stopping_condition
+                        .try_lock()
+                        .expect("Cannot get condition")
+                        .name()
+                )
             }
         }
     }
@@ -89,7 +104,14 @@ impl Display for StoppingCondition {
                 write!(f, "{}", values.join(" AND "))
             }
             StoppingCondition::Function(custom_stopping_condition) => {
-                write!(f, "c{}", custom_stopping_condition.name())
+                write!(
+                    f,
+                    "c{}",
+                    custom_stopping_condition
+                        .try_lock()
+                        .expect("Cannot get condition")
+                        .name()
+                )
             }
         }
     }
