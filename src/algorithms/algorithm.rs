@@ -883,7 +883,7 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
             StoppingCondition::Function(custom_stopping_condition) => custom_stopping_condition
                 .try_lock()
                 .expect("Cannot get condition")
-                .is_met(),
+                .is_met(self.generation(), self.number_of_function_evaluations()),
         };
         Ok(is_met)
     }
