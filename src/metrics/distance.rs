@@ -1,5 +1,5 @@
 use crate::core::{Individual, OError};
-use crate::utils::vector_min;
+use crate::utils::{euclidean_distance, vector_min};
 
 static DISTANCE_NAME: &str = "Distance";
 
@@ -229,12 +229,10 @@ impl<'a> Distance<'a> {
         r: &Individual,
         _is_inverse: bool,
     ) -> Result<f64, OError> {
-        Ok(a.get_objective_values()?
-            .iter()
-            .zip(r.get_objective_values()?)
-            .map(|(a_k, r_k)| (a_k - r_k).powi(2))
-            .sum::<f64>()
-            .sqrt())
+        Ok(euclidean_distance(
+            &a.get_objective_values()?,
+            &r.get_objective_values()?,
+        ))
     }
 
     /// Max (plus) distance between two points used in the GD+ and IGD+ metrics.

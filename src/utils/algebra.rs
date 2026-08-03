@@ -130,6 +130,16 @@ pub fn vector_magnitude(vector: &[f64]) -> Result<f64, String> {
     Ok(dot_product(vector, vector)?.sqrt())
 }
 
+/// Calculate the Euclidean distance between two points.
+pub fn euclidean_distance(point_1: &[f64], point_2: &[f64]) -> f64 {
+    point_1
+        .iter()
+        .zip(point_2)
+        .map(|(a_k, r_k)| (a_k - r_k).powi(2))
+        .sum::<f64>()
+        .sqrt()
+}
+
 /// Calculate the perpendicular distance between a line vector `line` and a `point`. This returns
 /// an error if the size of the vectors does not match.
 ///
