@@ -633,7 +633,7 @@ impl Population {
     /// Borrow the population individuals as mutable reference.
     ///
     /// return: `&mut [Individual]`
-    pub fn individuals_as_mut(&mut self) -> &mut [Individual] {
+    pub fn individuals_as_mut(&mut self) -> &mut Vec<Individual> {
         self.0.as_mut()
     }
 

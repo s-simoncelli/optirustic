@@ -153,6 +153,7 @@ impl<'py> IntoPyObject<'py> for DataValue {
             DataValue::Integer(v) => v.into_pyobject(py)?.into_any(),
             DataValue::USize(v) => v.into_pyobject(py)?.into_any(),
             DataValue::Vector(v) => v.into_pyobject(py)?.into_any(),
+            DataValue::IntVector(v) => v.into_pyobject(py)?.into_any(),
             DataValue::DataVector(v) => v.into_pyobject(py)?.into_any(),
             DataValue::Map(v) => v.into_pyobject(py)?.into_any(),
         };
