@@ -184,7 +184,7 @@ pub fn algorithm(attrs: TokenStream, input: TokenStream) -> TokenStream {
                     syn::Field::parse_named
                         .parse2(quote! {
                             /// The population with the solutions.
-                            population: Population
+                            pub(crate) population: Population
                         })
                         .expect("Cannot add `population` field"),
                 );
