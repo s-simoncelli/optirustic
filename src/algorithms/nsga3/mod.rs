@@ -12,7 +12,7 @@ use crate::algorithms::nsga3::niching::Niching;
 use crate::algorithms::nsga3::normalise::Normalise;
 #[cfg(feature = "python")]
 use crate::algorithms::PyStoppingConditionMap;
-use crate::algorithms::{algorithm_options_as_str, Algorithm, NumThreads};
+use crate::algorithms::{algorithm_options_as_str, Algorithm, EvolveStatus, NumThreads};
 use crate::core::utils::get_rng;
 use crate::core::{DataValue, Individual, OError};
 use crate::operators::{
@@ -390,7 +390,7 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
 
     /// Evolve the population. The first part of this code comes from NSGA2::evolve(). NSGA3 mainly
     /// differs in the survival method.
-    fn evolve(&mut self) -> Result<(), OError> {
+    fn evolve(&mut self) -> Result<EvolveStatus, OError> {
         // Create the new population, based on the population at the previous time-step, of size
         // self.number_of_individuals. The loop adds two individuals at the time.
         debug!("Generating new population (selection + crossover + mutation)");
@@ -526,7 +526,7 @@ impl Algorithm<NSGA3Arg> for NSGA3 {
         }
 
         self.generation += 1;
-        Ok(())
+        Ok(EvolveStatus::Continue)
     }
 
     fn additional_export_data(&self) -> Option<HashMap<String, DataValue>> {

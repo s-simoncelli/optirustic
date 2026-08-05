@@ -499,9 +499,9 @@ impl Display for AlgorithmExport {
 pub struct ExportHistory {
     /// Export the algorithm data each time the generation counter in [`Algorithm::generation`]
     /// increases by the provided step.
-    generation_step: usize,
+    pub generation_step: usize,
     /// Serialise the algorithm history and export the results to a JSON file in the given folder.
-    destination: PathBuf,
+    pub destination: PathBuf,
 }
 
 impl ExportHistory {
@@ -554,6 +554,13 @@ impl ExportHistory {
     }
 }
 
+/// An enum returned by [`Algorithm::evolve()`] to indicate whether to continue or stop
+/// evolving the population.
+pub enum EvolveStatus {
+    Continue,
+    Stop,
+}
+
 /// The trait to use to implement an algorithm.
 pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
     /// Initialise the algorithm.
@@ -561,10 +568,11 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
     /// return: `Result<(), OError>`
     fn initialise(&mut self) -> Result<(), OError>;
 
-    /// Evolve the population.
+    /// Evolve the population. This method returns `EvolveStatus` if the algorithm needs
+    /// to stop the evolution.
     ///
-    /// return: `Result<(), OError>`
-    fn evolve(&mut self) -> Result<(), OError>;
+    /// return: `Result<EvolveStatus, OError>`
+    fn evolve(&mut self) -> Result<EvolveStatus, OError>;
 
     /// Return the current step of the algorithm evolution.
     ///
@@ -784,8 +792,13 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
 
             // Evolve population
             info!("Generation #{}", self.generation());
+
+            let mut terminate = false;
             let now = SystemTime::now();
-            self.evolve()?;
+            if matches!(self.evolve()?, EvolveStatus::Stop) {
+                terminate = true;
+            }
+
             if let Result::Ok(elapsed) = now.elapsed() {
                 avg_time = (avg_time + elapsed.as_secs_f64()) / 2.0;
             }
@@ -795,38 +808,41 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
                 self.elapsed_as_string()
             );
 
-            // print time left. For vectorial stopping condition this cannot be calculated
-            match self.stopping_condition() {
-                StoppingCondition::MaxDurationAsMinutes(max_t) => {
-                    let left = max_t * 60 - self.start_time().elapsed().as_secs() as u32;
-                    info!("Approximate time left: {}", elapsed_as_string(left as u64));
+            // Termination - skip if early termination is returned by evolve()
+            if !terminate {
+                // print time left. For vectorial stopping condition this cannot be calculated
+                match self.stopping_condition() {
+                    StoppingCondition::MaxDurationAsMinutes(max_t) => {
+                        let left = max_t * 60 - self.start_time().elapsed().as_secs() as u32;
+                        info!("Approximate time left: {}", elapsed_as_string(left as u64));
+                    }
+                    StoppingCondition::MaxDurationAsHours(max_t) => {
+                        let left = max_t * 60 * 24 - self.start_time().elapsed().as_secs() as u32;
+                        info!("Approximate time left: {}", elapsed_as_string(left as u64));
+                    }
+                    StoppingCondition::MaxGeneration(gen) => {
+                        let left = (gen - self.generation()) as f64 * avg_time;
+                        info!("Approximate time left: {}", elapsed_as_string(left as u64));
+                    }
+                    StoppingCondition::MaxFunctionEvaluations(nfe) => {
+                        let left = (nfe - self.number_of_function_evaluations()) as f64 * avg_time
+                            / self.number_of_function_evaluations() as f64;
+                        info!("Approximate time left: {}", elapsed_as_string(left as u64));
+                    }
+                    _ => {}
                 }
-                StoppingCondition::MaxDurationAsHours(max_t) => {
-                    let left = max_t * 60 * 24 - self.start_time().elapsed().as_secs() as u32;
-                    info!("Approximate time left: {}", elapsed_as_string(left as u64));
-                }
-                StoppingCondition::MaxGeneration(gen) => {
-                    let left = (gen - self.generation()) as f64 * avg_time;
-                    info!("Approximate time left: {}", elapsed_as_string(left as u64));
-                }
-                StoppingCondition::MaxFunctionEvaluations(nfe) => {
-                    let left = (nfe - self.number_of_function_evaluations()) as f64 * avg_time
-                        / self.number_of_function_evaluations() as f64;
-                    info!("Approximate time left: {}", elapsed_as_string(left as u64));
-                }
-                _ => {}
+
+                let cond = self.stopping_condition();
+                terminate = self.is_stopping_condition_met(cond)?;
+                info!("Stopping evolution because the {} was reached", cond.name());
             }
 
-            // Termination
-            let cond = self.stopping_condition();
-            let terminate = self.is_stopping_condition_met(cond)?;
             if terminate {
                 // save last file
                 if let Some(export) = self.export_history() {
                     self.save_to_json(&export.destination, Some("Final"))?;
                 }
 
-                info!("Stopping evolution because the {} was reached", cond.name());
                 info!("Took {}", self.elapsed_as_string());
                 break 'gen_loop;
             }
@@ -880,10 +896,6 @@ pub trait Algorithm<AlgorithmOptions: Serialize + DeserializeOwned>: Display {
                     .iter()
                     .all(|c| self.is_stopping_condition_met(c).unwrap())
             }
-            StoppingCondition::Function(custom_stopping_condition) => custom_stopping_condition
-                .try_lock()
-                .expect("Cannot get condition")
-                .is_met(self.generation(), self.number_of_function_evaluations()),
         };
         Ok(is_met)
     }
