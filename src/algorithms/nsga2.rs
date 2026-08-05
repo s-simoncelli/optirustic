@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 #[cfg(feature = "python")]
 use crate::algorithms::PyStoppingConditionMap;
-use crate::algorithms::{algorithm_options_as_str, Algorithm, NumThreads};
+use crate::algorithms::{algorithm_options_as_str, Algorithm, EvolveStatus, NumThreads};
 use crate::core::utils::get_rng;
 use crate::core::{DataValue, Individual, Individuals, IndividualsMut, OError};
 use crate::operators::{
@@ -101,8 +101,9 @@ pub struct NSGA2<'a> {
     /// The seed to use.
     rng: Box<dyn RngCore>,
     /// A callback function to run after each evolution completed by [`NSGA2::evolve()`]. This
-    /// can be set using [`NSGA2::set_after_evolve()`].
-    after_evolve: Option<Box<dyn FnMut(&NSGA2) + 'a>>,
+    /// can be set using [`NSGA2::set_after_evolve()`]. If this returns [`EvolveStatus::Stop`],
+    /// the evolution stops.
+    after_evolve: Option<Box<dyn FnMut(&mut NSGA2) -> Result<EvolveStatus, OError> + 'a>>,
 }
 
 impl<'a> NSGA2<'a> {
@@ -257,6 +258,12 @@ impl<'a> NSGA2<'a> {
         Ok(())
     }
 
+    /// Set a custom population before the algorithm starts. This overwrites any population
+    /// randomly set when the algorithm is initialised or seeded from an archive.
+    pub(crate) fn set_population(&mut self, population: Population) {
+        self.population = population;
+    }
+
     /// Set a callback function to execute after [`NSGA2::evolve()`] is called and a
     /// new population generation is created. The function can access the data of the
     /// algorithm (such as the individual's data).
@@ -266,21 +273,11 @@ impl<'a> NSGA2<'a> {
     /// * `callback`: A callback function accepting `&NSGA2`.
     ///
     /// returns: `Result<(), OError>`
-    pub(crate) fn set_after_evolve(&mut self, callback: Box<dyn FnMut(&NSGA2) + 'a>) {
+    pub(crate) fn set_after_evolve(
+        &mut self,
+        callback: Box<dyn FnMut(&mut NSGA2) -> Result<EvolveStatus, OError> + 'a>,
+    ) {
         self.after_evolve = Some(callback);
-    }
-
-    /// Add a new stopping condition after the algorithm is initialised. This is combined
-    /// with any existing condition using [`StoppingCondition::Any`].
-    ///
-    /// # Arguments
-    ///
-    /// * `stopping_condition`: The new condition to add.
-    ///
-    /// returns: `Result<(), OError>`
-    pub(crate) fn set_stopping_condition_as_any(&mut self, stopping_condition: StoppingCondition) {
-        self.stopping_condition =
-            StoppingCondition::Any(vec![self.stopping_condition.clone(), stopping_condition]);
     }
 }
 
@@ -312,7 +309,7 @@ impl<'a> Algorithm<NSGA2Arg> for NSGA2<'a> {
         Ok(())
     }
 
-    fn evolve(&mut self) -> Result<(), OError> {
+    fn evolve(&mut self) -> Result<EvolveStatus, OError> {
         // Create the new population, based on the population at the previous time-step, of size
         // self.number_of_individuals. The loop adds two individuals at the time.
         debug!("Generating new population (selection + crossover + mutation)");
@@ -412,10 +409,12 @@ impl<'a> Algorithm<NSGA2Arg> for NSGA2<'a> {
         self.generation += 1;
 
         if let Some(mut after_evolve) = self.after_evolve.take() {
-            after_evolve(self);
+            if matches!(after_evolve(self)?, EvolveStatus::Stop) {
+                return Ok(EvolveStatus::Stop);
+            }
             self.after_evolve = Some(after_evolve);
         }
-        Ok(())
+        Ok(EvolveStatus::Continue)
     }
 }
 
